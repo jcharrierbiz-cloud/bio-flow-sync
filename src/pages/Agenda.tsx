@@ -1,34 +1,14 @@
-import { Sparkles, Zap, Battery, BatteryLow, Clock, Flag } from "lucide-react";
-import { useState } from "react";
+import { Sparkles, Zap, BatteryLow, Clock, Flag } from "lucide-react";
+import { useAgendaStore, defaultTasks } from "@/lib/agendaStore";
 
-interface Task {
-  id: number;
-  time: string;
-  duration: string;
-  title: string;
-  priority: "high" | "medium" | "low";
-  energy: "high" | "low";
-  category: string;
-}
-
-const initialTasks: Task[] = [
-  { id: 1, time: "09:00", duration: "1h30", title: "Réunion Stratégie Q1", priority: "high", energy: "high", category: "Travail" },
-  { id: 2, time: "10:30", duration: "45min", title: "Rédaction rapport", priority: "medium", energy: "high", category: "Travail" },
-  { id: 3, time: "12:00", duration: "1h", title: "Déjeuner", priority: "low", energy: "low", category: "Repas" },
-  { id: 4, time: "13:30", duration: "1h", title: "Code Review", priority: "medium", energy: "high", category: "Travail" },
-  { id: 5, time: "15:00", duration: "30min", title: "Marche rapide", priority: "low", energy: "low", category: "Sport" },
-  { id: 6, time: "16:00", duration: "1h30", title: "Deep Work — Maquettes", priority: "high", energy: "high", category: "Travail" },
-  { id: 7, time: "18:00", duration: "45min", title: "HIIT Training", priority: "medium", energy: "high", category: "Sport" },
-];
-
-const optimizedTasks: Task[] = [
-  { id: 1, time: "09:00", duration: "1h30", title: "Deep Work — Maquettes", priority: "high", energy: "high", category: "Travail" },
-  { id: 2, time: "10:30", duration: "1h30", title: "Réunion Stratégie Q1", priority: "high", energy: "high", category: "Travail" },
-  { id: 3, time: "12:00", duration: "1h", title: "Déjeuner", priority: "low", energy: "low", category: "Repas" },
-  { id: 4, time: "13:30", duration: "30min", title: "Marche rapide", priority: "low", energy: "low", category: "Sport" },
-  { id: 5, time: "14:00", duration: "45min", title: "Rédaction rapport", priority: "medium", energy: "low", category: "Travail" },
-  { id: 6, time: "15:30", duration: "1h", title: "Code Review", priority: "medium", energy: "low", category: "Travail" },
-  { id: 7, time: "17:30", duration: "45min", title: "HIIT Training", priority: "medium", energy: "high", category: "Sport" },
+const optimizedTasks = [
+  { id: 1, time: "09:00", duration: "1h30", title: "Deep Work — Maquettes", priority: "high" as const, energy: "high" as const, category: "Travail" },
+  { id: 2, time: "10:30", duration: "1h30", title: "Réunion Stratégie Q1", priority: "high" as const, energy: "high" as const, category: "Travail" },
+  { id: 3, time: "12:00", duration: "1h", title: "Déjeuner", priority: "low" as const, energy: "low" as const, category: "Repas" },
+  { id: 4, time: "13:30", duration: "30min", title: "Marche rapide", priority: "low" as const, energy: "low" as const, category: "Sport" },
+  { id: 5, time: "14:00", duration: "45min", title: "Rédaction rapport", priority: "medium" as const, energy: "low" as const, category: "Travail" },
+  { id: 6, time: "15:30", duration: "1h", title: "Code Review", priority: "medium" as const, energy: "low" as const, category: "Travail" },
+  { id: 7, time: "17:30", duration: "45min", title: "HIIT Training", priority: "medium" as const, energy: "high" as const, category: "Sport" },
 ];
 
 const priorityColors: Record<string, string> = {
@@ -38,12 +18,16 @@ const priorityColors: Record<string, string> = {
 };
 
 const Agenda = () => {
-  const [tasks, setTasks] = useState(initialTasks);
-  const [optimized, setOptimized] = useState(false);
+  const { tasks, optimized, setTasks, setOptimized } = useAgendaStore();
 
   const handleOptimize = () => {
-    setTasks(optimized ? initialTasks : optimizedTasks);
-    setOptimized(!optimized);
+    if (optimized) {
+      setTasks(defaultTasks);
+      setOptimized(false);
+    } else {
+      setTasks(optimizedTasks);
+      setOptimized(true);
+    }
   };
 
   return (
@@ -78,18 +62,13 @@ const Agenda = () => {
       <div className="space-y-3">
         {tasks.map((task) => (
           <div key={task.id} className="glass-card p-4 flex gap-4 items-start">
-            {/* Time column */}
             <div className="flex flex-col items-center min-w-[44px]">
               <span className="mono text-sm font-medium text-foreground">{task.time}</span>
               <span className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
                 <Clock className="w-2.5 h-2.5" /> {task.duration}
               </span>
             </div>
-
-            {/* Divider */}
             <div className="w-px h-full min-h-[40px] bg-glass-border self-stretch" />
-
-            {/* Content */}
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-medium text-foreground truncate">{task.title}</h3>
               <div className="flex items-center gap-2 mt-2 flex-wrap">

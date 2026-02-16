@@ -1,9 +1,11 @@
 import EnergyRing from "@/components/EnergyRing";
 import PerformanceChart from "@/components/PerformanceChart";
-import CoachModal from "@/components/CoachModal";
 import { Bot, TrendingUp, Moon, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
       {/* Header */}
@@ -38,21 +40,22 @@ const Home = () => {
       </div>
 
       {/* AI Coach CTA */}
-      <CoachModal>
-        <button className="w-full glass-card p-4 flex items-center gap-4 glow-violet cursor-pointer hover:bg-card/80 transition-all group">
-          <div className="w-12 h-12 rounded-2xl bg-ai-violet/15 flex items-center justify-center group-hover:bg-ai-violet/25 transition-colors">
-            <Bot className="w-6 h-6 text-ai-violet" />
-          </div>
-          <div className="flex-1 text-left">
-            <h3 className="text-sm font-semibold text-foreground">Coach Bio-Flow</h3>
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-ai-violet" />
-              1 recommandation en attente
-            </p>
-          </div>
-          <div className="w-2 h-2 rounded-full bg-ai-violet animate-pulse-glow" />
-        </button>
-      </CoachModal>
+      <button
+        onClick={() => navigate("/coach")}
+        className="w-full glass-card p-4 flex items-center gap-4 glow-violet cursor-pointer hover:bg-card/80 transition-all group"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-ai-violet/15 flex items-center justify-center group-hover:bg-ai-violet/25 transition-colors">
+          <Bot className="w-6 h-6 text-ai-violet" />
+        </div>
+        <div className="flex-1 text-left">
+          <h3 className="text-sm font-semibold text-foreground">Coach Bio-Flow</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-ai-violet" />
+            1 recommandation en attente
+          </p>
+        </div>
+        <div className="w-2 h-2 rounded-full bg-ai-violet animate-pulse-glow" />
+      </button>
     </div>
   );
 };

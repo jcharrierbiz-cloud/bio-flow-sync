@@ -1,8 +1,11 @@
 import { Camera, Utensils, Dumbbell, Flame, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { takePhoto } from "@/lib/camera";
+import { toast } from "sonner";
 
 const Log = () => {
   const [mealLogged, setMealLogged] = useState(false);
+  const [mealPhoto, setMealPhoto] = useState<string | null>(null);
   const [sportDuration, setSportDuration] = useState(30);
   const [sportIntensity, setSportIntensity] = useState<"light" | "moderate" | "intense">("moderate");
   const [sportLogged, setSportLogged] = useState(false);
@@ -11,6 +14,19 @@ const Log = () => {
     light: { label: "Léger", color: "text-energy", bg: "bg-energy/15 border-energy/20" },
     moderate: { label: "Modéré", color: "text-warning", bg: "bg-warning/15 border-warning/20" },
     intense: { label: "Intense", color: "text-intensity", bg: "bg-intensity/15 border-intensity/20" },
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const photo = await takePhoto();
+      if (photo) {
+        setMealPhoto(photo);
+        setMealLogged(true);
+        toast.success("Photo analysée par l'IA !");
+      }
+    } catch (e) {
+      toast.error("Impossible d'accéder à la caméra");
+    }
   };
 
   return (
@@ -29,7 +45,7 @@ const Log = () => {
 
         {!mealLogged ? (
           <button
-            onClick={() => setMealLogged(true)}
+            onClick={handleTakePhoto}
             className="w-full py-10 rounded-xl border-2 border-dashed border-glass-border hover:border-energy/30 transition-colors flex flex-col items-center gap-3 group"
           >
             <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center group-hover:bg-energy/10 transition-colors">
@@ -42,9 +58,13 @@ const Log = () => {
           </button>
         ) : (
           <div className="space-y-3">
-            <div className="w-full h-36 rounded-xl bg-secondary flex items-center justify-center">
-              <span className="text-muted-foreground text-sm">🍝 Pâtes Bolognaise</span>
-            </div>
+            {mealPhoto ? (
+              <img src={mealPhoto} alt="Repas" className="w-full h-36 rounded-xl object-cover" />
+            ) : (
+              <div className="w-full h-36 rounded-xl bg-secondary flex items-center justify-center">
+                <span className="text-muted-foreground text-sm">🍝 Pâtes Bolognaise</span>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <span className="text-[11px] px-2.5 py-1 rounded-full bg-intensity/10 text-intensity border border-intensity/15">
                 Repas Lourd
@@ -74,7 +94,6 @@ const Log = () => {
         </div>
 
         <div className="space-y-4">
-          {/* Duration slider */}
           <div>
             <div className="flex justify-between text-xs mb-2">
               <span className="text-muted-foreground">Durée</span>
@@ -93,7 +112,6 @@ const Log = () => {
             />
           </div>
 
-          {/* Intensity */}
           <div>
             <span className="text-xs text-muted-foreground block mb-2">Intensité</span>
             <div className="grid grid-cols-3 gap-2">
