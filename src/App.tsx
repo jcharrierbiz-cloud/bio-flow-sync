@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
 import Health from "./pages/Health";
+import Coach from "./pages/Coach";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/log" element={<Log />} />
             <Route path="/health" element={<Health />} />
+            <Route path="/coach" element={<Coach />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
