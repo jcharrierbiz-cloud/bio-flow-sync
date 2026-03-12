@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Clock, Sun, Sparkles } from "lucide-react";
+import { Bell, Clock, Sun, Sparkles, Volume2, User } from "lucide-react";
 import {
   isOnboarded,
   markOnboarded,
@@ -7,6 +7,7 @@ import {
   requestPermission,
   type NotifPrefs,
 } from "@/lib/notifications";
+import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 
 interface Props {
   open: boolean;
@@ -14,22 +15,26 @@ interface Props {
 }
 
 const OnboardingModal = ({ open, onClose }: Props) => {
-  const [step, setStep] = useState<"welcome" | "timing" | "done">("welcome");
+  const [step, setStep] = useState<"welcome" | "name" | "timing" | "done">("welcome");
   const [timing, setTiming] = useState<30 | 60>(30);
+  const [name, setName] = useState("");
+  const [audioEnabled, setAudioEnabled] = useState(true);
 
   if (!open) return null;
 
   const handleEnableNotifs = async () => {
     const granted = await requestPermission();
     if (granted) {
-      setStep("timing");
+      setStep("name");
     } else {
-      // Even if denied, save prefs and continue
-      const prefs: NotifPrefs = { enabled: false, reminderMinutes: 30, morningEnabled: true };
-      savePrefs(prefs);
-      markOnboarded();
-      onClose();
+      setStep("name");
     }
+  };
+
+  const handleNameNext = () => {
+    if (name.trim()) setUserName(name.trim());
+    setAudioGreetingEnabled(audioEnabled);
+    setStep("timing");
   };
 
   const handleFinish = () => {
@@ -41,6 +46,8 @@ const OnboardingModal = ({ open, onClose }: Props) => {
   };
 
   const handleSkip = () => {
+    if (name.trim()) setUserName(name.trim());
+    setAudioGreetingEnabled(audioEnabled);
     const prefs: NotifPrefs = { enabled: false, reminderMinutes: 30, morningEnabled: false };
     savePrefs(prefs);
     markOnboarded();
@@ -93,6 +100,50 @@ const OnboardingModal = ({ open, onClose }: Props) => {
                 Plus tard
               </button>
             </div>
+          </>
+        )}
+
+        {step === "name" && (
+          <>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-energy/15 flex items-center justify-center">
+                <User className="w-7 h-7 text-energy" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">Comment tu t'appelles ?</h2>
+              <p className="text-sm text-muted-foreground">Pour personnaliser ton expérience</p>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Ton prénom"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-energy/50"
+              autoFocus
+            />
+
+            <div
+              onClick={() => setAudioEnabled(!audioEnabled)}
+              className={`glass-card p-3 flex items-center gap-3 cursor-pointer transition-all ${
+                audioEnabled ? "border-ai-violet/30 glow-violet" : ""
+              }`}
+            >
+              <Volume2 className={`w-5 h-5 shrink-0 ${audioEnabled ? "text-ai-violet" : "text-muted-foreground"}`} />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-foreground">Accueil vocal</p>
+                <p className="text-[10px] text-muted-foreground">Un bonjour chaleureux à chaque ouverture</p>
+              </div>
+              <div className={`w-10 h-6 rounded-full transition-colors ${audioEnabled ? "bg-ai-violet" : "bg-secondary"} flex items-center`}>
+                <div className={`w-4 h-4 rounded-full bg-foreground transition-transform mx-1 ${audioEnabled ? "translate-x-4" : ""}`} />
+              </div>
+            </div>
+
+            <button
+              onClick={handleNameNext}
+              className="w-full py-3 rounded-xl bg-energy text-primary-foreground text-sm font-semibold hover:bg-energy/90 transition-colors"
+            >
+              Continuer
+            </button>
           </>
         )}
 
