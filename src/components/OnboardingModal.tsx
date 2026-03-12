@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Clock, Sun, Sparkles } from "lucide-react";
+import { Bell, Clock, Sun, Sparkles, Volume2, User } from "lucide-react";
 import {
   isOnboarded,
   markOnboarded,
@@ -7,6 +7,7 @@ import {
   requestPermission,
   type NotifPrefs,
 } from "@/lib/notifications";
+import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 
 interface Props {
   open: boolean;
@@ -14,8 +15,10 @@ interface Props {
 }
 
 const OnboardingModal = ({ open, onClose }: Props) => {
-  const [step, setStep] = useState<"welcome" | "timing" | "done">("welcome");
+  const [step, setStep] = useState<"welcome" | "name" | "timing" | "done">("welcome");
   const [timing, setTiming] = useState<30 | 60>(30);
+  const [name, setName] = useState("");
+  const [audioEnabled, setAudioEnabled] = useState(true);
 
   if (!open) return null;
 

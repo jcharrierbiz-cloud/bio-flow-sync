@@ -1,17 +1,28 @@
 import EnergyRing from "@/components/EnergyRing";
 import PerformanceChart from "@/components/PerformanceChart";
+import AudioGreeting from "@/components/AudioGreeting";
 import { Bot, TrendingUp, Moon, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGreeting } from "@/hooks/useGreeting";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { dateLabel, greeting, emoji, userName, shouldPlayAudio, markPlayed } = useGreeting();
 
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <div>
-        <p className="text-muted-foreground text-sm">Dimanche 16 Février</p>
-        <h1 className="text-2xl font-bold text-foreground mt-1">Bonjour, Alex 👋</h1>
+        <p className="text-muted-foreground text-sm capitalize">{dateLabel}</p>
+        <h1 className="text-2xl font-bold text-foreground mt-1 animate-fade-in">
+          {greeting}, {userName} {emoji}
+        </h1>
+        <AudioGreeting
+          greeting={greeting}
+          userName={userName}
+          shouldPlay={shouldPlayAudio}
+          onPlayed={markPlayed}
+        />
       </div>
 
       {/* Energy Score */}
