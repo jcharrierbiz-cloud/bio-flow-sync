@@ -61,6 +61,10 @@ const Agenda = () => {
         </div>
       )}
 
+      {/* Weekly Progress */}
+      <WeeklyChart />
+
+      {/* Agenda tasks */}
       <div className="space-y-3">
         {tasks.map((task) => (
           <div key={task.id} className="glass-card p-4 flex gap-4 items-start">
