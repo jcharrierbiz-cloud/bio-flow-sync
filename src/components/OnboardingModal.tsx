@@ -147,7 +147,7 @@ const OnboardingModal = ({ open, onClose }: Props) => {
           </>
         )}
 
-
+        {step === "timing" && (
           <>
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="w-14 h-14 rounded-2xl bg-energy/15 flex items-center justify-center">
