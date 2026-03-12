@@ -25,14 +25,16 @@ const OnboardingModal = ({ open, onClose }: Props) => {
   const handleEnableNotifs = async () => {
     const granted = await requestPermission();
     if (granted) {
-      setStep("timing");
+      setStep("name");
     } else {
-      // Even if denied, save prefs and continue
-      const prefs: NotifPrefs = { enabled: false, reminderMinutes: 30, morningEnabled: true };
-      savePrefs(prefs);
-      markOnboarded();
-      onClose();
+      setStep("name");
     }
+  };
+
+  const handleNameNext = () => {
+    if (name.trim()) setUserName(name.trim());
+    setAudioGreetingEnabled(audioEnabled);
+    setStep("timing");
   };
 
   const handleFinish = () => {
@@ -44,6 +46,8 @@ const OnboardingModal = ({ open, onClose }: Props) => {
   };
 
   const handleSkip = () => {
+    if (name.trim()) setUserName(name.trim());
+    setAudioGreetingEnabled(audioEnabled);
     const prefs: NotifPrefs = { enabled: false, reminderMinutes: 30, morningEnabled: false };
     savePrefs(prefs);
     markOnboarded();
