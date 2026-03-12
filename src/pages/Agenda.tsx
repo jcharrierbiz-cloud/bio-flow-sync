@@ -93,6 +93,9 @@ const Agenda = () => {
           </div>
         ))}
       </div>
+
+      {/* Personal To-Do */}
+      <TodoList />
     </div>
   );
 };
