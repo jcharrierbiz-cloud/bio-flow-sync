@@ -1,7 +1,8 @@
 import EnergyRing from "@/components/EnergyRing";
 import PerformanceChart from "@/components/PerformanceChart";
+import WeeklyChart from "@/components/WeeklyChart";
 import AudioGreeting from "@/components/AudioGreeting";
-import { Bot, TrendingUp, Moon, Sparkles } from "lucide-react";
+import { Bot, TrendingUp, Moon, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
 
@@ -24,6 +25,32 @@ const Home = () => {
           onPlayed={markPlayed}
         />
       </div>
+
+      {/* AI Coach CTA — prominent banner */}
+      <button
+        onClick={() => navigate("/coach")}
+        className="w-full relative overflow-hidden rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition-all group"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--ai-violet)), hsl(var(--ai-violet) / 0.7), hsl(var(--energy) / 0.5))",
+        }}
+      >
+        <div className="w-14 h-14 rounded-2xl bg-background/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Bot className="w-7 h-7 text-white" />
+        </div>
+        <div className="flex-1 text-left">
+          <h3 className="text-base font-bold text-white">Coach Bio-Flow</h3>
+          <p className="text-xs text-white/80 mt-0.5 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            1 recommandation en attente
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse-glow" />
+          <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform" />
+        </div>
+        {/* Decorative glow */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+      </button>
 
       {/* Energy Score */}
       <div className="glass-card p-6 flex flex-col items-center glow-energy">
@@ -50,23 +77,8 @@ const Home = () => {
         <PerformanceChart />
       </div>
 
-      {/* AI Coach CTA */}
-      <button
-        onClick={() => navigate("/coach")}
-        className="w-full glass-card p-4 flex items-center gap-4 glow-violet cursor-pointer hover:bg-card/80 transition-all group"
-      >
-        <div className="w-12 h-12 rounded-2xl bg-ai-violet/15 flex items-center justify-center group-hover:bg-ai-violet/25 transition-colors">
-          <Bot className="w-6 h-6 text-ai-violet" />
-        </div>
-        <div className="flex-1 text-left">
-          <h3 className="text-sm font-semibold text-foreground">Coach Bio-Flow</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-ai-violet" />
-            1 recommandation en attente
-          </p>
-        </div>
-        <div className="w-2 h-2 rounded-full bg-ai-violet animate-pulse-glow" />
-      </button>
+      {/* Weekly Chart */}
+      <WeeklyChart />
     </div>
   );
 };
