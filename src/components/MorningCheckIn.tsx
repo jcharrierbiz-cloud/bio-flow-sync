@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Sun, Moon, Heart, Smartphone, Fingerprint, Sparkles, Activity, X } from "lucide-react";
-import { hasDoneMorningScanToday, markMorningScanDone } from "@/lib/notifications";
+import { Sun, Moon, Heart, Smartphone, Fingerprint, Sparkles, X } from "lucide-react";
+import { markMorningScanDone } from "@/lib/notifications";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
+import PPGScanner from "@/components/PPGScanner";
 
 interface Props {
   open: boolean;
@@ -20,13 +21,11 @@ const sleepQualities = [
 const MorningCheckIn = ({ open, onClose }: Props) => {
   const [step, setStep] = useState<"sleep" | "scan-choice" | "scanning" | "result">("sleep");
   const [selectedSleep, setSelectedSleep] = useState<number | null>(null);
-  const { measuring, progress, result, start, stop } = useHeartRate();
+  const hr = useHeartRate();
 
   if (!open) return null;
 
-  const handleSleepSelect = (index: number) => {
-    setSelectedSleep(index);
-  };
+  const handleSleepSelect = (index: number) => setSelectedSleep(index);
 
   const handleNextToScan = () => {
     if (selectedSleep === null) return;
@@ -40,7 +39,7 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   const handleCameraScan = async () => {
     setStep("scanning");
     try {
-      await start();
+      await hr.start();
     } catch {
       toast.error("Impossible d'accéder à la caméra.");
       setStep("scan-choice");
@@ -60,7 +59,7 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   };
 
   // Auto-advance when scan completes
-  if (result && step === "scanning") {
+  if (hr.phase === "done" && hr.result && step === "scanning") {
     setTimeout(() => setStep("result"), 300);
   }
 
@@ -71,7 +70,7 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
       <div className="glass-card p-6 max-w-sm w-full space-y-5 glow-energy animate-in fade-in-0 slide-in-from-bottom-4 duration-300 relative">
         {/* Close button */}
         <button
-          onClick={() => { stop(); markMorningScanDone(); onClose(); }}
+          onClick={() => { hr.stop(); markMorningScanDone(); onClose(); }}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="w-4 h-4" />
@@ -164,76 +163,32 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
           </>
         )}
 
-        {/* Step 3: Scanning */}
-        {step === "scanning" && measuring && (
-          <>
-            <div className="text-center space-y-3">
-              <div className="w-20 h-20 rounded-full bg-intensity/10 flex items-center justify-center mx-auto">
-                <Heart className="w-8 h-8 text-intensity animate-pulse" />
-              </div>
-              <p className="text-sm font-medium text-foreground">Place ton index sur la caméra</p>
-              <p className="text-xs text-muted-foreground">Active le flash et maintiens la pression</p>
-            </div>
-            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-intensity to-energy rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground text-center mono">{Math.round(progress)}%</p>
-            <button
-              onClick={() => { stop(); setStep("scan-choice"); }}
-              className="w-full py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-medium"
-            >
-              Annuler
-            </button>
-          </>
+        {/* Step 3 & 4: Scanning + Results via PPGScanner */}
+        {(step === "scanning" || step === "result") && (
+          <PPGScanner
+            phase={hr.phase === "done" ? "done" : hr.phase}
+            progress={hr.progress}
+            bpmLive={hr.bpmLive}
+            waveform={hr.waveform}
+            error={hr.error}
+            torchSupported={hr.torchSupported}
+            result={hr.result}
+            onStop={() => { hr.stop(); setStep("scan-choice"); }}
+            onFinish={handleFinish}
+            compact
+          />
         )}
 
-        {/* Step 4: Results */}
-        {step === "result" && result && (
-          <>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Sparkles className="w-8 h-8 text-ai-violet" />
-              <h2 className="text-lg font-bold text-foreground">Journée calibrée !</h2>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="glass-card p-3 text-center">
-                <Activity className="w-4 h-4 text-energy mx-auto mb-1" />
-                <span className="mono text-lg font-bold text-foreground block">{result.bpm}</span>
-                <span className="text-[10px] text-muted-foreground">BPM</span>
-              </div>
-              <div className="glass-card p-3 text-center">
-                <Heart className="w-4 h-4 text-intensity mx-auto mb-1" />
-                <span className="mono text-lg font-bold text-foreground block">{result.hrv}ms</span>
-                <span className="text-[10px] text-muted-foreground">VFC</span>
-              </div>
-              <div className="glass-card p-3 text-center">
-                <Sparkles className="w-4 h-4 text-ai-violet mx-auto mb-1" />
-                <span className="mono text-lg font-bold text-foreground block">{result.readiness}%</span>
-                <span className="text-[10px] text-muted-foreground">Readiness</span>
-              </div>
-            </div>
-
-            {sleepData && (
-              <div className="glass-card p-3 glow-violet">
-                <p className="text-xs text-secondary-foreground leading-relaxed">
-                  <Sparkles className="w-3 h-3 text-ai-violet inline mr-1" />
-                  {sleepData.hours < 7
-                    ? `Nuit ${sleepData.label.toLowerCase()} (~${sleepData.hours}h). Privilégie les tâches légères cet après-midi et un créneau de récupération.`
-                    : `${sleepData.label} nuit (~${sleepData.hours}h) ! Tes créneaux de performance seront optimaux ce matin. Profites-en pour les tâches exigeantes.`}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={handleFinish}
-              className="w-full py-3 rounded-xl bg-energy text-primary-foreground text-sm font-semibold hover:bg-energy/90 transition-colors"
-            >
-              C'est parti pour la journée !
-            </button>
-          </>
+        {/* Sleep summary in results */}
+        {step === "result" && hr.result && sleepData && (
+          <div className="glass-card p-3 glow-violet">
+            <p className="text-xs text-secondary-foreground leading-relaxed">
+              <Sparkles className="w-3 h-3 text-ai-violet inline mr-1" />
+              {sleepData.hours < 7
+                ? `Nuit ${sleepData.label.toLowerCase()} (~${sleepData.hours}h). Privilégie les tâches légères cet après-midi et un créneau de récupération.`
+                : `${sleepData.label} nuit (~${sleepData.hours}h) ! Tes créneaux de performance seront optimaux ce matin. Profites-en pour les tâches exigeantes.`}
+            </p>
+          </div>
         )}
       </div>
     </div>

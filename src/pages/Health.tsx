@@ -1,35 +1,39 @@
-import { Heart, Moon, ScanLine, Sparkles, Activity, Smartphone, Fingerprint } from "lucide-react";
+import { Heart, Moon, ScanLine, Sparkles, Smartphone, Fingerprint } from "lucide-react";
 import { useState } from "react";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
+import PPGScanner from "@/components/PPGScanner";
 
 const Health = () => {
   const [sleep, setSleep] = useState(6.2);
-  const [scanMode, setScanMode] = useState<"idle" | "choosing" | "camera">("idle");
-  const { measuring, progress, result, start, stop } = useHeartRate();
+  const [scanMode, setScanMode] = useState<"idle" | "choosing" | "scanning">("idle");
+  const hr = useHeartRate();
 
   const sleepQuality = sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique";
   const sleepColor = sleep >= 7.5 ? "text-energy" : sleep >= 6 ? "text-warning" : "text-intensity";
 
-  const handleStartScan = () => {
-    setScanMode("choosing");
-  };
+  const handleStartScan = () => setScanMode("choosing");
 
   const handleWatchConnect = () => {
     toast.info("Connexion à la montre connectée non disponible sur le web. Utilise la méthode par caméra.");
   };
 
   const handleCameraScan = async () => {
-    setScanMode("camera");
+    setScanMode("scanning");
     try {
-      await start();
+      await hr.start();
     } catch {
       toast.error("Impossible d'accéder à la caméra. Vérifie les permissions.");
       setScanMode("idle");
     }
   };
 
-  const scanned = result !== null;
+  const handleStop = () => {
+    hr.stop();
+    setScanMode("idle");
+  };
+
+  const scanned = hr.result !== null && hr.phase === "done";
 
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
@@ -87,49 +91,30 @@ const Health = () => {
           </div>
         )}
 
-        {measuring && (
-          <div className="space-y-4">
-            <div className="text-center space-y-2">
-              <div className="w-20 h-20 rounded-full bg-intensity/10 flex items-center justify-center mx-auto relative">
-                <Heart className="w-8 h-8 text-intensity animate-pulse" />
-              </div>
-              <p className="text-sm font-medium text-foreground">Place ton index sur la caméra</p>
-              <p className="text-xs text-muted-foreground">Active le flash et maintiens la pression</p>
-            </div>
-            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-intensity to-energy rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground text-center mono">{Math.round(progress)}%</p>
-            <button
-              onClick={() => { stop(); setScanMode("idle"); }}
-              className="w-full py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-medium"
-            >
-              Annuler
-            </button>
-          </div>
+        {scanMode === "scanning" && (
+          <PPGScanner
+            phase={hr.phase}
+            progress={hr.progress}
+            bpmLive={hr.bpmLive}
+            waveform={hr.waveform}
+            error={hr.error}
+            torchSupported={hr.torchSupported}
+            result={hr.result}
+            onStop={handleStop}
+          />
         )}
 
-        {scanned && (
-          <div className="grid grid-cols-3 gap-3">
-            <div className="glass-card p-3 text-center">
-              <Activity className="w-4 h-4 text-energy mx-auto mb-1" />
-              <span className="mono text-lg font-bold text-foreground block">{result!.bpm}</span>
-              <span className="text-[10px] text-muted-foreground">BPM repos</span>
-            </div>
-            <div className="glass-card p-3 text-center">
-              <Heart className="w-4 h-4 text-intensity mx-auto mb-1" />
-              <span className="mono text-lg font-bold text-foreground block">{result!.hrv}ms</span>
-              <span className="text-[10px] text-muted-foreground">VFC</span>
-            </div>
-            <div className="glass-card p-3 text-center">
-              <Sparkles className="w-4 h-4 text-ai-violet mx-auto mb-1" />
-              <span className="mono text-lg font-bold text-foreground block">{result!.readiness}%</span>
-              <span className="text-[10px] text-muted-foreground">Readiness</span>
-            </div>
-          </div>
+        {scanned && scanMode !== "scanning" && (
+          <PPGScanner
+            phase="done"
+            progress={100}
+            bpmLive={hr.result!.bpm}
+            waveform={[]}
+            error={null}
+            torchSupported={true}
+            result={hr.result}
+            onStop={() => {}}
+          />
         )}
       </div>
 
