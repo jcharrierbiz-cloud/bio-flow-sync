@@ -133,7 +133,7 @@ export async function updateProfileField(field: string, value: unknown): Promise
   // Update cache
   const cached = getCachedProfile();
   if (cached) {
-    (cached as Record<string, unknown>)[field] = value;
+    (cached as any)[field] = value;
     cacheProfile(cached);
   }
 }

@@ -183,10 +183,10 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
     ? "animate-in fade-in-0 slide-in-from-right-8 duration-300"
     : "animate-in fade-in-0 slide-in-from-left-8 duration-300";
 
-  const renderSelectCards = <T extends string>(
-    options: { value: T; emoji: string; label: string; desc: string }[],
-    selected: T | "",
-    onSelect: (v: T) => void,
+  const renderSelectCards = (
+    options: { value: string; emoji: string; label: string; desc: string }[],
+    selected: string,
+    onSelect: (v: string) => void,
     large?: boolean,
   ) => (
     <div className={`grid gap-2 ${large ? "grid-cols-1" : "grid-cols-2"}`}>
