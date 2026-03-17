@@ -424,7 +424,7 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 <h1 className="text-xl font-bold text-foreground">Côté organisation ?</h1>
                 <p className="text-sm text-muted-foreground">Pour adapter le style de coaching et la structure de ton planning.</p>
               </div>
-              {renderSelectCards(orgOptions, org, setOrg)}
+              {renderSelectCards(orgOptions, org, (v) => setOrg(v as OrgLevel))}
               <button
                 onClick={next}
                 disabled={!org}
