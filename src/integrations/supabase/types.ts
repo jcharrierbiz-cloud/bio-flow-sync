@@ -50,6 +50,81 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          age: number
+          ai_coach_config: Json | null
+          audio_greeting_enabled: boolean
+          created_at: string
+          device_id: string | null
+          fitness_level: string | null
+          goal_details: string | null
+          height: number | null
+          height_unit: string | null
+          id: string
+          main_goal: string | null
+          morning_scan_enabled: boolean
+          notification_enabled: boolean
+          onboarding_completed: boolean
+          organization_level: string | null
+          pseudo: string
+          reminder_minutes: number
+          status: string | null
+          updated_at: string
+          user_id: string | null
+          weight: number | null
+          weight_unit: string | null
+        }
+        Insert: {
+          age: number
+          ai_coach_config?: Json | null
+          audio_greeting_enabled?: boolean
+          created_at?: string
+          device_id?: string | null
+          fitness_level?: string | null
+          goal_details?: string | null
+          height?: number | null
+          height_unit?: string | null
+          id?: string
+          main_goal?: string | null
+          morning_scan_enabled?: boolean
+          notification_enabled?: boolean
+          onboarding_completed?: boolean
+          organization_level?: string | null
+          pseudo: string
+          reminder_minutes?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Update: {
+          age?: number
+          ai_coach_config?: Json | null
+          audio_greeting_enabled?: boolean
+          created_at?: string
+          device_id?: string | null
+          fitness_level?: string | null
+          goal_details?: string | null
+          height?: number | null
+          height_unit?: string | null
+          id?: string
+          main_goal?: string | null
+          morning_scan_enabled?: boolean
+          notification_enabled?: boolean
+          onboarding_completed?: boolean
+          organization_level?: string | null
+          pseudo?: string
+          reminder_minutes?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
