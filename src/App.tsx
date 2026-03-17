@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import OnboardingModal from "@/components/OnboardingModal";
 import MorningCheckIn from "@/components/MorningCheckIn";
+import FocusLock from "@/components/FocusLock";
 import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
@@ -78,6 +79,7 @@ const AppContent = () => {
       </BrowserRouter>
       <OnboardingModal open={showOnboarding} onClose={handleOnboardingClose} />
       <MorningCheckIn open={showMorningCheckIn} onClose={() => setShowMorningCheckIn(false)} />
+      <FocusLock />
     </>
   );
 };

@@ -110,3 +110,8 @@
     font-family: 'JetBrains Mono', monospace;
   }
 }
+
+@keyframes draw {
+  from { stroke-dashoffset: 283; }
+  to { stroke-dashoffset: 0; }
+}
