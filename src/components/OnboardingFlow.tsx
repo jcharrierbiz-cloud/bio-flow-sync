@@ -405,7 +405,7 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 <h1 className="text-xl font-bold text-foreground">Ton niveau sportif ?</h1>
                 <p className="text-sm text-muted-foreground">Pour calibrer tes recommandations de récupération.</p>
               </div>
-              {renderSelectCards(fitnessOptions, fitness, setFitness)}
+              {renderSelectCards(fitnessOptions, fitness, (v) => setFitness(v as FitnessLevel))}
               <button
                 onClick={next}
                 disabled={!fitness}
