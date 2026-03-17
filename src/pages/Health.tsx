@@ -170,6 +170,9 @@ const Health = () => {
             : `Belle nuit ! ${sleep.toFixed(1)}h avec un bon ratio de sommeil profond. Tu devrais être au top de 9h à 12h. C'est le moment idéal pour tes tâches les plus exigeantes.`}
         </p>
       </div>
+
+      {/* Focus Stats */}
+      <FocusStats />
     </div>
   );
 };

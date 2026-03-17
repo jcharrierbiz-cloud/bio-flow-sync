@@ -79,6 +79,7 @@ const AppContent = () => {
       </BrowserRouter>
       <OnboardingModal open={showOnboarding} onClose={handleOnboardingClose} />
       <MorningCheckIn open={showMorningCheckIn} onClose={() => setShowMorningCheckIn(false)} />
+      <FocusLock />
     </>
   );
 };

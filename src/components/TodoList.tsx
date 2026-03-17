@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTodoStore } from "@/lib/todoStore";
-import { Plus, X, CheckCircle2, Circle } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, Clock } from "lucide-react";
 
 const categories = ["Perso", "Sport", "Travail", "Santé", "Autre"];
 
@@ -16,11 +16,13 @@ const TodoList = () => {
   const { todos, addTodo, toggleTodo, removeTodo } = useTodoStore();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Perso");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayTodos = todos.filter(
-    (t) => t.createdAt.slice(0, 10) === todayStr
+    (t) => t.createdAt.slice(0, 10) === todayStr || t.scheduledAt?.slice(0, 10) === todayStr
   );
   const donePct =
     todayTodos.length > 0
@@ -31,8 +33,14 @@ const TodoList = () => {
 
   const handleAdd = () => {
     if (!title.trim()) return;
-    addTodo(title.trim(), category);
+    const scheduledAt =
+      scheduledDate && scheduledTime
+        ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+        : undefined;
+    addTodo(title.trim(), category, scheduledAt);
     setTitle("");
+    setScheduledDate("");
+    setScheduledTime("");
     setShowForm(false);
   };
 
@@ -64,6 +72,26 @@ const TodoList = () => {
             placeholder="Nouvelle tâche..."
             className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-energy"
           />
+          {/* Schedule date/time for Focus Lock */}
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => setScheduledDate(e.target.value)}
+              className="flex-1 bg-muted border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-energy"
+            />
+            <input
+              type="time"
+              value={scheduledTime}
+              onChange={(e) => setScheduledTime(e.target.value)}
+              className="flex-1 bg-muted border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-energy"
+            />
+          </div>
+          {scheduledDate && scheduledTime && (
+            <p className="text-[10px] text-energy flex items-center gap-1">
+              <Clock className="w-3 h-3" /> Focus Lock s'activera à l'heure prévue
+            </p>
+          )}
           <div className="flex gap-1.5 flex-wrap">
             {categories.map((c) => (
               <button
@@ -110,15 +138,23 @@ const TodoList = () => {
                 <Circle className="w-4.5 h-4.5 text-muted-foreground" />
               )}
             </button>
-            <span
-              className={`flex-1 text-sm transition-all ${
-                todo.done
-                  ? "line-through text-muted-foreground"
-                  : "text-foreground"
-              }`}
-            >
-              {todo.title}
-            </span>
+            <div className="flex-1 min-w-0">
+              <span
+                className={`text-sm transition-all block ${
+                  todo.done
+                    ? "line-through text-muted-foreground"
+                    : "text-foreground"
+                }`}
+              >
+                {todo.title}
+              </span>
+              {todo.scheduledAt && (
+                <span className="text-[9px] text-energy/70 flex items-center gap-0.5">
+                  <Clock className="w-2.5 h-2.5" />
+                  {new Date(todo.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
             <span
               className={`text-[9px] px-1.5 py-0.5 rounded-full ${
                 categoryColors[todo.category] || categoryColors["Autre"]
