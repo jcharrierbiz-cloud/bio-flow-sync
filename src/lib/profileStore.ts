@@ -17,7 +17,7 @@ export interface UserProfile {
   status: string;
   main_goal: string;
   goal_details?: string;
-  ai_coach_config?: Record<string, unknown> | null;
+  ai_coach_config?: Record<string, any> | null;
   onboarding_completed: boolean;
   audio_greeting_enabled: boolean;
   notification_enabled: boolean;
