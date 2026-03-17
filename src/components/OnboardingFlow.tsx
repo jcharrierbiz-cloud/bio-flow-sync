@@ -443,7 +443,7 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 <h1 className="text-xl font-bold text-foreground">Tu es plutôt...</h1>
                 <p className="text-sm text-muted-foreground">Influence ton rythme de vie et la façon dont le coach structure tes journées.</p>
               </div>
-              {renderSelectCards(statusOptions, status, setStatus)}
+              {renderSelectCards(statusOptions, status, (v) => setStatus(v as Status))}
               <button
                 onClick={next}
                 disabled={!status}
