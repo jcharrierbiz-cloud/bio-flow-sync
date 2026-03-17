@@ -113,7 +113,7 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
 
   const { data, error } = await supabase
     .from("user_profiles")
-    .insert({ ...profile, device_id: deviceId })
+    .insert(dbPayload)
     .select()
     .single();
   if (error) { console.error("Insert profile error:", error); return null; }
