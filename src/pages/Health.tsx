@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
+import FocusStats from "@/components/FocusStats";
 
 const Health = () => {
   const [sleep, setSleep] = useState(6.2);
