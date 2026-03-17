@@ -85,6 +85,12 @@ export async function fetchProfile(): Promise<UserProfile | null> {
 export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<UserProfile | null> {
   const deviceId = getDeviceId();
 
+  const dbPayload = {
+    ...profile,
+    device_id: deviceId,
+    ai_coach_config: profile.ai_coach_config as any,
+  };
+
   // Check if profile exists
   const { data: existing } = await supabase
     .from("user_profiles")
@@ -95,7 +101,7 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
   if (existing) {
     const { data, error } = await supabase
       .from("user_profiles")
-      .update({ ...profile, device_id: deviceId })
+      .update(dbPayload)
       .eq("id", existing.id)
       .select()
       .single();
