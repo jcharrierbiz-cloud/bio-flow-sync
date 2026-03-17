@@ -462,7 +462,7 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 <h1 className="text-xl font-bold text-foreground">Ton objectif n°1 ?</h1>
                 <p className="text-sm text-muted-foreground">Le coach va tout organiser autour de cela.</p>
               </div>
-              {renderSelectCards(goalOptions, goal, setGoal, true)}
+              {renderSelectCards(goalOptions, goal, (v) => setGoal(v as Goal), true)}
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Détaille si tu veux (optionnel)</label>
                 <textarea
