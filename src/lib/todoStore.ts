@@ -6,11 +6,12 @@ export interface TodoItem {
   category: string;
   done: boolean;
   createdAt: string;
+  scheduledAt?: string; // ISO datetime string for Focus Lock trigger
 }
 
 interface TodoStore {
   todos: TodoItem[];
-  addTodo: (title: string, category: string) => void;
+  addTodo: (title: string, category: string, scheduledAt?: string) => void;
   toggleTodo: (id: string) => void;
   removeTodo: (id: string) => void;
 }
@@ -30,13 +31,14 @@ const saveTodos = (todos: TodoItem[]) => {
 
 export const useTodoStore = create<TodoStore>((set, get) => ({
   todos: loadTodos(),
-  addTodo: (title, category) => {
+  addTodo: (title, category, scheduledAt) => {
     const todo: TodoItem = {
       id: crypto.randomUUID(),
       title,
       category,
       done: false,
       createdAt: new Date().toISOString(),
+      scheduledAt,
     };
     const next = [...get().todos, todo];
     saveTodos(next);
