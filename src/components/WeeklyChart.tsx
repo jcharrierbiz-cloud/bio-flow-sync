@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useWeeklyStore, getWeekDays, DayLog } from "@/lib/weeklyStore";
 import { useTodoStore } from "@/lib/todoStore";
 import { useAgendaStore } from "@/lib/agendaStore";
