@@ -19,13 +19,26 @@ serve(async (req) => {
 
 Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte autour) avec cette structure :
 {
-  "coach_tone": "motivant" | "bienveillant" | "direct" | "scientifique",
-  "focus_duration_default": number (minutes, entre 15 et 45),
-  "morning_routine_suggestion": string (phrase courte),
-  "recovery_priority": "high" | "medium" | "low",
-  "recommended_breaks_per_day": number,
-  "energy_management_tips": [string, string, string],
-  "personalized_greeting": string (phrase d'accueil personnalisée)
+  "coachPersonality": "2-3 phrases décrivant le ton et le style exact du coach pour cet utilisateur",
+  "coachName": "un prénom pour le coach adapté au profil",
+  "dailyStructure": "structure de journée recommandée (rythme matin/après-midi/soir)",
+  "focusAreas": ["domaine1", "domaine2", "domaine3"],
+  "weeklyGoals": {
+    "tasks": number entre 5 et 20,
+    "focusSessions": number entre 3 et 14,
+    "restDays": number entre 1 et 3
+  },
+  "rewardSystem": {
+    "taskReward": "court message de célébration pour une tâche terminée",
+    "dailyReward": "récompense débloquée après avoir terminé toutes les tâches du jour",
+    "streakMilestones": {
+      "3days": "message milestone",
+      "7days": "message milestone",
+      "30days": "message milestone"
+    }
+  },
+  "nutritionGuidelines": "3-4 conseils nutrition pratiques adaptés à l'âge, niveau sportif et objectif",
+  "firstMessage": "le tout premier message du coach à l'utilisateur, chaleureux et personnalisé, max 3 phrases"
 }`;
 
     const userMsg = `Profil utilisateur :
