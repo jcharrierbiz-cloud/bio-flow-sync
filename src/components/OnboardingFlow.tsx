@@ -9,6 +9,11 @@ import { toast } from "sonner";
 
 const TOTAL_STEPS = 10;
 
+const getCachedCoachConfig = (): any => {
+  const profile = getCachedProfile();
+  return profile?.ai_coach_config || null;
+};
+
 interface Props {
   open: boolean;
   onClose: (profile: UserProfile | null) => void;
