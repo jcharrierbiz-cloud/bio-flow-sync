@@ -14,33 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      daily_nutrition_logs: {
-        Row: {
-          checked: boolean
-          created_at: string
-          device_id: string
-          id: string
-          log_date: string
-          tip_index: number
-        }
-        Insert: {
-          checked?: boolean
-          created_at?: string
-          device_id: string
-          id?: string
-          log_date?: string
-          tip_index: number
-        }
-        Update: {
-          checked?: boolean
-          created_at?: string
-          device_id?: string
-          id?: string
-          log_date?: string
-          tip_index?: number
-        }
-        Relationships: []
-      }
       focus_sessions: {
         Row: {
           abandoned: boolean
