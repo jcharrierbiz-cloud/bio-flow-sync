@@ -130,7 +130,23 @@ const TodoList = () => {
             className="flex items-center gap-3 py-2 px-1 group"
           >
             <button
-              onClick={() => toggleTodo(todo.id)}
+              onClick={() => {
+                const wasDone = todo.done;
+                toggleTodo(todo.id);
+                if (!wasDone) {
+                  fireTaskConfetti();
+                  useRewardStore.getState().addXP(10);
+                  useRewardStore.getState().checkStreak();
+                  // Check if all done
+                  const allDone = todayTodos.every((t) => t.id === todo.id ? true : t.done);
+                  if (allDone && todayTodos.length > 1) {
+                    setTimeout(() => {
+                      fireDailyCompletion();
+                      useRewardStore.getState().addXP(50);
+                    }, 1000);
+                  }
+                }
+              }}
               className="shrink-0"
             >
               {todo.done ? (
