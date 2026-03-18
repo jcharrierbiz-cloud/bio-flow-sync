@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Info, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { saveProfile, getDeviceId, type UserProfile } from "@/lib/profileStore";
+import { saveProfile, getDeviceId, getCachedProfile, type UserProfile } from "@/lib/profileStore";
 import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { savePrefs, requestPermission, markOnboarded } from "@/lib/notifications";
 import { supabase } from "@/integrations/supabase/client";
