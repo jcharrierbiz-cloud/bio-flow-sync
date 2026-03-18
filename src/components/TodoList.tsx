@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTodoStore } from "@/lib/todoStore";
 import { Plus, X, CheckCircle2, Circle, Clock } from "lucide-react";
+import { useRewardStore, fireTaskConfetti, fireDailyCompletion } from "@/lib/rewardStore";
 
 const categories = ["Perso", "Sport", "Travail", "Santé", "Autre"];
 
