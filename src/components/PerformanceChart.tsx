@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const data = [

@@ -1,13 +1,18 @@
 import { useState, useRef } from "react";
 import { Info, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { saveProfile, getDeviceId, type UserProfile } from "@/lib/profileStore";
+import { saveProfile, getDeviceId, getCachedProfile, type UserProfile } from "@/lib/profileStore";
 import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { savePrefs, requestPermission, markOnboarded } from "@/lib/notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const TOTAL_STEPS = 10;
+
+const getCachedCoachConfig = (): any => {
+  const profile = getCachedProfile();
+  return profile?.ai_coach_config || null;
+};
 
 interface Props {
   open: boolean;
@@ -499,16 +504,64 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
             </div>
           )}
 
-          {/* Step 10: Done */}
+          {/* Step 10: Welcome */}
           {step === 10 && (
-            <div key="s10" className="flex flex-col items-center justify-center min-h-[60vh] gap-4 animate-in fade-in-0 zoom-in-95 duration-500">
-              <span className="text-6xl">✨</span>
+            <div key="s10" className="flex flex-col items-center justify-center min-h-[60vh] gap-5 animate-in fade-in-0 zoom-in-95 duration-500">
+              {/* Animated checkmark */}
+              <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center">
+                <svg viewBox="0 0 52 52" className="w-12 h-12">
+                  <circle cx="26" cy="26" r="24" fill="none" stroke="hsl(175, 80%, 45%)" strokeWidth="2" opacity="0.3" />
+                  <path
+                    d="M14 27 L22 35 L38 19"
+                    fill="none"
+                    stroke="hsl(175, 80%, 45%)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      strokeDasharray: 50,
+                      strokeDashoffset: 50,
+                      animation: "draw 0.6s ease-out 0.3s forwards",
+                    }}
+                  />
+                </svg>
+              </div>
+
               <h1 className="text-2xl font-bold text-foreground text-center">
-                Bienvenue, {pseudo} !
+                Bienvenue, {pseudo} 👋
               </h1>
-              <p className="text-sm text-muted-foreground text-center">
-                Ton coach personnel est prêt. Bio-Flow va t'accompagner tout au long de ta journée.
-              </p>
+
+              {/* Coach bubble */}
+              {(() => {
+                const config = getCachedCoachConfig();
+                const coachName = config?.coachName || "Coach";
+                const firstMessage = config?.firstMessage || "Ton coach personnel est prêt. Bio-Flow va t'accompagner tout au long de ta journée.";
+                return (
+                  <div className="w-full space-y-2">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                        {coachName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] text-muted-foreground mb-1">{coachName}</p>
+                        <div className="bg-secondary/60 rounded-2xl rounded-tl-sm px-4 py-3">
+                          <p className="text-sm text-foreground leading-relaxed">{firstMessage}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <button
+                onClick={() => onClose(null)}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors mt-2"
+              >
+                Commencer avec {(() => {
+                  const config = getCachedCoachConfig();
+                  return config?.coachName || "le Coach";
+                })()}
+              </button>
             </div>
           )}
         </div>

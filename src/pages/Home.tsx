@@ -2,6 +2,9 @@ import EnergyRing from "@/components/EnergyRing";
 import PerformanceChart from "@/components/PerformanceChart";
 import WeeklyChart from "@/components/WeeklyChart";
 import AudioGreeting from "@/components/AudioGreeting";
+import NutritionCard from "@/components/NutritionCard";
+import StreakBadge from "@/components/StreakBadge";
+import LevelBadge from "@/components/LevelBadge";
 import { Bot, TrendingUp, Moon, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
@@ -14,9 +17,13 @@ const Home = () => {
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <div>
-        <p className="text-muted-foreground text-sm capitalize">{dateLabel}</p>
-        <h1 className="text-2xl font-bold text-foreground mt-1 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <p className="text-muted-foreground text-sm capitalize">{dateLabel}</p>
+          <StreakBadge />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mt-1 animate-fade-in flex items-center gap-2">
           {greeting}, {userName} {emoji}
+          <LevelBadge />
         </h1>
         <AudioGreeting
           greeting={greeting}
@@ -26,7 +33,7 @@ const Home = () => {
         />
       </div>
 
-      {/* AI Coach CTA — prominent banner */}
+      {/* AI Coach CTA */}
       <button
         onClick={() => navigate("/coach")}
         className="w-full relative overflow-hidden rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition-all group"
@@ -48,7 +55,6 @@ const Home = () => {
           <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse-glow" />
           <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform" />
         </div>
-        {/* Decorative glow */}
         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
       </button>
 
@@ -67,6 +73,9 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Nutrition Card */}
+      <NutritionCard />
 
       {/* Performance Window */}
       <div className="glass-card p-5">
