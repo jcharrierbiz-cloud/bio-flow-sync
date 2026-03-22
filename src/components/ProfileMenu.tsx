@@ -47,8 +47,11 @@ const ProfileMenu = () => {
   const [recalibrating, setRecalibrating] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const xp = useRewardStore((s) => s.xp);
-  const level = useRewardStore((s) => s.getLevel());
-  const xpInLevel = useRewardStore((s) => s.getXPInLevel());
+  const level = Math.floor(xp / 100) + 1;
+  const xpInLevel = {
+    current: xp % 100,
+    needed: 100,
+  };
 
   useEffect(() => {
     setProfile(getCachedProfile());
