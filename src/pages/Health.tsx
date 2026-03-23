@@ -4,11 +4,13 @@ import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import FocusStats from "@/components/FocusStats";
+import { useScanStore } from "@/lib/scanStore";
 
 const Health = () => {
   const [sleep, setSleep] = useState(6.2);
   const [scanMode, setScanMode] = useState<"idle" | "choosing" | "scanning">("idle");
   const hr = useHeartRate();
+  const saveScan = useScanStore((s) => s.saveScan);
 
   const sleepQuality = sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique";
   const sleepColor = sleep >= 7.5 ? "text-energy" : sleep >= 6 ? "text-warning" : "text-intensity";
@@ -35,6 +37,21 @@ const Health = () => {
   };
 
   const scanned = hr.result !== null && hr.phase === "done";
+
+  // Save scan when done
+  const handleScanFinish = async () => {
+    if (hr.result) {
+      await saveScan({
+        scanned_at: new Date().toISOString(),
+        bpm: hr.result.bpm,
+        hrv_rmssd: hr.result.hrv,
+        stress_index: hr.result.stressIndex,
+        readiness_score: hr.result.readiness,
+        is_morning_scan: true, // store logic decides
+      });
+      toast.success("Scan enregistré !");
+    }
+  };
 
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
@@ -72,18 +89,12 @@ const Health = () => {
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground text-center">Choisis ta méthode de mesure</p>
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleWatchConnect}
-                className="glass-card p-4 flex flex-col items-center gap-2 hover:border-ai-violet/30 transition-all"
-              >
+              <button onClick={handleWatchConnect} className="glass-card p-4 flex flex-col items-center gap-2 hover:border-ai-violet/30 transition-all">
                 <Smartphone className="w-6 h-6 text-ai-violet" />
                 <span className="text-xs font-medium text-foreground">Montre connectée</span>
                 <span className="text-[10px] text-muted-foreground">HealthKit / Google Fit</span>
               </button>
-              <button
-                onClick={handleCameraScan}
-                className="glass-card p-4 flex flex-col items-center gap-2 hover:border-energy/30 transition-all"
-              >
+              <button onClick={handleCameraScan} className="glass-card p-4 flex flex-col items-center gap-2 hover:border-energy/30 transition-all">
                 <Fingerprint className="w-6 h-6 text-energy" />
                 <span className="text-xs font-medium text-foreground">Flash + Index</span>
                 <span className="text-[10px] text-muted-foreground">30 secondes</span>
@@ -102,6 +113,7 @@ const Health = () => {
             torchSupported={hr.torchSupported}
             result={hr.result}
             onStop={handleStop}
+            onFinish={handleScanFinish}
           />
         )}
 
@@ -128,16 +140,11 @@ const Health = () => {
           </div>
           <span className={`text-xs font-medium ${sleepColor}`}>{sleepQuality}</span>
         </div>
-
         <div className="flex items-center gap-4">
           <span className="mono text-3xl font-bold text-foreground">{sleep.toFixed(1)}<span className="text-sm text-muted-foreground font-normal ml-1">h</span></span>
           <div className="flex-1">
             <input
-              type="range"
-              min="3"
-              max="10"
-              step="0.1"
-              value={sleep}
+              type="range" min="3" max="10" step="0.1" value={sleep}
               onChange={(e) => setSleep(Number(e.target.value))}
               className="w-full h-1.5 rounded-full appearance-none bg-secondary cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-ai-violet [&::-webkit-slider-thumb]:shadow-[0_0_10px_hsl(270,75%,60%,0.4)]
@@ -145,7 +152,6 @@ const Health = () => {
             />
           </div>
         </div>
-
         <div className="flex gap-2">
           {["Profond", "Léger", "REM"].map((phase, i) => (
             <div key={phase} className="flex-1 glass-card p-2 text-center">

@@ -1,3 +1,5 @@
+import AnimatedScore from "@/components/AnimatedScore";
+
 interface EnergyRingProps {
   score: number;
   size?: number;
@@ -12,27 +14,15 @@ const EnergyRing = ({ score, size = 180 }: EnergyRingProps) => {
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        {/* Background ring */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="hsl(var(--muted))"
-          strokeWidth={strokeWidth}
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth}
         />
-        {/* Energy ring */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="url(#energyGradient)"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-all duration-1000 ease-out"
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="url(#energyGradient)" strokeWidth={strokeWidth}
+          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+          className="transition-all duration-[1200ms] ease-out"
           style={{ filter: "drop-shadow(0 0 8px hsl(175 80% 45% / 0.4))" }}
         />
         <defs>
@@ -43,7 +33,9 @@ const EnergyRing = ({ score, size = 180 }: EnergyRingProps) => {
         </defs>
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-bold mono text-gradient-energy">{score}</span>
+        <span className="text-4xl font-bold mono text-gradient-energy">
+          <AnimatedScore value={score} />
+        </span>
         <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase mt-1">/ 100</span>
       </div>
     </div>
