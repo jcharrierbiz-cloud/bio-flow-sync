@@ -4,6 +4,7 @@ import { markMorningScanDone } from "@/lib/notifications";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
+import { useScanStore } from "@/lib/scanStore";
 
 interface Props {
   open: boolean;
@@ -22,6 +23,7 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   const [step, setStep] = useState<"sleep" | "scan-choice" | "scanning" | "result">("sleep");
   const [selectedSleep, setSelectedSleep] = useState<number | null>(null);
   const hr = useHeartRate();
+  const saveScan = useScanStore((s) => s.saveScan);
 
   if (!open) return null;
 
@@ -52,7 +54,18 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
     toast.success("Check-in matinal enregistré !");
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    // Save scan to Supabase
+    if (hr.result) {
+      await saveScan({
+        scanned_at: new Date().toISOString(),
+        bpm: hr.result.bpm,
+        hrv_rmssd: hr.result.hrv,
+        stress_index: hr.result.stressIndex,
+        readiness_score: hr.result.readiness,
+        is_morning_scan: true, // will be overridden by store logic
+      });
+    }
     markMorningScanDone();
     onClose();
     toast.success("Journée calibrée ! Bonne journée 💪");
@@ -68,7 +81,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/90 backdrop-blur-lg p-5">
       <div className="glass-card p-6 max-w-sm w-full space-y-5 glow-energy animate-in fade-in-0 slide-in-from-bottom-4 duration-300 relative">
-        {/* Close button */}
         <button
           onClick={() => { hr.stop(); markMorningScanDone(); onClose(); }}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
@@ -76,7 +88,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
           <X className="w-4 h-4" />
         </button>
 
-        {/* Step 1: Sleep quality */}
         {step === "sleep" && (
           <>
             <div className="flex flex-col items-center gap-2 text-center">
@@ -86,16 +97,13 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
               <h2 className="text-lg font-bold text-foreground">Bonjour ! ☀️</h2>
               <p className="text-sm text-muted-foreground">Comment était ta nuit ?</p>
             </div>
-
             <div className="flex justify-between gap-2">
               {sleepQualities.map((sq, i) => (
                 <button
                   key={sq.label}
                   onClick={() => handleSleepSelect(i)}
                   className={`flex-1 glass-card p-2.5 flex flex-col items-center gap-1.5 transition-all ${
-                    selectedSleep === i
-                      ? "border-energy/50 glow-energy scale-105"
-                      : "hover:border-glass-highlight"
+                    selectedSleep === i ? "border-energy/50 glow-energy scale-105" : "hover:border-glass-highlight"
                   }`}
                 >
                   <span className="text-xl">{sq.emoji}</span>
@@ -103,7 +111,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
                 </button>
               ))}
             </div>
-
             {sleepData && (
               <div className="glass-card p-3 flex items-center gap-3">
                 <Moon className="w-4 h-4 text-ai-violet shrink-0" />
@@ -112,7 +119,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
                 </p>
               </div>
             )}
-
             <button
               onClick={handleNextToScan}
               disabled={selectedSleep === null}
@@ -123,7 +129,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
           </>
         )}
 
-        {/* Step 2: Choose scan method */}
         {step === "scan-choice" && (
           <>
             <div className="flex flex-col items-center gap-2 text-center">
@@ -134,36 +139,24 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
               <p className="text-sm text-muted-foreground">Mesure ta fréquence cardiaque pour calibrer ta journée</p>
               <p className="text-[10px] text-muted-foreground">⏱️ Moins de 2 minutes</p>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleWatchConnect}
-                className="glass-card p-4 flex flex-col items-center gap-2 hover:border-ai-violet/30 transition-all"
-              >
+              <button onClick={handleWatchConnect} className="glass-card p-4 flex flex-col items-center gap-2 hover:border-ai-violet/30 transition-all">
                 <Smartphone className="w-6 h-6 text-ai-violet" />
                 <span className="text-xs font-medium text-foreground">Montre connectée</span>
                 <span className="text-[10px] text-muted-foreground">HealthKit / Fit</span>
               </button>
-              <button
-                onClick={handleCameraScan}
-                className="glass-card p-4 flex flex-col items-center gap-2 hover:border-energy/30 transition-all"
-              >
+              <button onClick={handleCameraScan} className="glass-card p-4 flex flex-col items-center gap-2 hover:border-energy/30 transition-all">
                 <Fingerprint className="w-6 h-6 text-energy" />
                 <span className="text-xs font-medium text-foreground">Flash + Index</span>
                 <span className="text-[10px] text-muted-foreground">30 secondes</span>
               </button>
             </div>
-
-            <button
-              onClick={handleSkipScan}
-              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={handleSkipScan} className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               Passer le scan
             </button>
           </>
         )}
 
-        {/* Step 3 & 4: Scanning + Results via PPGScanner */}
         {(step === "scanning" || step === "result") && (
           <PPGScanner
             phase={hr.phase === "done" ? "done" : hr.phase}
@@ -179,7 +172,6 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
           />
         )}
 
-        {/* Sleep summary in results */}
         {step === "result" && hr.result && sleepData && (
           <div className="glass-card p-3 glow-violet">
             <p className="text-xs text-secondary-foreground leading-relaxed">

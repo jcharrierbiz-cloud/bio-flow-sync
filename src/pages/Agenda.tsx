@@ -1,7 +1,6 @@
 import { Sparkles, Zap, BatteryLow, Clock, Flag } from "lucide-react";
 import { useAgendaStore, defaultTasks } from "@/lib/agendaStore";
-import TodoList from "@/components/TodoList";
-import WeeklyChart from "@/components/WeeklyChart";
+import AgendaTodoList from "@/components/AgendaTodoList";
 
 const optimizedTasks = [
   { id: 1, time: "09:00", duration: "1h30", title: "Deep Work — Maquettes", priority: "high" as const, energy: "high" as const, category: "Travail" },
@@ -61,8 +60,8 @@ const Agenda = () => {
         </div>
       )}
 
-      {/* Weekly Progress */}
-      <WeeklyChart />
+      {/* To-Do List (replaces weekly chart) */}
+      <AgendaTodoList />
 
       {/* Agenda tasks */}
       <div className="space-y-3">
@@ -93,9 +92,6 @@ const Agenda = () => {
           </div>
         ))}
       </div>
-
-      {/* Personal To-Do */}
-      <TodoList />
     </div>
   );
 };
