@@ -77,6 +77,48 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_sessions: {
+        Row: {
+          bpm: number
+          created_at: string
+          day_date: string
+          device_id: string
+          hrv_rmssd: number
+          id: string
+          is_morning_scan: boolean
+          readiness_score: number
+          scanned_at: string
+          stress_index: number
+          user_id: string | null
+        }
+        Insert: {
+          bpm: number
+          created_at?: string
+          day_date?: string
+          device_id: string
+          hrv_rmssd: number
+          id?: string
+          is_morning_scan?: boolean
+          readiness_score: number
+          scanned_at?: string
+          stress_index: number
+          user_id?: string | null
+        }
+        Update: {
+          bpm?: number
+          created_at?: string
+          day_date?: string
+          device_id?: string
+          hrv_rmssd?: number
+          id?: string
+          is_morning_scan?: boolean
+          readiness_score?: number
+          scanned_at?: string
+          stress_index?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           age: number
