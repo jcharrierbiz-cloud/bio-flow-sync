@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Tu es "Coach Bio-Flow", un assistant IA spécialisé dans l'optimisation biologique de la journée. Tu aides l'utilisateur à organiser son agenda en fonction de son niveau d'énergie, son sommeil, sa nutrition et son activité sportive.
+const BASE_SYSTEM_PROMPT = `Tu es "Coach Bio-Flow", un assistant IA spécialisé dans l'optimisation biologique de la journée. Tu aides l'utilisateur à organiser son agenda en fonction de son niveau d'énergie, son sommeil, sa nutrition et son activité sportive.
 
 Tes capacités :
 - Analyser le niveau d'énergie et la fatigue de l'utilisateur
@@ -29,12 +30,90 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, agenda } = await req.json();
+    const { messages, agenda, deviceId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Build sport context if deviceId provided
+    let sportContext = "";
+    if (deviceId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, serviceKey);
+
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+        const { data: sportSessions } = await sb
+          .from("effort_sessions")
+          .select("*")
+          .eq("device_id", deviceId)
+          .not("ai_analysis", "is", null)
+          .gte("day_date", fourteenDaysAgo.toISOString().slice(0, 10))
+          .order("logged_at", { ascending: false })
+          .limit(20);
+
+        if (sportSessions && sportSessions.length > 0) {
+          // Compute aggregates
+          const typeCount: Record<string, number> = {};
+          sportSessions.forEach((s: any) => {
+            const t = s.session_type_detected || "Unknown";
+            typeCount[t] = (typeCount[t] || 0) + 1;
+          });
+          const mostPracticedSport = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+          const avgWeeklySessions = (sportSessions.length / 2).toFixed(1);
+          const latest = sportSessions[0];
+          const latestAnalysis = latest.ai_analysis as any;
+          const latestStrengthPattern = latestAnalysis?.strengthPattern || "not enough data yet";
+          const latestImprovementFocus = latestAnalysis?.improvementFocus || "not enough data yet";
+          const lastNextSessionAdvice = latestAnalysis?.nextSessionAdvice || "none";
+
+          const recentFollowupNotes = sportSessions
+            .slice(0, 5)
+            .flatMap((s: any) => s.followup_notes || [])
+            .join("; ") || "aucune note de suivi";
+
+          const sessionLines = sportSessions.map((s: any) => {
+            const a = s.ai_analysis as any;
+            return "- " + s.day_date + ": " + s.session_type_detected +
+              " (" + s.intensity_level + ", load " + (a?.estimatedLoad || "?") + "/100) — " +
+              (a?.weeklyProgressNote || "");
+          }).join("\n");
+
+          // Check overtraining
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const recentHigh = sportSessions.filter((s: any) =>
+            new Date(s.day_date) >= sevenDaysAgo &&
+            (s.intensity_level === "High" || s.intensity_level === "Maximum")
+          ).length;
+
+          sportContext = "\n\n## Sport training history — last 14 days\n" +
+            sessionLines + "\n\n" +
+            "## Running coach observations\n" +
+            "- Most practiced sport: " + mostPracticedSport + "\n" +
+            "- Weekly average sessions: " + avgWeeklySessions + "\n" +
+            "- Identified strength: " + latestStrengthPattern + "\n" +
+            "- Current improvement focus: " + latestImprovementFocus + "\n" +
+            "- Last advice given: " + lastNextSessionAdvice + "\n" +
+            "- Follow-up notes from user: " + recentFollowupNotes + "\n\n" +
+            "Sport coaching rules:\n" +
+            "1. Always reference actual past sessions by type and date.\n" +
+            "2. Never repeat the same nextSessionAdvice twice in a row.\n" +
+            "3. Track progression explicitly — compare current to past.\n" +
+            (recentHigh >= 5
+              ? "4. WARNING: " + recentHigh + " High/Maximum sessions in last 7 days. Proactively warn about overtraining risk.\n"
+              : "4. Monitor for overtraining if intensity increases.\n") +
+            "5. When user asks about sport: always check follow-up notes for recovery feedback before giving new advice.";
+        }
+      } catch (e) {
+        console.error("Failed to load sport context:", e);
+      }
+    }
+
     const contextMessage = agenda
-      ? `\n\nVoici l'agenda actuel de l'utilisateur :\n${JSON.stringify(agenda, null, 2)}`
+      ? "\n\nVoici l'agenda actuel de l'utilisateur :\n" + JSON.stringify(agenda, null, 2)
       : "";
 
     const response = await fetch(
@@ -42,13 +121,13 @@ serve(async (req) => {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: "Bearer " + LOVABLE_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT + contextMessage },
+            { role: "system", content: BASE_SYSTEM_PROMPT + contextMessage + sportContext },
             ...messages,
           ],
           stream: true,

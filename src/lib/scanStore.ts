@@ -117,7 +117,8 @@ export const useScanStore = create<ScanStore>((set, get) => ({
 // Generate BioWindow curve data
 export function generateBioWindowCurve(
   morningScan: ScanSession | null,
-  additionalScans: ScanSession[]
+  additionalScans: ScanSession[],
+  sportImpacts?: { hour: number; impact: number }[]
 ): { hour: string; energy: number; zone: "peak" | "moderate" | "rest" }[] {
   const points: { hour: string; energy: number; zone: "peak" | "moderate" | "rest" }[] = [];
 
@@ -147,6 +148,17 @@ export function generateBioWindowCurve(
         // Interpolation factor: full at scan hour, fading over 2h
         const factor = 1 - diff / 2;
         energy = Math.round(energy + delta * factor * 0.5);
+      }
+    }
+
+    // Apply sport impacts
+    if (sportImpacts) {
+      for (const si of sportImpacts) {
+        const diff = h - si.hour;
+        if (diff >= 0 && diff <= 3) {
+          const factor = 1 - diff / 3;
+          energy = Math.round(energy + si.impact * factor);
+        }
       }
     }
 
