@@ -8,6 +8,7 @@ import StreakBadge from "@/components/StreakBadge";
 import LevelBadge from "@/components/LevelBadge";
 import ScanCards from "@/components/ScanCards";
 import AnimatedScore from "@/components/AnimatedScore";
+import WeeklySportSummary from "@/components/WeeklySportSummary";
 import { Bot, TrendingUp, Moon, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
@@ -97,6 +98,9 @@ const Home = () => {
 
       {/* BioWindow Performance Curve */}
       <BioWindowChart morningScan={morningScan} additionalScans={additionalScans} />
+
+      {/* Weekly Sport Summary */}
+      <WeeklySportSummary />
 
       {/* Weekly Chart */}
       <WeeklyChart />

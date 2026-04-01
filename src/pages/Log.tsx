@@ -1,20 +1,36 @@
 import { Camera, Utensils, Dumbbell, Flame, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { takePhoto } from "@/lib/camera";
 import { toast } from "sonner";
+import { useEffortStore, EffortSession, getSportIcon } from "@/lib/effortStore";
+import SportJournal from "@/components/SportJournal";
+import SportAnalysisCard from "@/components/SportAnalysisCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const intensityConfig = {
+  light: { label: "Léger", color: "text-energy", bg: "bg-energy/15 border-energy/20", dbValue: "Léger" },
+  moderate: { label: "Modéré", color: "text-warning", bg: "bg-warning/15 border-warning/20", dbValue: "Modéré" },
+  intense: { label: "Intense", color: "text-intensity", bg: "bg-intensity/15 border-intensity/20", dbValue: "Intense" },
+};
 
 const Log = () => {
   const [mealLogged, setMealLogged] = useState(false);
   const [mealPhoto, setMealPhoto] = useState<string | null>(null);
   const [sportDuration, setSportDuration] = useState(30);
   const [sportIntensity, setSportIntensity] = useState<"light" | "moderate" | "intense">("moderate");
-  const [sportLogged, setSportLogged] = useState(false);
+  const [currentSession, setCurrentSession] = useState<EffortSession | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<EffortSession | null>(null);
 
-  const intensityConfig = {
-    light: { label: "Léger", color: "text-energy", bg: "bg-energy/15 border-energy/20" },
-    moderate: { label: "Modéré", color: "text-warning", bg: "bg-warning/15 border-warning/20" },
-    intense: { label: "Intense", color: "text-intensity", bg: "bg-intensity/15 border-intensity/20" },
-  };
+  const { sessions, loading, loadSessions, saveSession, addFollowupNote } = useEffortStore();
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
 
   const handleTakePhoto = async () => {
     try {
@@ -28,6 +44,17 @@ const Log = () => {
       toast.error("Impossible d'accéder à la caméra");
     }
   };
+
+  const handleLogSport = async () => {
+    const session = await saveSession(sportDuration, intensityConfig[sportIntensity].dbValue);
+    if (session) {
+      setCurrentSession(session);
+      toast.success("Effort enregistré !");
+    }
+  };
+
+  // Past sessions (excluding current)
+  const pastSessions = sessions.filter((s) => s.id !== currentSession?.id);
 
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
@@ -131,18 +158,110 @@ const Log = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setSportLogged(true)}
-            className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-              sportLogged
-                ? "bg-energy/15 text-energy border border-energy/20"
-                : "bg-energy text-primary-foreground hover:opacity-90"
-            }`}
-          >
-            {sportLogged ? "✓ Effort enregistré" : "Enregistrer l'effort"}
-          </button>
+          {!currentSession ? (
+            <button
+              onClick={handleLogSport}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-energy text-primary-foreground hover:opacity-90 transition-all"
+            >
+              Enregistrer l'effort
+            </button>
+          ) : (
+            <div className="bg-energy/15 text-energy border border-energy/20 py-3 rounded-xl text-sm font-semibold text-center">
+              ✓ Effort enregistré
+            </div>
+          )}
         </div>
+
+        {/* Journal block — shown after logging */}
+        {currentSession && (
+          <SportJournal session={currentSession} />
+        )}
       </div>
+
+      {/* Effort History */}
+      {pastSessions.length > 0 && (
+        <div className="glass-card p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Historique des efforts</h2>
+          <div className="space-y-2">
+            {pastSessions.slice(0, 10).map((s) => {
+              const d = new Date(s.logged_at);
+              const timeStr = d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+              const dateStr = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedHistory(s)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-lg">{getSportIcon(s.session_type_detected)}</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {s.session_type_detected || s.intensity} — {s.duration_minutes} min
+                      </p>
+                      <p className="text-xs text-muted-foreground">{dateStr} à {timeStr}</p>
+                    </div>
+                  </div>
+                  <div>
+                    {s.ai_analysis ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-energy/15 text-energy">✦ Analysé</span>
+                    ) : s.journal_text ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/15 text-warning">📝 Non analysé</span>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* History detail modal */}
+      <Dialog open={!!selectedHistory} onOpenChange={() => setSelectedHistory(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto bg-card border-glass-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              {getSportIcon(selectedHistory?.session_type_detected)}{" "}
+              {selectedHistory?.session_type_detected || "Séance"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedHistory && (
+            <div className="space-y-4">
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span>⏱ {selectedHistory.duration_minutes} min</span>
+                <span>📅 {new Date(selectedHistory.logged_at).toLocaleDateString("fr-FR")}</span>
+              </div>
+
+              {selectedHistory.journal_text && (
+                <div className="bg-secondary rounded-xl p-3">
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{selectedHistory.journal_text}</p>
+                </div>
+              )}
+
+              {selectedHistory.ai_analysis ? (
+                <SportAnalysisCard
+                  analysis={selectedHistory.ai_analysis}
+                  followupNotes={selectedHistory.followup_notes || []}
+                  onAddFollowup={(note) => {
+                    addFollowupNote(selectedHistory.id, note);
+                    setSelectedHistory({
+                      ...selectedHistory,
+                      followup_notes: [...(selectedHistory.followup_notes || []), note],
+                    });
+                  }}
+                />
+              ) : selectedHistory.journal_text ? (
+                <SportJournal session={selectedHistory} />
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Aucun journal pour cette séance
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
