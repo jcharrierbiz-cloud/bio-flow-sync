@@ -151,6 +151,17 @@ export function generateBioWindowCurve(
       }
     }
 
+    // Apply sport impacts
+    if (sportImpacts) {
+      for (const si of sportImpacts) {
+        const diff = h - si.hour;
+        if (diff >= 0 && diff <= 3) {
+          const factor = 1 - diff / 3;
+          energy = Math.round(energy + si.impact * factor);
+        }
+      }
+    }
+
     energy = Math.max(0, Math.min(100, energy));
     const zone = energy >= 65 ? "peak" : energy >= 40 ? "moderate" : "rest";
     const hourStr = `${h.toString().padStart(2, "0")}:00`;
