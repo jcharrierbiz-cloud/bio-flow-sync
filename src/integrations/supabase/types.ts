@@ -41,6 +41,57 @@ export type Database = {
         }
         Relationships: []
       }
+      effort_sessions: {
+        Row: {
+          ai_analysis: Json | null
+          analyzed_at: string | null
+          created_at: string
+          day_date: string
+          device_id: string
+          duration_minutes: number
+          followup_notes: string[] | null
+          id: string
+          intensity: string
+          intensity_level: string | null
+          journal_text: string | null
+          logged_at: string
+          session_type_detected: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          analyzed_at?: string | null
+          created_at?: string
+          day_date?: string
+          device_id: string
+          duration_minutes?: number
+          followup_notes?: string[] | null
+          id?: string
+          intensity?: string
+          intensity_level?: string | null
+          journal_text?: string | null
+          logged_at?: string
+          session_type_detected?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_analysis?: Json | null
+          analyzed_at?: string | null
+          created_at?: string
+          day_date?: string
+          device_id?: string
+          duration_minutes?: number
+          followup_notes?: string[] | null
+          id?: string
+          intensity?: string
+          intensity_level?: string | null
+          journal_text?: string | null
+          logged_at?: string
+          session_type_detected?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       focus_sessions: {
         Row: {
           abandoned: boolean
@@ -191,6 +242,36 @@ export type Database = {
           user_id?: string | null
           weight?: number | null
           weight_unit?: string | null
+        }
+        Relationships: []
+      }
+      weekly_summaries: {
+        Row: {
+          created_at: string
+          device_id: string
+          generated_at: string
+          id: string
+          sport_synthesis: string | null
+          user_id: string | null
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          generated_at?: string
+          id?: string
+          sport_synthesis?: string | null
+          user_id?: string | null
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          generated_at?: string
+          id?: string
+          sport_synthesis?: string | null
+          user_id?: string | null
+          week_start_date?: string
         }
         Relationships: []
       }
