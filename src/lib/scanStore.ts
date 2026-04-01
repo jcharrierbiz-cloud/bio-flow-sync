@@ -117,7 +117,8 @@ export const useScanStore = create<ScanStore>((set, get) => ({
 // Generate BioWindow curve data
 export function generateBioWindowCurve(
   morningScan: ScanSession | null,
-  additionalScans: ScanSession[]
+  additionalScans: ScanSession[],
+  sportImpacts?: { hour: number; impact: number }[]
 ): { hour: string; energy: number; zone: "peak" | "moderate" | "rest" }[] {
   const points: { hour: string; energy: number; zone: "peak" | "moderate" | "rest" }[] = [];
 
