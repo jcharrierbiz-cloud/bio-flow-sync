@@ -1,0 +1,1 @@
+ALTER TABLE public.weekly_summaries ADD CONSTRAINT weekly_summaries_device_week_unique UNIQUE (device_id, week_start_date);
