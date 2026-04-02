@@ -9,7 +9,6 @@ import BottomNav from "@/components/BottomNav";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
 import FocusLock from "@/components/FocusLock";
-import ProfileMenu from "@/components/ProfileMenu";
 import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
@@ -34,7 +33,6 @@ const AppContent = () => {
 
   useEffect(() => {
     const init = async () => {
-      // Try to fetch profile from Supabase
       await fetchProfile();
       
       if (!isOnboardingComplete()) {
@@ -50,7 +48,6 @@ const AppContent = () => {
     init();
   }, []);
 
-  // Schedule agenda notifications when tasks change
   useEffect(() => {
     const prefs = getPrefs();
     if (!prefs.enabled) return;
@@ -74,12 +71,6 @@ const AppContent = () => {
       <Sonner />
       <BrowserRouter>
         <div className="min-h-screen bg-background">
-          {/* Profile menu floating on top right */}
-          {!showOnboarding && (
-            <div className="fixed top-3 right-3 z-50">
-              <ProfileMenu />
-            </div>
-          )}
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/agenda" element={<Agenda />} />

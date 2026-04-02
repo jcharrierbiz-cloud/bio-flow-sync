@@ -175,9 +175,11 @@ export type Database = {
           age: number
           ai_coach_config: Json | null
           audio_greeting_enabled: boolean
+          blocked_categories: string[]
           created_at: string
           device_id: string | null
           fitness_level: string | null
+          focus_lock_enabled: boolean
           goal_details: string | null
           height: number | null
           height_unit: string | null
@@ -189,19 +191,24 @@ export type Database = {
           organization_level: string | null
           pseudo: string
           reminder_minutes: number
+          schedule: string | null
+          sport_history: string | null
           status: string | null
           updated_at: string
           user_id: string | null
           weight: number | null
           weight_unit: string | null
+          workload: string | null
         }
         Insert: {
           age: number
           ai_coach_config?: Json | null
           audio_greeting_enabled?: boolean
+          blocked_categories?: string[]
           created_at?: string
           device_id?: string | null
           fitness_level?: string | null
+          focus_lock_enabled?: boolean
           goal_details?: string | null
           height?: number | null
           height_unit?: string | null
@@ -213,19 +220,24 @@ export type Database = {
           organization_level?: string | null
           pseudo: string
           reminder_minutes?: number
+          schedule?: string | null
+          sport_history?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string | null
           weight?: number | null
           weight_unit?: string | null
+          workload?: string | null
         }
         Update: {
           age?: number
           ai_coach_config?: Json | null
           audio_greeting_enabled?: boolean
+          blocked_categories?: string[]
           created_at?: string
           device_id?: string | null
           fitness_level?: string | null
+          focus_lock_enabled?: boolean
           goal_details?: string | null
           height?: number | null
           height_unit?: string | null
@@ -237,11 +249,14 @@ export type Database = {
           organization_level?: string | null
           pseudo?: string
           reminder_minutes?: number
+          schedule?: string | null
+          sport_history?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string | null
           weight?: number | null
           weight_unit?: string | null
+          workload?: string | null
         }
         Relationships: []
       }

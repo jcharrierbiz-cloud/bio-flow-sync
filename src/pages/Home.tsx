@@ -9,6 +9,7 @@ import LevelBadge from "@/components/LevelBadge";
 import ScanCards from "@/components/ScanCards";
 import AnimatedScore from "@/components/AnimatedScore";
 import WeeklySportSummary from "@/components/WeeklySportSummary";
+import ProfileDrawer from "@/components/ProfileDrawer";
 import { Bot, TrendingUp, Moon, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
@@ -24,7 +25,13 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
+    <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6">
+      {/* Top bar */}
+      <div className="flex items-center justify-between">
+        <span className="text-primary font-bold text-sm tracking-wider">BIO-FLOW</span>
+        <ProfileDrawer />
+      </div>
+
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">

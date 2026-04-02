@@ -14,48 +14,35 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `Tu es le moteur d'analyse de Bio-Flow, une app de productivité et bien-être.
-À partir du profil utilisateur, génère une configuration de coach personnalisé.
+    const systemPrompt = "You are Bio-Flow's onboarding AI. " +
+      "Based on the user profile, generate a complete personalized coaching configuration in JSON only. " +
+      "No preamble, no markdown, no backticks. Only a valid JSON object with these exact keys: " +
+      "coachTone (string: describe the exact communication style and tone BIO should use with this user), " +
+      "coachName (string: a first name for the coach adapted to the user profile), " +
+      "dailyStructure (string: recommended day structure based on schedule and workload), " +
+      "focusAreas (array of 3 strings: top priorities), " +
+      "weeklyTaskGoal (integer: realistic number of tasks per week for this profile), " +
+      "nutritionTip (string: one specific daily nutrition tip for this profile), " +
+      "firstMessage (string: BIO's very first message to the user, warm, personalized, max 2 sentences, in French, use their pseudo), " +
+      "motivationStyle (string: how to celebrate wins for this specific user)";
 
-Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte autour) avec cette structure :
-{
-  "coachPersonality": "2-3 phrases décrivant le ton et le style exact du coach pour cet utilisateur",
-  "coachName": "un prénom pour le coach adapté au profil",
-  "dailyStructure": "structure de journée recommandée (rythme matin/après-midi/soir)",
-  "focusAreas": ["domaine1", "domaine2", "domaine3"],
-  "weeklyGoals": {
-    "tasks": number entre 5 et 20,
-    "focusSessions": number entre 3 et 14,
-    "restDays": number entre 1 et 3
-  },
-  "rewardSystem": {
-    "taskReward": "court message de célébration pour une tâche terminée",
-    "dailyReward": "récompense débloquée après avoir terminé toutes les tâches du jour",
-    "streakMilestones": {
-      "3days": "message milestone",
-      "7days": "message milestone",
-      "30days": "message milestone"
-    }
-  },
-  "nutritionGuidelines": "3-4 conseils nutrition pratiques adaptés à l'âge, niveau sportif et objectif",
-  "firstMessage": "le tout premier message du coach à l'utilisateur, chaleureux et personnalisé, max 3 phrases"
-}`;
-
-    const userMsg = `Profil utilisateur :
-- Pseudo : ${profileData.pseudo}
-- Âge : ${profileData.age} ans
-- Poids : ${profileData.weight ? `${profileData.weight} ${profileData.weightUnit}` : "non renseigné"}
-- Taille : ${profileData.height ? `${profileData.height} ${profileData.heightUnit}` : "non renseigné"}
-- Niveau sportif : ${profileData.fitness}
-- Organisation : ${profileData.org}
-- Statut : ${profileData.status}
-- Objectif principal : ${profileData.goal}
-- Détails objectif : ${profileData.goalDetails || "aucun"}`;
+    const userMsg = "Profile: pseudo=" + (profileData.pseudo || "") +
+      ", age=" + (profileData.age || "") +
+      ", weight=" + (profileData.weight || "not provided") +
+      ", height=" + (profileData.height || "not provided") +
+      ", sportLevel=" + (profileData.sportLevel || profileData.fitness || "") +
+      ", sportHistory=" + (profileData.sportHistory || "not provided") +
+      ", schedule=" + (profileData.schedule || profileData.status || "") +
+      ", workload=" + (profileData.workload || profileData.org || "") +
+      ", mainGoal=" + (profileData.mainGoal || profileData.goal || "") +
+      ", goalDetail=" + (profileData.goalDetail || profileData.goalDetails || "none") +
+      ", focusLockEnabled=" + (profileData.focusLockEnabled || false) +
+      ", blockedCategories=" + ((profileData.blockedCategories || []).join(",") || "none");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: "Bearer " + LOVABLE_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -88,7 +75,6 @@ Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte autour) a
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "{}";
     
-    // Parse JSON from response (handle potential markdown wrapping)
     let config;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
