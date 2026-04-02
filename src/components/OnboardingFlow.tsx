@@ -1,566 +1,600 @@
-import { useState, useRef } from "react";
-import { Info, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
-import { saveProfile, getDeviceId, getCachedProfile, type UserProfile } from "@/lib/profileStore";
-import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
-import { savePrefs, requestPermission, markOnboarded } from "@/lib/notifications";
+import { saveProfile, getDeviceId, type UserProfile } from "@/lib/profileStore";
+import { setUserName } from "@/hooks/useGreeting";
+import { markOnboarded } from "@/lib/notifications";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-const TOTAL_STEPS = 10;
-
-const getCachedCoachConfig = (): any => {
-  const profile = getCachedProfile();
-  return profile?.ai_coach_config || null;
-};
+import { ChevronLeft } from "lucide-react";
 
 interface Props {
   open: boolean;
   onClose: (profile: UserProfile | null) => void;
 }
 
-type FitnessLevel = "sedentary" | "light" | "moderate" | "very_active" | "athlete";
-type OrgLevel = "chaotic" | "flexible" | "organized" | "structured";
-type Status = "student" | "working" | "both" | "entrepreneur" | "transition";
-type Goal = "cognitive" | "stress" | "sleep" | "productivity" | "fitness" | "holistic";
-
-const fitnessOptions: { value: FitnessLevel; emoji: string; label: string; desc: string }[] = [
-  { value: "sedentary", emoji: "🛋", label: "Sédentaire", desc: "Peu ou pas d'activité physique" },
-  { value: "light", emoji: "🚶", label: "Légèrement actif", desc: "1-2 séances/semaine" },
-  { value: "moderate", emoji: "💪", label: "Modérément actif", desc: "3-4 séances/semaine" },
-  { value: "very_active", emoji: "🔥", label: "Très actif", desc: "5+ séances/semaine" },
-  { value: "athlete", emoji: "⚡", label: "Athlète", desc: "Entraînement quotidien" },
-];
-
-const orgOptions: { value: OrgLevel; emoji: string; label: string; desc: string }[] = [
-  { value: "chaotic", emoji: "😅", label: "Chaotique", desc: "J'oublie souvent, j'improvise" },
-  { value: "flexible", emoji: "🌊", label: "Flexible", desc: "J'ai une direction mais peu de structure" },
-  { value: "organized", emoji: "📋", label: "Organisé", desc: "J'utilise des listes et des routines" },
-  { value: "structured", emoji: "🎯", label: "Très structuré", desc: "Chaque heure est planifiée" },
-];
-
-const statusOptions: { value: Status; emoji: string; label: string; desc: string }[] = [
-  { value: "student", emoji: "📚", label: "Étudiant", desc: "Cours, révisions, examens" },
-  { value: "working", emoji: "💼", label: "En activité", desc: "Job à temps plein ou partiel" },
-  { value: "both", emoji: "🔄", label: "Les deux", desc: "Études et travail simultanés" },
-  { value: "entrepreneur", emoji: "🚀", label: "Entrepreneur", desc: "Je construis mon propre projet" },
-  { value: "transition", emoji: "🌱", label: "En transition", desc: "Entre deux étapes de vie" },
-];
-
-const goalOptions: { value: Goal; emoji: string; label: string; desc: string }[] = [
-  { value: "cognitive", emoji: "⚡", label: "Performance cognitive", desc: "Être au maximum mental chaque jour" },
-  { value: "stress", emoji: "😌", label: "Réduire le stress", desc: "Retrouver calme et équilibre" },
-  { value: "sleep", emoji: "💤", label: "Améliorer mon sommeil", desc: "Récupérer vraiment" },
-  { value: "productivity", emoji: "🏆", label: "Accomplir plus", desc: "Productivité et discipline" },
-  { value: "fitness", emoji: "💪", label: "Santé physique", desc: "Bouger plus, me sentir mieux" },
-  { value: "holistic", emoji: "🧠", label: "Tout optimiser", desc: "Performance holistique complète" },
-];
-
 const loadingTexts = [
-  "Analyse de ton profil biologique...",
-  "Calibrage de ton coach personnel...",
+  "Analyse de ton profil...",
+  "Calibrage de ton coach BIO...",
   "Construction de ta routine optimale...",
-  "Définition de tes récompenses...",
-  "Tout est prêt.",
+  "Personnalisation de tes objectifs...",
+  "Tout est prêt. ✦",
 ];
 
 const OnboardingFlow = ({ open, onClose }: Props) => {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"next" | "prev">("next");
+
+  // Screen 1
   const [pseudo, setPseudo] = useState("");
   const [age, setAge] = useState("");
+  const [pseudoError, setPseudoError] = useState("");
+  const [ageError, setAgeError] = useState("");
+
+  // Screen 2
   const [weight, setWeight] = useState("");
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
   const [height, setHeight] = useState("");
   const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("cm");
-  const [fitness, setFitness] = useState<FitnessLevel | "">("");
-  const [org, setOrg] = useState<OrgLevel | "">("");
-  const [status, setStatus] = useState<Status | "">("");
-  const [goal, setGoal] = useState<Goal | "">("");
-  const [goalDetails, setGoalDetails] = useState("");
-  const [showWeightInfo, setShowWeightInfo] = useState(false);
-  const [showHeightInfo, setShowHeightInfo] = useState(false);
+
+  // Screen 3
+  const [sportLevel, setSportLevel] = useState("");
+  const [sportHistory, setSportHistory] = useState("");
+  const [schedule, setSchedule] = useState("");
+  const [workload, setWorkload] = useState("");
+
+  // Screen 4
+  const [mainGoal, setMainGoal] = useState("");
+  const [goalDetail, setGoalDetail] = useState("");
+  const [focusLockEnabled, setFocusLockEnabled] = useState(false);
+  const [blockedCategories, setBlockedCategories] = useState<string[]>([
+    "social", "games", "streaming", "shopping", "messaging",
+  ]);
+
+  // Screen 5
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const termsRef = useRef<HTMLDivElement>(null);
+
+  // Loading
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
-  const [audioEnabled, setAudioEnabled] = useState(true);
   const loadingInterval = useRef<ReturnType<typeof setInterval>>();
 
   if (!open) return null;
 
-  const goTo = (nextStep: number) => {
-    setDirection(nextStep > step ? "next" : "prev");
-    setStep(nextStep);
-  };
-
-  const next = () => goTo(step + 1);
-
-  const handleAnalysis = async () => {
-    goTo(9);
-    
-    // Start loading text cycle
-    let idx = 0;
-    loadingInterval.current = setInterval(() => {
-      idx++;
-      if (idx < loadingTexts.length) setLoadingTextIdx(idx);
-    }, 1500);
-
-    // Call AI analysis
-    try {
-      const profileData = {
-        pseudo, age: Number(age),
-        weight: weight ? Number(weight) : null, weightUnit,
-        height: height ? Number(height) : null, heightUnit,
-        fitness, org, status, goal, goalDetails,
-      };
-      
-      const { data } = await supabase.functions.invoke("analyze-profile", {
-        body: profileData,
-      });
-
-      // Save profile to Supabase
-      const profile: Omit<UserProfile, "id"> = {
-        device_id: getDeviceId(),
-        pseudo,
-        age: Number(age),
-        weight: weight ? Number(weight) : null,
-        weight_unit: weightUnit,
-        height: height ? Number(height) : null,
-        height_unit: heightUnit,
-        fitness_level: fitness,
-        organization_level: org,
-        status,
-        main_goal: goal,
-        goal_details: goalDetails || undefined,
-        ai_coach_config: data?.config || null,
-        onboarding_completed: true,
-        audio_greeting_enabled: audioEnabled,
-        notification_enabled: false,
-        reminder_minutes: 30,
-        morning_scan_enabled: true,
-      };
-
-      // Persist to localStorage too
-      setUserName(pseudo);
-      setAudioGreetingEnabled(audioEnabled);
-      markOnboarded();
-
-      const saved = await saveProfile(profile);
-      
-      clearInterval(loadingInterval.current);
-      setLoadingTextIdx(loadingTexts.length - 1);
-      
-      setTimeout(() => goTo(10), 1200);
-      setTimeout(() => onClose(saved), 3500);
-    } catch (err) {
-      console.error("Analysis error:", err);
-      clearInterval(loadingInterval.current);
-      
-      // Save anyway without AI config
-      const profile: Omit<UserProfile, "id"> = {
-        device_id: getDeviceId(),
-        pseudo, age: Number(age),
-        weight: weight ? Number(weight) : null,
-        weight_unit: weightUnit,
-        height: height ? Number(height) : null,
-        height_unit: heightUnit,
-        fitness_level: fitness,
-        organization_level: org,
-        status,
-        main_goal: goal,
-        goal_details: goalDetails || undefined,
-        ai_coach_config: null,
-        onboarding_completed: true,
-        audio_greeting_enabled: audioEnabled,
-        notification_enabled: false,
-        reminder_minutes: 30,
-        morning_scan_enabled: true,
-      };
-      setUserName(pseudo);
-      setAudioGreetingEnabled(audioEnabled);
-      markOnboarded();
-      const saved = await saveProfile(profile);
-      
-      setTimeout(() => goTo(10), 800);
-      setTimeout(() => onClose(saved), 2500);
-    }
+  const goTo = (s: number) => {
+    setDirection(s > step ? "next" : "prev");
+    setStep(s);
   };
 
   const slideClass = direction === "next"
     ? "animate-in fade-in-0 slide-in-from-right-8 duration-300"
     : "animate-in fade-in-0 slide-in-from-left-8 duration-300";
 
-  const renderSelectCards = (
-    options: { value: string; emoji: string; label: string; desc: string }[],
-    selected: string,
-    onSelect: (v: string) => void,
-    large?: boolean,
-  ) => (
-    <div className={`grid gap-2 ${large ? "grid-cols-1" : "grid-cols-2"}`}>
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onSelect(opt.value)}
-          className={`glass-card p-3 flex items-center gap-3 text-left transition-all ${
-            selected === opt.value
-              ? "border-primary/50 bg-primary/10"
-              : "hover:border-glass-highlight"
-          }`}
-        >
-          <span className="text-xl shrink-0">{opt.emoji}</span>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-foreground">{opt.label}</p>
-            <p className="text-[10px] text-muted-foreground leading-tight">{opt.desc}</p>
-          </div>
-        </button>
-      ))}
-    </div>
+  const validatePseudo = (v: string) => {
+    if (v.length < 2) return "Minimum 2 caractères";
+    if (v.length > 20) return "Maximum 20 caractères";
+    if (!/^[a-zA-Z0-9_-]+$/.test(v)) return "Lettres, chiffres, _ et - uniquement";
+    return "";
+  };
+
+  const screen1Valid = pseudo.trim().length >= 2 && !validatePseudo(pseudo.trim()) && age && Number(age) >= 1 && Number(age) <= 120;
+  const screen3Valid = sportLevel && sportHistory && schedule && workload;
+  const screen4Valid = !!mainGoal;
+
+  const handleContinueScreen1 = () => {
+    const pErr = validatePseudo(pseudo.trim());
+    const aErr = !age || Number(age) < 1 || Number(age) > 120 ? "Âge entre 1 et 120" : "";
+    setPseudoError(pErr);
+    setAgeError(aErr);
+    if (!pErr && !aErr) goTo(2);
+  };
+
+  const handleTermsScroll = () => {
+    const el = termsRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 20;
+    if (atBottom) setHasScrolledToBottom(true);
+  };
+
+  const toggleCategory = (cat: string) => {
+    setBlockedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const handleFinish = async () => {
+    goTo(6); // loading screen
+    let idx = 0;
+    loadingInterval.current = setInterval(() => {
+      idx++;
+      if (idx < loadingTexts.length) setLoadingTextIdx(idx);
+    }, 1500);
+
+    try {
+      const profileData = {
+        pseudo: pseudo.trim(),
+        age: Number(age),
+        weight: weight ? Number(weight) : null,
+        weightUnit,
+        height: height ? Number(height) : null,
+        heightUnit,
+        sportLevel,
+        sportHistory,
+        schedule,
+        workload,
+        mainGoal,
+        goalDetail: goalDetail || null,
+        focusLockEnabled,
+        blockedCategories,
+      };
+
+      const { data } = await supabase.functions.invoke("analyze-profile", {
+        body: profileData,
+      });
+
+      const profile: Omit<UserProfile, "id"> = {
+        device_id: getDeviceId(),
+        pseudo: pseudo.trim(),
+        age: Number(age),
+        weight: weight ? Number(weight) : null,
+        weight_unit: weightUnit,
+        height: height ? Number(height) : null,
+        height_unit: heightUnit,
+        fitness_level: sportLevel,
+        sport_history: sportHistory,
+        organization_level: workload,
+        status: schedule,
+        schedule,
+        workload,
+        main_goal: mainGoal,
+        goal_details: goalDetail || undefined,
+        ai_coach_config: data?.config || null,
+        onboarding_completed: true,
+        audio_greeting_enabled: true,
+        notification_enabled: false,
+        reminder_minutes: 30,
+        morning_scan_enabled: true,
+        focus_lock_enabled: focusLockEnabled,
+        blocked_categories: blockedCategories,
+      };
+
+      setUserName(pseudo.trim());
+      markOnboarded();
+      const saved = await saveProfile(profile);
+      clearInterval(loadingInterval.current);
+      setLoadingTextIdx(loadingTexts.length - 1);
+      setTimeout(() => onClose(saved), 2000);
+    } catch (err) {
+      console.error("Onboarding error:", err);
+      clearInterval(loadingInterval.current);
+      const profile: Omit<UserProfile, "id"> = {
+        device_id: getDeviceId(),
+        pseudo: pseudo.trim(),
+        age: Number(age),
+        weight: weight ? Number(weight) : null,
+        weight_unit: weightUnit,
+        height: height ? Number(height) : null,
+        height_unit: heightUnit,
+        fitness_level: sportLevel,
+        sport_history: sportHistory,
+        organization_level: workload,
+        status: schedule,
+        schedule,
+        workload,
+        main_goal: mainGoal,
+        goal_details: goalDetail || undefined,
+        ai_coach_config: null,
+        onboarding_completed: true,
+        audio_greeting_enabled: true,
+        notification_enabled: false,
+        reminder_minutes: 30,
+        morning_scan_enabled: true,
+        focus_lock_enabled: focusLockEnabled,
+        blocked_categories: blockedCategories,
+      };
+      setUserName(pseudo.trim());
+      markOnboarded();
+      const saved = await saveProfile(profile);
+      setTimeout(() => onClose(saved), 1500);
+    }
+  };
+
+  const SelectCard = ({ emoji, label, desc, selected, onClick, fullWidth }: {
+    emoji: string; label: string; desc?: string; selected: boolean; onClick: () => void; fullWidth?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`p-3 rounded-xl border text-left transition-all ${fullWidth ? "w-full" : ""} ${
+        selected
+          ? "border-primary/60 bg-primary/10"
+          : "border-[hsl(var(--glass-border))] hover:border-[hsl(var(--glass-highlight))]"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-lg shrink-0">{emoji}</span>
+        <div>
+          <p className={`text-xs font-medium ${selected ? "text-primary" : "text-foreground"}`}>{label}</p>
+          {desc && <p className="text-[10px] text-muted-foreground leading-tight">{desc}</p>}
+        </div>
+      </div>
+    </button>
   );
 
+  // Loading screen (step 6)
+  if (step === 6) {
+    return (
+      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center" style={{ background: "#090F0D" }}>
+        <div className="w-20 h-20 rounded-full border-2 border-primary/40 flex items-center justify-center animate-pulse">
+          <div className="w-12 h-12 rounded-full bg-primary/20 animate-ping" />
+        </div>
+        <p className="mt-8 text-sm text-foreground animate-in fade-in-0 duration-500" key={loadingTextIdx}>
+          {loadingTexts[loadingTextIdx]}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-background">
+    <div className="fixed inset-0 z-[70] flex flex-col" style={{ background: "#090F0D" }}>
       {/* Progress bar */}
-      {step <= 8 && (
-        <div className="px-5 pt-4 pb-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] text-muted-foreground">Étape {step}/8</span>
-            {step > 1 && (
-              <button onClick={() => goTo(step - 1)} className="text-[10px] text-muted-foreground hover:text-foreground">
-                ← Retour
-              </button>
-            )}
+      {step <= 5 && (
+        <div className="px-5 pt-4 pb-1">
+          <div className="h-[3px] w-full bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(step / 5) * 100}%` }}
+            />
           </div>
-          <Progress value={(step / 8) * 100} className="h-1.5" />
+          <p className="text-center text-[12px] text-muted-foreground mt-2">Étape {step} sur 5</p>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-5 pb-28">
-        <div className="max-w-sm mx-auto pt-4">
-          {/* Step 1: Pseudo */}
+      {/* Back button */}
+      {step > 1 && step <= 5 && (
+        <button onClick={() => goTo(step - 1)} className="absolute top-14 left-4 text-muted-foreground hover:text-foreground z-10 flex items-center gap-1 text-xs">
+          <ChevronLeft className="w-4 h-4" /> Retour
+        </button>
+      )}
+
+      {/* Logo */}
+      {step <= 5 && (
+        <div className="text-center mt-1 mb-2">
+          <span className="text-primary font-bold text-sm tracking-wider">BIO-FLOW</span>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-5 pb-4">
+        <div className="max-w-sm mx-auto">
+
+          {/* SCREEN 1 — Identity */}
           {step === 1 && (
-            <div key="s1" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">👤</span>
-                <h1 className="text-xl font-bold text-foreground">Comment on t'appelle ?</h1>
-                <p className="text-sm text-muted-foreground">Ce sera ton nom dans l'app.</p>
+            <div key="s1" className={`space-y-5 pt-6 ${slideClass}`}>
+              <div className="text-center space-y-2">
+                <h1 className="text-2xl font-bold text-foreground">Bienvenue sur Bio-Flow</h1>
+                <p className="text-sm text-muted-foreground">Quelques informations pour personnaliser ton expérience.</p>
               </div>
-              <input
-                type="text"
-                placeholder="Ton pseudo..."
-                value={pseudo}
-                onChange={(e) => setPseudo(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
-              <button
-                onClick={next}
-                disabled={pseudo.trim().length < 2}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          )}
 
-          {/* Step 2: Age */}
-          {step === 2 && (
-            <div key="s2" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">🎂</span>
-                <h1 className="text-xl font-bold text-foreground">Quel âge as-tu ?</h1>
-                <p className="text-sm text-muted-foreground">Permet d'adapter les recommandations biologiques à ton profil.</p>
-              </div>
-              <input
-                type="number"
-                min={13}
-                max={99}
-                placeholder="Ton âge"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
-              <button
-                onClick={next}
-                disabled={!age || Number(age) < 13 || Number(age) > 99}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          )}
-
-          {/* Step 3: Weight (optional) */}
-          {step === 3 && (
-            <div key="s3" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">⚖️</span>
-                <h1 className="text-xl font-bold text-foreground">Quel est ton poids ?</h1>
-                <p className="text-sm text-muted-foreground">
-                  Optionnel — utile pour calculer ta charge physiologique.
-                </p>
-                <button onClick={() => setShowWeightInfo(!showWeightInfo)} className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
-                  <Info className="w-3 h-3" /> En savoir plus
-                </button>
-                {showWeightInfo && (
-                  <p className="text-[10px] text-muted-foreground leading-relaxed bg-secondary/50 rounded-lg p-3 text-left">
-                    Ton poids nous permet d'estimer ta dépense énergétique basale, d'adapter tes recommandations de récupération post-effort, et de calibrer ton score de charge allostatique. Cette donnée reste privée et n'est jamais partagée.
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  placeholder={weightUnit === "kg" ? "70" : "154"}
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-                <div className="flex rounded-xl overflow-hidden border border-border">
-                  {(["kg", "lbs"] as const).map((u) => (
-                    <button
-                      key={u}
-                      onClick={() => setWeightUnit(u)}
-                      className={`px-3 py-3 text-xs font-medium transition-colors ${
-                        weightUnit === u ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      {u}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={next}
-                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-                >
-                  Continuer
-                </button>
-                <button
-                  onClick={() => { setWeight(""); next(); }}
-                  className="py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Passer
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Height (optional) */}
-          {step === 4 && (
-            <div key="s4" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">📏</span>
-                <h1 className="text-xl font-bold text-foreground">Quelle est ta taille ?</h1>
-                <p className="text-sm text-muted-foreground">
-                  Optionnel — affine le calcul de ton IMC et de tes seuils d'effort.
-                </p>
-                <button onClick={() => setShowHeightInfo(!showHeightInfo)} className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
-                  <Info className="w-3 h-3" /> En savoir plus
-                </button>
-                {showHeightInfo && (
-                  <p className="text-[10px] text-muted-foreground leading-relaxed bg-secondary/50 rounded-lg p-3 text-left">
-                    La taille combinée au poids permet de calculer ton IMC et d'estimer ton métabolisme de base avec précision. Cela aide le coach à calibrer tes objectifs sans sur ou sous-estimer ta capacité physique réelle.
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  placeholder={heightUnit === "cm" ? "175" : "5.9"}
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-                <div className="flex rounded-xl overflow-hidden border border-border">
-                  {(["cm", "ft"] as const).map((u) => (
-                    <button
-                      key={u}
-                      onClick={() => setHeightUnit(u)}
-                      className={`px-3 py-3 text-xs font-medium transition-colors ${
-                        heightUnit === u ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      {u}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={next}
-                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-                >
-                  Continuer
-                </button>
-                <button
-                  onClick={() => { setHeight(""); next(); }}
-                  className="py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Passer
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Fitness */}
-          {step === 5 && (
-            <div key="s5" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">🏃</span>
-                <h1 className="text-xl font-bold text-foreground">Ton niveau sportif ?</h1>
-                <p className="text-sm text-muted-foreground">Pour calibrer tes recommandations de récupération.</p>
-              </div>
-              {renderSelectCards(fitnessOptions, fitness, (v) => setFitness(v as FitnessLevel))}
-              <button
-                onClick={next}
-                disabled={!fitness}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          )}
-
-          {/* Step 6: Organization */}
-          {step === 6 && (
-            <div key="s6" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">🗂</span>
-                <h1 className="text-xl font-bold text-foreground">Côté organisation ?</h1>
-                <p className="text-sm text-muted-foreground">Pour adapter le style de coaching et la structure de ton planning.</p>
-              </div>
-              {renderSelectCards(orgOptions, org, (v) => setOrg(v as OrgLevel))}
-              <button
-                onClick={next}
-                disabled={!org}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          )}
-
-          {/* Step 7: Status */}
-          {step === 7 && (
-            <div key="s7" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">🎓</span>
-                <h1 className="text-xl font-bold text-foreground">Tu es plutôt...</h1>
-                <p className="text-sm text-muted-foreground">Influence ton rythme de vie et la façon dont le coach structure tes journées.</p>
-              </div>
-              {renderSelectCards(statusOptions, status, (v) => setStatus(v as Status))}
-              <button
-                onClick={next}
-                disabled={!status}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          )}
-
-          {/* Step 8: Goal */}
-          {step === 8 && (
-            <div key="s8" className={`space-y-5 ${slideClass}`}>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="text-5xl">🎯</span>
-                <h1 className="text-xl font-bold text-foreground">Ton objectif n°1 ?</h1>
-                <p className="text-sm text-muted-foreground">Le coach va tout organiser autour de cela.</p>
-              </div>
-              {renderSelectCards(goalOptions, goal, (v) => setGoal(v as Goal), true)}
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Détaille si tu veux (optionnel)</label>
-                <textarea
-                  placeholder="Ex: je veux réussir mon année scolaire sans m'épuiser..."
-                  value={goalDetails}
-                  onChange={(e) => setGoalDetails(e.target.value.slice(0, 200))}
-                  maxLength={200}
-                  rows={2}
-                  className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                <label className="text-xs font-medium text-foreground">Ton pseudo</label>
+                <input
+                  type="text"
+                  placeholder="Choisis un pseudo..."
+                  value={pseudo}
+                  onChange={(e) => { setPseudo(e.target.value); setPseudoError(""); }}
+                  className={`w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${pseudoError ? "border border-destructive ring-destructive/50" : ""}`}
+                  autoFocus
                 />
-                <p className="text-[10px] text-muted-foreground text-right">{goalDetails.length}/200</p>
+                {pseudoError && <p className="text-[11px] text-destructive">{pseudoError}</p>}
+                <p className="text-[11px] text-muted-foreground">Ce pseudo est permanent — il ne pourra plus être modifié.</p>
               </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Ton âge</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  placeholder="Ex: 17"
+                  value={age}
+                  onChange={(e) => { setAge(e.target.value); setAgeError(""); }}
+                  className={`w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${ageError ? "border border-destructive ring-destructive/50" : ""}`}
+                />
+                {ageError && <p className="text-[11px] text-destructive">{ageError}</p>}
+              </div>
+
               <button
-                onClick={handleAnalysis}
-                disabled={!goal}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
+                onClick={handleContinueScreen1}
+                disabled={!screen1Valid}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
+                style={{ height: 48, borderRadius: 12 }}
               >
-                Analyser mon profil <ChevronRight className="w-4 h-4 inline" />
+                Continuer
               </button>
             </div>
           )}
 
-          {/* Step 9: AI Loading */}
-          {step === 9 && (
-            <div key="s9" className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-in fade-in-0 duration-500">
-              <div className="relative w-24 h-24">
-                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-                <div className="absolute inset-2 rounded-full bg-primary/30 animate-pulse" />
-                <div className="absolute inset-4 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: "0.3s" }} />
+          {/* SCREEN 2 — Physical data */}
+          {step === 2 && (
+            <div key="s2" className={`space-y-5 pt-4 ${slideClass}`}>
+              {/* Info card */}
+              <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(0, 229, 195, 0.08)", border: "1px solid rgba(0, 229, 195, 0.3)" }}>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary text-base">✦</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Pourquoi ces informations ?</p>
+                    <p className="text-[13px] text-muted-foreground leading-relaxed mt-1">
+                      Ton poids et ta taille permettent à BIO de calculer ton métabolisme de base, d'estimer ta dépense énergétique réelle et de calibrer tes seuils d'effort. Plus ces données sont précises, plus les recommandations de ton coach seront adaptées à ta réalité physiologique. Tout cela reste strictement privé et n'est jamais partagé.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground text-center transition-all duration-300">
-                {loadingTexts[loadingTextIdx]}
-              </p>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Poids <span className="text-muted-foreground font-normal">(optionnel)</span></label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Ex: 68"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <div className="flex rounded-xl overflow-hidden border border-border">
+                    {(["kg", "lbs"] as const).map((u) => (
+                      <button
+                        key={u}
+                        onClick={() => setWeightUnit(u)}
+                        className={`px-3 py-3 text-xs font-medium transition-colors ${weightUnit === u ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Taille <span className="text-muted-foreground font-normal">(optionnel)</span></label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Ex: 175"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <div className="flex rounded-xl overflow-hidden border border-border">
+                    {(["cm", "ft"] as const).map((u) => (
+                      <button
+                        key={u}
+                        onClick={() => setHeightUnit(u)}
+                        className={`px-3 py-3 text-xs font-medium transition-colors ${heightUnit === u ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-center text-[12px] text-muted-foreground">Tu peux laisser ces champs vides et les renseigner plus tard dans tes paramètres.</p>
+
+              <button
+                onClick={() => goTo(3)}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                style={{ height: 48, borderRadius: 12 }}
+              >
+                Continuer
+              </button>
             </div>
           )}
 
-          {/* Step 10: Welcome */}
-          {step === 10 && (
-            <div key="s10" className="flex flex-col items-center justify-center min-h-[60vh] gap-5 animate-in fade-in-0 zoom-in-95 duration-500">
-              {/* Animated checkmark */}
-              <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center">
-                <svg viewBox="0 0 52 52" className="w-12 h-12">
-                  <circle cx="26" cy="26" r="24" fill="none" stroke="hsl(175, 80%, 45%)" strokeWidth="2" opacity="0.3" />
-                  <path
-                    d="M14 27 L22 35 L38 19"
-                    fill="none"
-                    stroke="hsl(175, 80%, 45%)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{
-                      strokeDasharray: 50,
-                      strokeDashoffset: 50,
-                      animation: "draw 0.6s ease-out 0.3s forwards",
-                    }}
-                  />
-                </svg>
+          {/* SCREEN 3 — Profile & lifestyle */}
+          {step === 3 && (
+            <div key="s3" className={`space-y-5 pt-4 ${slideClass}`}>
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-bold text-foreground">Ton profil de vie</h1>
+                <p className="text-[13px] text-muted-foreground">Pour que BIO adapte ton planning à ta réalité.</p>
               </div>
 
-              <h1 className="text-2xl font-bold text-foreground text-center">
-                Bienvenue, {pseudo} 👋
-              </h1>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Niveau sportif actuel</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: "sedentary", e: "🛋", l: "Sédentaire", d: "Peu ou pas d'activité" },
+                    { v: "beginner", e: "🚶", l: "Débutant", d: "J'essaie de bouger plus" },
+                    { v: "intermediate", e: "💪", l: "Intermédiaire", d: "2 à 4 séances/semaine" },
+                    { v: "advanced", e: "🔥", l: "Avancé", d: "5 séances et plus" },
+                    { v: "athlete", e: "⚡", l: "Athlète", d: "Entraînement intensif quotidien" },
+                  ].map((o) => (
+                    <SelectCard key={o.v} emoji={o.e} label={o.l} desc={o.d} selected={sportLevel === o.v} onClick={() => setSportLevel(o.v)} />
+                  ))}
+                </div>
+              </div>
 
-              {/* Coach bubble */}
-              {(() => {
-                const config = getCachedCoachConfig();
-                const coachName = config?.coachName || "Coach";
-                const firstMessage = config?.firstMessage || "Ton coach personnel est prêt. Bio-Flow va t'accompagner tout au long de ta journée.";
-                return (
-                  <div className="w-full space-y-2">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                        {coachName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[10px] text-muted-foreground mb-1">{coachName}</p>
-                        <div className="bg-secondary/60 rounded-2xl rounded-tl-sm px-4 py-3">
-                          <p className="text-sm text-foreground leading-relaxed">{firstMessage}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">As-tu déjà pratiqué un sport régulièrement ?</label>
+                <div className="space-y-2">
+                  {[
+                    { v: "yes", e: "✅", l: "Oui, j'ai un historique sportif" },
+                    { v: "no", e: "🆕", l: "Non, je commence maintenant" },
+                    { v: "paused", e: "⏸", l: "J'en faisais avant, j'ai arrêté" },
+                  ].map((o) => (
+                    <SelectCard key={o.v} emoji={o.e} label={o.l} selected={sportHistory === o.v} onClick={() => setSportHistory(o.v)} fullWidth />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Ton emploi du temps au quotidien</label>
+                <div className="space-y-2">
+                  {[
+                    { v: "student", e: "📚", l: "Étudiant — cours et révisions" },
+                    { v: "working", e: "💼", l: "En activité — travail à temps plein" },
+                    { v: "both", e: "🔄", l: "Étudiant et travailleur" },
+                    { v: "entrepreneur", e: "🚀", l: "Entrepreneur — projet personnel" },
+                    { v: "flexible", e: "🌱", l: "Flexible — peu de contraintes fixes" },
+                  ].map((o) => (
+                    <SelectCard key={o.v} emoji={o.e} label={o.l} selected={schedule === o.v} onClick={() => setSchedule(o.v)} fullWidth />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Intensité de ton emploi du temps</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { v: "heavy", e: "😤", l: "Chargé" },
+                    { v: "moderate", e: "😐", l: "Modéré" },
+                    { v: "light", e: "😌", l: "Léger" },
+                  ].map((o) => (
+                    <SelectCard key={o.v} emoji={o.e} label={o.l} selected={workload === o.v} onClick={() => setWorkload(o.v)} />
+                  ))}
+                </div>
+              </div>
 
               <button
-                onClick={() => onClose(null)}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors mt-2"
+                onClick={() => goTo(4)}
+                disabled={!screen3Valid}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
+                style={{ height: 48, borderRadius: 12 }}
               >
-                Commencer avec {(() => {
-                  const config = getCachedCoachConfig();
-                  return config?.coachName || "le Coach";
-                })()}
+                Continuer
+              </button>
+            </div>
+          )}
+
+          {/* SCREEN 4 — Goals & Focus Lock */}
+          {step === 4 && (
+            <div key="s4" className={`space-y-5 pt-4 ${slideClass}`}>
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-bold text-foreground">Tes objectifs</h1>
+                <p className="text-[13px] text-muted-foreground">BIO va tout organiser autour de ce qui compte pour toi.</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: "cognitive", e: "⚡", l: "Performance cognitive" },
+                    { v: "stress", e: "😌", l: "Réduire le stress" },
+                    { v: "sleep", e: "💤", l: "Meilleur sommeil" },
+                    { v: "productivity", e: "🏆", l: "Productivité maximale" },
+                    { v: "fitness", e: "💪", l: "Santé physique" },
+                    { v: "holistic", e: "🧠", l: "Optimisation totale" },
+                  ].map((o) => (
+                    <SelectCard key={o.v} emoji={o.e} label={o.l} selected={mainGoal === o.v} onClick={() => setMainGoal(o.v)} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Précise si tu veux <span className="text-muted-foreground font-normal">(optionnel)</span></label>
+                <div className="relative">
+                  <textarea
+                    value={goalDetail}
+                    onChange={(e) => setGoalDetail(e.target.value.slice(0, 200))}
+                    placeholder="Ex: Je veux réussir mon bac sans m'épuiser..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  />
+                  <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground">{goalDetail.length}/200</span>
+                </div>
+              </div>
+
+              {/* Focus Lock */}
+              <div className="border-t border-primary/20 pt-4 space-y-3">
+                <h2 className="text-[15px] font-medium text-foreground">🔒 Focus Lock</h2>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  Quand une tâche de ta to-do list arrive à l'heure prévue, Bio-Flow peut bloquer les applications de divertissement sur ton téléphone pour t'aider à rester concentré. Tu choisis maintenant quelles apps sont considérées comme 'divertissement'.
+                </p>
+
+                <button
+                  onClick={() => setFocusLockEnabled(!focusLockEnabled)}
+                  className="flex items-center justify-between w-full p-3 rounded-xl bg-secondary"
+                >
+                  <span className="text-sm text-foreground font-medium">Activer le Focus Lock</span>
+                  <div className={`w-10 h-6 rounded-full transition-colors ${focusLockEnabled ? "bg-primary" : "bg-muted"} flex items-center`}>
+                    <div className={`w-4 h-4 rounded-full bg-foreground transition-transform mx-1 ${focusLockEnabled ? "translate-x-4" : ""}`} />
+                  </div>
+                </button>
+
+                {focusLockEnabled && (
+                  <div className="space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                    <p className="text-[12px] text-muted-foreground">Coche les catégories à bloquer pendant le focus :</p>
+                    {[
+                      { v: "social", e: "🎵", l: "Réseaux sociaux (TikTok, Instagram, Snapchat...)" },
+                      { v: "games", e: "🎮", l: "Jeux mobiles (Brawl Stars, Clash...)" },
+                      { v: "streaming", e: "📺", l: "Streaming vidéo (YouTube, Netflix...)" },
+                      { v: "shopping", e: "🛒", l: "Shopping (Amazon, Vinted...)" },
+                      { v: "messaging", e: "💬", l: "Messageries de divertissement (Discord...)" },
+                    ].map((cat) => (
+                      <label key={cat.v} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={blockedCategories.includes(cat.v)}
+                          onChange={() => toggleCategory(cat.v)}
+                          className="w-4 h-4 rounded accent-primary"
+                        />
+                        <span className="text-xs text-foreground">{cat.e} {cat.l}</span>
+                      </label>
+                    ))}
+                    <p className="text-[12px] text-muted-foreground">Les appels, SMS, et apps de productivité restent toujours accessibles.</p>
+                    <p className="text-[12px] text-warning">⚠ Le blocage complet nécessite une app native. Dans cette version, Bio-Flow crée un environnement de focus maximal avec overlay plein écran et alertes de sortie.</p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => goTo(5)}
+                disabled={!screen4Valid}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
+                style={{ height: 48, borderRadius: 12 }}
+              >
+                Continuer
+              </button>
+            </div>
+          )}
+
+          {/* SCREEN 5 — Terms */}
+          {step === 5 && (
+            <div key="s5" className={`space-y-4 pt-4 ${slideClass}`}>
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-bold text-foreground">Conditions d'utilisation</h1>
+                <p className="text-[13px] text-muted-foreground">Lis attentivement avant de continuer.</p>
+              </div>
+
+              <div
+                ref={termsRef}
+                onScroll={handleTermsScroll}
+                className="rounded-xl p-4 text-[13px] text-muted-foreground leading-relaxed overflow-y-auto custom-scrollbar space-y-4"
+                style={{ maxHeight: "55vh", background: "rgba(255,255,255,0.03)", borderRadius: 12 }}
+              >
+                <p><strong className="text-foreground">1. Données personnelles</strong><br />Bio-Flow collecte ton pseudo, âge, poids (optionnel), taille (optionnel), niveau sportif et objectifs dans le seul but de personnaliser ton expérience. Ces données sont stockées de manière sécurisée et ne sont jamais vendues ni partagées avec des tiers.</p>
+                <p><strong className="text-foreground">2. Données biométriques</strong><br />Les mesures effectuées via le scanner PPG (fréquence cardiaque, HRV estimée) sont des estimations à visée bien-être uniquement. Bio-Flow n'est pas un dispositif médical. Ces données ne remplacent en aucun cas un avis médical professionnel.</p>
+                <p><strong className="text-foreground">3. Intelligence artificielle</strong><br />Le coach BIO est un assistant IA. Ses recommandations sont personnalisées mais restent des suggestions. En cas de problème de santé, consulte un professionnel.</p>
+                <p><strong className="text-foreground">4. Focus Lock</strong><br />La fonctionnalité Focus Lock crée un environnement de concentration via l'interface de l'app. L'utilisateur reste libre de quitter à tout moment. Bio-Flow décline toute responsabilité en cas d'utilisation inappropriée.</p>
+                <p><strong className="text-foreground">5. Âge et responsabilité</strong><br />Bio-Flow est accessible à tous les âges. Pour les utilisateurs mineurs, l'utilisation est sous la responsabilité des parents ou tuteurs légaux.</p>
+                <p><strong className="text-foreground">6. Modifications</strong><br />Bio-Flow se réserve le droit de modifier ces conditions. Les utilisateurs seront notifiés de tout changement majeur.</p>
+                <p><strong className="text-foreground">7. Contact</strong><br />Pour toute question : support@bioflow.app</p>
+              </div>
+
+              <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${!hasScrolledToBottom ? "opacity-40 pointer-events-none" : "animate-in zoom-in-95 duration-300"}`}>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  disabled={!hasScrolledToBottom}
+                  className="w-5 h-5 rounded accent-primary"
+                />
+                <span className="text-sm text-foreground">J'ai lu et j'accepte les conditions d'utilisation de Bio-Flow</span>
+              </label>
+
+              <button
+                onClick={handleFinish}
+                disabled={!termsAccepted}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-40"
+                style={{ height: 48, borderRadius: 12 }}
+              >
+                Terminer et accéder à Bio-Flow
               </button>
             </div>
           )}

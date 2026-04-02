@@ -13,8 +13,11 @@ export interface UserProfile {
   height?: number | null;
   height_unit: "cm" | "ft";
   fitness_level: string;
+  sport_history?: string;
   organization_level: string;
   status: string;
+  schedule?: string;
+  workload?: string;
   main_goal: string;
   goal_details?: string;
   ai_coach_config?: Record<string, any> | null;
@@ -23,6 +26,8 @@ export interface UserProfile {
   notification_enabled: boolean;
   reminder_minutes: number;
   morning_scan_enabled: boolean;
+  focus_lock_enabled: boolean;
+  blocked_categories: string[];
 }
 
 export function getDeviceId(): string {
@@ -67,8 +72,11 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     height: data.height,
     height_unit: (data.height_unit as "cm" | "ft") || "cm",
     fitness_level: data.fitness_level || "",
+    sport_history: (data as any).sport_history || "",
     organization_level: data.organization_level || "",
     status: data.status || "",
+    schedule: (data as any).schedule || data.status || "",
+    workload: (data as any).workload || data.organization_level || "",
     main_goal: data.main_goal || "",
     goal_details: data.goal_details || "",
     ai_coach_config: data.ai_coach_config as Record<string, unknown> | null,
@@ -77,6 +85,8 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     notification_enabled: data.notification_enabled,
     reminder_minutes: data.reminder_minutes,
     morning_scan_enabled: data.morning_scan_enabled,
+    focus_lock_enabled: (data as any).focus_lock_enabled || false,
+    blocked_categories: (data as any).blocked_categories || [],
   };
   cacheProfile(profile);
   return profile;
@@ -85,13 +95,32 @@ export async function fetchProfile(): Promise<UserProfile | null> {
 export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<UserProfile | null> {
   const deviceId = getDeviceId();
 
-  const dbPayload = {
-    ...profile,
+  const dbPayload: any = {
     device_id: deviceId,
-    ai_coach_config: profile.ai_coach_config as any,
+    pseudo: profile.pseudo,
+    age: profile.age,
+    weight: profile.weight,
+    weight_unit: profile.weight_unit,
+    height: profile.height,
+    height_unit: profile.height_unit,
+    fitness_level: profile.fitness_level,
+    sport_history: profile.sport_history,
+    organization_level: profile.organization_level,
+    status: profile.status,
+    schedule: profile.schedule,
+    workload: profile.workload,
+    main_goal: profile.main_goal,
+    goal_details: profile.goal_details,
+    ai_coach_config: profile.ai_coach_config,
+    onboarding_completed: profile.onboarding_completed,
+    audio_greeting_enabled: profile.audio_greeting_enabled,
+    notification_enabled: profile.notification_enabled,
+    reminder_minutes: profile.reminder_minutes,
+    morning_scan_enabled: profile.morning_scan_enabled,
+    focus_lock_enabled: profile.focus_lock_enabled,
+    blocked_categories: profile.blocked_categories,
   };
 
-  // Check if profile exists
   const { data: existing } = await supabase
     .from("user_profiles")
     .select("id")
@@ -130,7 +159,6 @@ export async function updateProfileField(field: string, value: unknown): Promise
     .eq("device_id", deviceId);
   if (error) console.error("Update field error:", error);
   
-  // Update cache
   const cached = getCachedProfile();
   if (cached) {
     (cached as any)[field] = value;
@@ -141,6 +169,5 @@ export async function updateProfileField(field: string, value: unknown): Promise
 export function isOnboardingComplete(): boolean {
   const cached = getCachedProfile();
   if (cached?.onboarding_completed) return true;
-  // Fallback to old localStorage check
   return localStorage.getItem("bioflow_onboarded") === "true";
 }

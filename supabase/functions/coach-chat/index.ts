@@ -34,14 +34,49 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Build sport context if deviceId provided
+    let personalContext = "";
     let sportContext = "";
+
     if (deviceId) {
       try {
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         const sb = createClient(supabaseUrl, serviceKey);
 
+        // Load user profile for personalization
+        const { data: profileData } = await sb
+          .from("user_profiles")
+          .select("*")
+          .eq("device_id", deviceId)
+          .maybeSingle();
+
+        if (profileData) {
+          const coachConfig = profileData.ai_coach_config as any;
+          const p = profileData as any;
+          
+          if (coachConfig) {
+            personalContext = "\n\nYour communication style for this user: " +
+              (coachConfig.coachTone || coachConfig.coachPersonality || "") +
+              "\nUser identity: " + p.pseudo +
+              ", " + p.age + " years old" +
+              (p.weight ? ", " + p.weight + (p.weight_unit || "kg") : "") +
+              (p.height ? ", " + p.height + (p.height_unit || "cm") : "") +
+              "\nSport profile: " + (p.fitness_level || "") +
+              ", history: " + (p.sport_history || "unknown") +
+              "\nDaily context: " + (p.schedule || p.status || "") +
+              ", workload: " + (p.workload || p.organization_level || "") +
+              "\nPrimary goal: " + (p.main_goal || "") +
+              (p.goal_details ? " — " + p.goal_details : "") +
+              "\nFocus areas: " + ((coachConfig.focusAreas || []).join(", ") || "general") +
+              "\nWeekly task goal: " + (coachConfig.weeklyTaskGoal || "10") +
+              "\nMotivation style: " + (coachConfig.motivationStyle || "encouraging") +
+              "\nCritical rule: Always address the user as '" + p.pseudo +
+              "'. Never use a generic greeting. " +
+              "Every recommendation must reference their specific profile data — never give generic advice.";
+          }
+        }
+
+        // Load sport context
         const fourteenDaysAgo = new Date();
         fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
@@ -55,7 +90,6 @@ serve(async (req) => {
           .limit(20);
 
         if (sportSessions && sportSessions.length > 0) {
-          // Compute aggregates
           const typeCount: Record<string, number> = {};
           sportSessions.forEach((s: any) => {
             const t = s.session_type_detected || "Unknown";
@@ -81,7 +115,6 @@ serve(async (req) => {
               (a?.weeklyProgressNote || "");
           }).join("\n");
 
-          // Check overtraining
           const sevenDaysAgo = new Date();
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
           const recentHigh = sportSessions.filter((s: any) =>
@@ -108,7 +141,7 @@ serve(async (req) => {
             "5. When user asks about sport: always check follow-up notes for recovery feedback before giving new advice.";
         }
       } catch (e) {
-        console.error("Failed to load sport context:", e);
+        console.error("Failed to load context:", e);
       }
     }
 
@@ -127,7 +160,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: BASE_SYSTEM_PROMPT + contextMessage + sportContext },
+            { role: "system", content: BASE_SYSTEM_PROMPT + personalContext + contextMessage + sportContext },
             ...messages,
           ],
           stream: true,
