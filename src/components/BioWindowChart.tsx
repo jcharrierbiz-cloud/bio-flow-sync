@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from "recharts";
 import { generateBioWindowCurve, ScanSession } from "@/lib/scanStore";
 
 interface Props {
@@ -9,15 +9,26 @@ interface Props {
 }
 
 const BioWindowChart = ({ morningScan, additionalScans }: Props) => {
-  const data = useMemo(
+  const rawData = useMemo(
     () => generateBioWindowCurve(morningScan, additionalScans),
     [morningScan, additionalScans]
   );
 
+  // Split energy into 3 stacked bands for colored zones
+  const data = useMemo(() => rawData.map((d) => ({
+    ...d,
+    // Rest zone: 0 to min(energy, 40)
+    rest: Math.min(d.energy, 40),
+    // Moderate zone: portion between 40 and 65
+    moderate: d.energy > 40 ? Math.min(d.energy, 65) - 40 : 0,
+    // Peak zone: portion above 65
+    peak: d.energy > 65 ? d.energy - 65 : 0,
+  })), [rawData]);
+
   const currentHour = new Date().getHours();
 
   // Find peak window
-  const peakHours = data
+  const peakHours = rawData
     .filter((d) => d.zone === "peak")
     .map((d) => d.hour);
   const peakLabel = peakHours.length >= 2
@@ -33,13 +44,21 @@ const BioWindowChart = ({ morningScan, additionalScans }: Props) => {
         </span>
       </div>
 
-      <div className="h-36">
+      <div className="h-44">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="bioGradPeak" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(175, 80%, 45%)" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="hsl(175, 80%, 45%)" stopOpacity={0.05} />
+                <stop offset="0%" stopColor="hsl(175, 80%, 45%)" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="hsl(175, 80%, 45%)" stopOpacity={0.1} />
+              </linearGradient>
+              <linearGradient id="bioGradModerate" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(45, 95%, 55%)" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="hsl(45, 95%, 55%)" stopOpacity={0.08} />
+              </linearGradient>
+              <linearGradient id="bioGradRest" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(15, 90%, 55%)" stopOpacity={0.45} />
+                <stop offset="100%" stopColor="hsl(15, 90%, 55%)" stopOpacity={0.05} />
               </linearGradient>
             </defs>
             <XAxis
@@ -56,20 +75,58 @@ const BioWindowChart = ({ morningScan, additionalScans }: Props) => {
               axisLine={false}
               tickLine={false}
             />
-            <ReferenceLine y={65} stroke="hsl(175, 80%, 45%)" strokeDasharray="3 3" strokeOpacity={0.4} />
-            <ReferenceLine y={40} stroke="hsl(45, 90%, 55%)" strokeDasharray="3 3" strokeOpacity={0.3} />
+            {/* Zone background bands */}
+            <ReferenceArea y1={65} y2={100} fill="hsl(175, 80%, 45%)" fillOpacity={0.04} />
+            <ReferenceArea y1={40} y2={65} fill="hsl(45, 95%, 55%)" fillOpacity={0.04} />
+            <ReferenceArea y1={0} y2={40} fill="hsl(15, 90%, 55%)" fillOpacity={0.04} />
+            
+            <ReferenceLine y={65} stroke="hsl(175, 80%, 45%)" strokeDasharray="3 3" strokeOpacity={0.5} label={{ value: "Peak", position: "right", fontSize: 8, fill: "hsl(175, 80%, 45%)" }} />
+            <ReferenceLine y={40} stroke="hsl(45, 95%, 55%)" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "Léger", position: "right", fontSize: 8, fill: "hsl(45, 95%, 55%)" }} />
             <ReferenceLine
               x={`${currentHour.toString().padStart(2, "0")}:00`}
               stroke="hsl(var(--foreground))"
               strokeDasharray="2 2"
-              strokeOpacity={0.3}
+              strokeOpacity={0.4}
+              label={{ value: "Now", position: "top", fontSize: 8, fill: "hsl(var(--foreground))" }}
             />
+            {/* Stacked areas: rest (bottom) → moderate → peak (top) */}
+            <Area
+              type="monotone"
+              dataKey="rest"
+              stackId="1"
+              stroke="hsl(15, 90%, 55%)"
+              strokeWidth={0}
+              fill="url(#bioGradRest)"
+              animationDuration={800}
+              dot={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="moderate"
+              stackId="1"
+              stroke="hsl(45, 95%, 55%)"
+              strokeWidth={0}
+              fill="url(#bioGradModerate)"
+              animationDuration={800}
+              dot={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="peak"
+              stackId="1"
+              stroke="hsl(175, 80%, 45%)"
+              strokeWidth={0}
+              fill="url(#bioGradPeak)"
+              animationDuration={800}
+              dot={false}
+            />
+            {/* Outline on top of the full energy curve */}
             <Area
               type="monotone"
               dataKey="energy"
               stroke="hsl(175, 80%, 45%)"
-              strokeWidth={2}
-              fill="url(#bioGradPeak)"
+              strokeWidth={1.5}
+              fill="none"
               animationDuration={800}
               dot={false}
               activeDot={{ r: 4, fill: "hsl(175, 80%, 45%)" }}
