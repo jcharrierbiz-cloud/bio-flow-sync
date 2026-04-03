@@ -277,7 +277,7 @@ const Coach = () => {
           </div>
 
           {/* Input */}
-          <div className="px-5 pb-5 pt-2">
+          <div className="px-5 pb-24 pt-2">
             <form
               onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
               className="flex items-center gap-2 glass-card px-4 py-2"
