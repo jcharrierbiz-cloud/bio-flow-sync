@@ -5,14 +5,15 @@ import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import FocusStats from "@/components/FocusStats";
 import { useScanStore } from "@/lib/scanStore";
+import { useSleepStore } from "@/lib/sleepStore";
 
 const Health = () => {
-  const [sleep, setSleep] = useState(6.2);
   const [scanMode, setScanMode] = useState<"idle" | "choosing" | "scanning">("idle");
   const hr = useHeartRate();
   const saveScan = useScanStore((s) => s.saveScan);
+  const { totalHours: sleep, phases, quality, setTotalHours: setSleep } = useSleepStore();
 
-  const sleepQuality = sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique";
+  const sleepQuality = quality ?? (sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique");
   const sleepColor = sleep >= 7.5 ? "text-energy" : sleep >= 6 ? "text-warning" : "text-intensity";
 
   const handleStartScan = () => setScanMode("choosing");
