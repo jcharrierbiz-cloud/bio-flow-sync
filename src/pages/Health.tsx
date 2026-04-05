@@ -142,7 +142,7 @@ const Health = () => {
           <span className={`text-xs font-medium ${sleepColor}`}>{sleepQuality}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="mono text-3xl font-bold text-foreground">{sleep.toFixed(1)}<span className="text-sm text-muted-foreground font-normal ml-1">h</span></span>
+          <span className="mono text-3xl font-bold text-foreground">{Math.floor(sleep)}<span className="text-sm text-muted-foreground font-normal">h</span>{String(Math.round((sleep % 1) * 60)).padStart(2, "0")}<span className="text-sm text-muted-foreground font-normal">min</span></span>
           <div className="flex-1">
             <input
               type="range" min="3" max="10" step="0.1" value={sleep}
