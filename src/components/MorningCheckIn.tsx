@@ -25,10 +25,14 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   const [selectedSleep, setSelectedSleep] = useState<number | null>(null);
   const hr = useHeartRate();
   const saveScan = useScanStore((s) => s.saveScan);
+  const setQualityFromCheckIn = useSleepStore((s) => s.setQualityFromCheckIn);
 
   if (!open) return null;
 
-  const handleSleepSelect = (index: number) => setSelectedSleep(index);
+  const handleSleepSelect = (index: number) => {
+    setSelectedSleep(index);
+    setQualityFromCheckIn(index);
+  };
 
   const handleNextToScan = () => {
     if (selectedSleep === null) return;
