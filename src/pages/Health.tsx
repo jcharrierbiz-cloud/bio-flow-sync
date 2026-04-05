@@ -5,14 +5,15 @@ import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import FocusStats from "@/components/FocusStats";
 import { useScanStore } from "@/lib/scanStore";
+import { useSleepStore } from "@/lib/sleepStore";
 
 const Health = () => {
-  const [sleep, setSleep] = useState(6.2);
   const [scanMode, setScanMode] = useState<"idle" | "choosing" | "scanning">("idle");
   const hr = useHeartRate();
   const saveScan = useScanStore((s) => s.saveScan);
+  const { totalHours: sleep, phases, quality, setTotalHours: setSleep } = useSleepStore();
 
-  const sleepQuality = sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique";
+  const sleepQuality = quality ?? (sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique");
   const sleepColor = sleep >= 7.5 ? "text-energy" : sleep >= 6 ? "text-warning" : "text-intensity";
 
   const handleStartScan = () => setScanMode("choosing");
@@ -153,12 +154,16 @@ const Health = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          {["Profond", "Léger", "REM"].map((phase, i) => (
-            <div key={phase} className="flex-1 glass-card p-2 text-center">
-              <span className="mono text-sm font-semibold text-foreground block">
-                {i === 0 ? "1.8h" : i === 1 ? "2.9h" : "1.5h"}
+          {([
+            { label: "Profond", value: phases.deep, color: "text-ai-violet" },
+            { label: "Léger", value: phases.light, color: "text-warning" },
+            { label: "REM", value: phases.rem, color: "text-energy" },
+          ]).map((phase) => (
+            <div key={phase.label} className="flex-1 glass-card p-2 text-center">
+              <span className={`mono text-sm font-semibold ${phase.color} block`}>
+                {phase.value.toFixed(1)}h
               </span>
-              <span className="text-[10px] text-muted-foreground">{phase}</span>
+              <span className="text-[10px] text-muted-foreground">{phase.label}</span>
             </div>
           ))}
         </div>

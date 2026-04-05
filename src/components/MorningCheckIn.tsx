@@ -5,6 +5,7 @@ import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import { useScanStore } from "@/lib/scanStore";
+import { useSleepStore } from "@/lib/sleepStore";
 
 interface Props {
   open: boolean;
@@ -24,10 +25,14 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   const [selectedSleep, setSelectedSleep] = useState<number | null>(null);
   const hr = useHeartRate();
   const saveScan = useScanStore((s) => s.saveScan);
+  const setQualityFromCheckIn = useSleepStore((s) => s.setQualityFromCheckIn);
 
   if (!open) return null;
 
-  const handleSleepSelect = (index: number) => setSelectedSleep(index);
+  const handleSleepSelect = (index: number) => {
+    setSelectedSleep(index);
+    setQualityFromCheckIn(index);
+  };
 
   const handleNextToScan = () => {
     if (selectedSleep === null) return;
