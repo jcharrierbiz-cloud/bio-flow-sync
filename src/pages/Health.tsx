@@ -142,7 +142,11 @@ const Health = () => {
           <span className={`text-xs font-medium ${sleepColor}`}>{sleepQuality}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="mono text-3xl font-bold text-foreground">{Math.floor(sleep)}<span className="text-sm text-muted-foreground font-normal">h</span>{String(Math.round((sleep % 1) * 60)).padStart(2, "0")}<span className="text-sm text-muted-foreground font-normal">min</span></span>
+          <div className="flex items-baseline gap-0.5">
+            <span className="mono text-3xl font-bold text-foreground">{Math.floor(sleep)}</span>
+            <span className="text-base text-muted-foreground font-medium">h</span>
+            <span className="mono text-3xl font-bold text-foreground ml-0.5">{String(Math.round((sleep % 1) * 60)).padStart(2, "0")}</span>
+          </div>
           <div className="flex-1">
             <input
               type="range" min="3" max="10" step="0.1" value={sleep}
@@ -155,17 +159,23 @@ const Health = () => {
         </div>
         <div className="flex gap-2">
           {([
-            { label: "Profond", value: phases.deep, color: "text-ai-violet" },
-            { label: "Léger", value: phases.light, color: "text-warning" },
-            { label: "REM", value: phases.rem, color: "text-energy" },
-          ]).map((phase) => (
-            <div key={phase.label} className="flex-1 glass-card p-2 text-center">
-              <span className={`mono text-sm font-semibold ${phase.color} block`}>
-                {phase.value.toFixed(1)}h
-              </span>
-              <span className="text-[10px] text-muted-foreground">{phase.label}</span>
-            </div>
-          ))}
+            { label: "Profond", value: phases.deep, color: "text-ai-violet", icon: "🌊" },
+            { label: "Léger", value: phases.light, color: "text-warning", icon: "💤" },
+            { label: "REM", value: phases.rem, color: "text-energy", icon: "👁" },
+          ]).map((phase) => {
+            const h = Math.floor(phase.value);
+            const m = Math.round((phase.value % 1) * 60);
+            return (
+              <div key={phase.label} className="flex-1 glass-card p-2.5 text-center space-y-0.5">
+                <span className="text-[10px]">{phase.icon}</span>
+                <div className={`mono text-sm font-semibold ${phase.color}`}>
+                  {h}<span className="text-[10px] font-normal opacity-60">h</span>
+                  {String(m).padStart(2, "0")}
+                </div>
+                <span className="text-[10px] text-muted-foreground block">{phase.label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
