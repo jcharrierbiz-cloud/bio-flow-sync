@@ -154,12 +154,16 @@ const Health = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          {["Profond", "Léger", "REM"].map((phase, i) => (
-            <div key={phase} className="flex-1 glass-card p-2 text-center">
-              <span className="mono text-sm font-semibold text-foreground block">
-                {i === 0 ? "1.8h" : i === 1 ? "2.9h" : "1.5h"}
+          {([
+            { label: "Profond", value: phases.deep, color: "text-ai-violet" },
+            { label: "Léger", value: phases.light, color: "text-warning" },
+            { label: "REM", value: phases.rem, color: "text-energy" },
+          ]).map((phase) => (
+            <div key={phase.label} className="flex-1 glass-card p-2 text-center">
+              <span className={`mono text-sm font-semibold ${phase.color} block`}>
+                {phase.value.toFixed(1)}h
               </span>
-              <span className="text-[10px] text-muted-foreground">{phase}</span>
+              <span className="text-[10px] text-muted-foreground">{phase.label}</span>
             </div>
           ))}
         </div>

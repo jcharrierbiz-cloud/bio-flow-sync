@@ -5,6 +5,7 @@ import { useHeartRate } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import { useScanStore } from "@/lib/scanStore";
+import { useSleepStore } from "@/lib/sleepStore";
 
 interface Props {
   open: boolean;
