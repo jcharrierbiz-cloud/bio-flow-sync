@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.analyze-profile]
 verify_jwt = false
+
+[functions.analyze-sport]
+verify_jwt = false
+
+[functions.weekly-sport-synthesis]
+verify_jwt = false
+
+[functions.tts-greeting]
+verify_jwt = false
