@@ -3,8 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // @ts-ignore
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
@@ -14,6 +15,7 @@ import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
 import Health from "./pages/Health";
 import Coach from "./pages/Coach";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import {
   hasDoneMorningScanToday,
@@ -25,7 +27,7 @@ import { useAgendaStore } from "@/lib/agendaStore";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+const ProtectedApp = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMorningCheckIn, setShowMorningCheckIn] = useState(false);
   const [ready, setReady] = useState(false);
@@ -67,24 +69,53 @@ const AppContent = () => {
 
   return (
     <>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/agenda" element={<Agenda />} />
-            <Route path="/log" element={<Log />} />
-            <Route path="/health" element={<Health />} />
-            <Route path="/coach" element={<Coach />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNav />
-        </div>
-      </BrowserRouter>
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/log" element={<Log />} />
+          <Route path="/health" element={<Health />} />
+          <Route path="/coach" element={<Coach />} />
+          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <BottomNav />
+      </div>
       <OnboardingFlow open={showOnboarding} onClose={handleOnboardingClose} />
       <MorningCheckIn open={showMorningCheckIn} onClose={() => setShowMorningCheckIn(false)} />
       <FocusLock />
+    </>
+  );
+};
+
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-[hsl(var(--energy)/0.3)] border-t-[hsl(var(--energy))] rounded-full animate-spin" />
+          <p className="text-muted-foreground text-sm">Chargement…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        {user ? (
+          <ProtectedApp />
+        ) : (
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="*" element={<Navigate to="/auth" replace />} />
+          </Routes>
+        )}
+      </BrowserRouter>
     </>
   );
 };
