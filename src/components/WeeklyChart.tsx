@@ -1,9 +1,12 @@
 // @ts-nocheck
-import { useWeeklyStore, getWeekDays, DayLog } from "@/lib/weeklyStore";
+import { useWeeklyStore, getWeekDays, computeDayPct, DayLog } from "@/lib/weeklyStore";
 import { useTodoStore } from "@/lib/todoStore";
 import { useAgendaStore } from "@/lib/agendaStore";
-import { CheckCircle2, Dumbbell, ListChecks } from "lucide-react";
-import { useEffect } from "react";
+import { useScanStore } from "@/lib/scanStore";
+import { useSleepStore } from "@/lib/sleepStore";
+import { CheckCircle2, Dumbbell, ListChecks, Moon, ScanLine, Apple } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const dayLabels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -11,6 +14,28 @@ const WeeklyChart = () => {
   const { days, logDay } = useWeeklyStore();
   const todos = useTodoStore((s) => s.todos);
   const tasks = useAgendaStore((s) => s.tasks);
+  const morningScan = useScanStore((s) => s.morningScan);
+  const additionalScans = useScanStore((s) => s.additionalScans);
+  const sleepQuality = useSleepStore((s) => s.quality);
+  const sleepHours = useSleepStore((s) => s.totalHours);
+  const [nutritionChecked, setNutritionChecked] = useState(false);
+
+  // Check if nutrition was logged today
+  useEffect(() => {
+    const checkNutrition = async () => {
+      const deviceId = localStorage.getItem("bioflow_device_id");
+      if (!deviceId) return;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("daily_nutrition_logs")
+        .select("checked")
+        .eq("device_id", deviceId)
+        .eq("log_date", todayStr)
+        .eq("checked", true);
+      setNutritionChecked((data?.length ?? 0) > 0);
+    };
+    checkNutrition();
+  }, []);
 
   // Auto-log today
   useEffect(() => {
@@ -20,6 +45,9 @@ const WeeklyChart = () => {
       (t) => t.createdAt.slice(0, 10) === todayStr
     );
 
+    const scanDone = !!(morningScan || additionalScans.length > 0);
+    const sleepLogged = !!(sleepQuality || sleepHours !== 6.2);
+
     logDay({
       date: todayStr,
       agendaDone: 0,
@@ -27,8 +55,11 @@ const WeeklyChart = () => {
       todosDone: todayTodos.filter((t) => t.done).length,
       todosTotal: todayTodos.length,
       sportDone: sportTasks.length > 0,
+      sleepLogged,
+      scanDone,
+      nutritionDone: nutritionChecked,
     });
-  }, [todos, tasks]);
+  }, [todos, tasks, morningScan, additionalScans, sleepQuality, sleepHours, nutritionChecked]);
 
   const weekDays = getWeekDays();
   const dayMap = new Map(days.map((d) => [d.date, d]));
@@ -36,11 +67,12 @@ const WeeklyChart = () => {
 
   // Stats
   const completedDays = weekDays.filter((d) => {
-    const log = dayMap.get(d);
-    return log && (log.todosDone > 0 || log.sportDone);
+    const pct = computeDayPct(dayMap.get(d));
+    return pct > 0;
   }).length;
 
   const sportDays = weekDays.filter((d) => dayMap.get(d)?.sportDone).length;
+  const scanDays = weekDays.filter((d) => dayMap.get(d)?.scanDone).length;
 
   return (
     <div className="glass-card p-5 space-y-4">
@@ -61,10 +93,7 @@ const WeeklyChart = () => {
           const label = dayLabels[d.getDay()];
           const isToday = dateStr === todayStr;
 
-          const total =
-            (log?.agendaTotal || 0) + (log?.todosTotal || 0) || 1;
-          const done = (log?.agendaDone || 0) + (log?.todosDone || 0);
-          const pct = Math.round((done / total) * 100);
+          const pct = computeDayPct(log);
           const barH = Math.max(8, pct);
 
           return (
@@ -82,11 +111,12 @@ const WeeklyChart = () => {
                     height: `${barH}px`,
                     width: "100%",
                     maxWidth: "28px",
-                    background: log?.sportDone
-                      ? `linear-gradient(to top, hsl(var(--energy)), hsl(var(--ai-violet)))`
-                      : pct > 0
-                      ? `hsl(var(--energy) / 0.6)`
-                      : `hsl(var(--muted))`,
+                    background:
+                      pct >= 80
+                        ? `linear-gradient(to top, hsl(var(--energy)), hsl(var(--ai-violet)))`
+                        : pct > 0
+                        ? `hsl(var(--energy) / 0.6)`
+                        : `hsl(var(--muted))`,
                   }}
                 />
               </div>
@@ -103,15 +133,18 @@ const WeeklyChart = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1">
           <ListChecks className="w-3 h-3 text-energy" /> Tâches
         </span>
         <span className="flex items-center gap-1">
-          <Dumbbell className="w-3 h-3 text-ai-violet" /> Sport
+          <Moon className="w-3 h-3 text-ai-violet" /> Sommeil
         </span>
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="w-3 h-3 text-energy" /> {sportDays} séances
+          <ScanLine className="w-3 h-3 text-energy" /> {scanDays} scans
+        </span>
+        <span className="flex items-center gap-1">
+          <Dumbbell className="w-3 h-3 text-ai-violet" /> {sportDays} sport
         </span>
       </div>
     </div>
