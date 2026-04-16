@@ -89,32 +89,12 @@ const ProtectedApp = () => {
 };
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-[hsl(var(--energy)/0.3)] border-t-[hsl(var(--energy))] rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm">Chargement…</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        {user ? (
-          <ProtectedApp />
-        ) : (
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="*" element={<Navigate to="/auth" replace />} />
-          </Routes>
-        )}
+        <ProtectedApp />
       </BrowserRouter>
     </>
   );
