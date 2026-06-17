@@ -155,7 +155,7 @@ const Log = () => {
           <h2 className="text-sm font-semibold text-foreground">Repas</h2>
         </div>
 
-        {!mealLogged ? (
+        {!mealPhoto && !analyzing ? (
           <button
             onClick={handleTakePhoto}
             className="w-full py-10 rounded-xl border-2 border-dashed border-glass-border hover:border-energy/30 transition-colors flex flex-col items-center gap-3 group"
@@ -165,35 +165,191 @@ const Log = () => {
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-foreground">Prendre une photo du plat</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Analyse IA automatique</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Reconnaissance IA · 500 000+ plats</p>
             </div>
           </button>
         ) : (
           <div className="space-y-3">
-            {mealPhoto ? (
-              <img src={mealPhoto} alt="Repas" className="w-full h-36 rounded-xl object-cover" />
-            ) : (
-              <div className="w-full h-36 rounded-xl bg-secondary flex items-center justify-center">
-                <span className="text-muted-foreground text-sm">🍝 Pâtes Bolognaise</span>
+            {mealPhoto && (
+              <div className="relative">
+                <img src={mealPhoto} alt="Repas" className="w-full h-40 rounded-xl object-cover" />
+                <button
+                  onClick={resetMeal}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white hover:bg-black/80"
+                  aria-label="Réinitialiser"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                {analyzing && (
+                  <div className="absolute inset-0 rounded-xl bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="w-6 h-6 text-energy animate-spin" />
+                    <span className="text-xs text-foreground font-medium">Analyse experte en cours…</span>
+                  </div>
+                )}
               </div>
             )}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-intensity/10 text-intensity border border-intensity/15">
-                Repas Lourd
-              </span>
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-warning/10 text-warning border border-warning/15">
-                Digestion lente
-              </span>
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-ai-violet/10 text-ai-violet border border-ai-violet/15 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Analyse IA
-              </span>
-            </div>
-            <div className="glass-card p-3 border-intensity/10">
-              <p className="text-xs text-secondary-foreground leading-relaxed">
-                <Flame className="w-3 h-3 text-intensity inline mr-1" />
-                Impact énergie : <span className="text-intensity font-medium">-20%</span> pour les 2 prochaines heures. Évite les tâches "High Energy" entre 13h et 15h.
-              </p>
-            </div>
+
+            {mealAnalysis && (
+              <div className="space-y-3 animate-fade-in">
+                {/* Title */}
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-foreground leading-tight">{mealAnalysis.dishName}</h3>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {mealAnalysis.cuisine} · Confiance {mealAnalysis.confidence}%
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-ai-violet/15 text-ai-violet border border-ai-violet/20 flex items-center gap-1 shrink-0">
+                      <Sparkles className="w-3 h-3" /> IA
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1.5">
+                  {mealAnalysis.tags?.slice(0, 4).map((t, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-energy/10 text-energy border border-energy/20">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Macros grid */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "Kcal", value: mealAnalysis.calories, unit: "" },
+                    { label: "Prot", value: mealAnalysis.macros?.protein, unit: "g" },
+                    { label: "Gluc", value: mealAnalysis.macros?.carbs, unit: "g" },
+                    { label: "Lip", value: mealAnalysis.macros?.fat, unit: "g" },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-secondary/60 rounded-lg p-2 text-center">
+                      <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{m.label}</p>
+                      <p className="text-sm font-bold mono text-foreground">{m.value ?? "—"}{m.unit}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Impact summary */}
+                <div className="glass-card p-3 space-y-2 border-energy/10">
+                  <div className="grid grid-cols-2 gap-3 text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <Zap className={`w-3.5 h-3.5 ${mealAnalysis.energyImpactPct < 0 ? "text-intensity" : "text-energy"}`} />
+                      <span className="text-muted-foreground">Énergie:</span>
+                      <span className={`font-semibold ${mealAnalysis.energyImpactPct < 0 ? "text-intensity" : "text-energy"}`}>
+                        {mealAnalysis.energyImpactPct > 0 ? "+" : ""}{mealAnalysis.energyImpactPct}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-ai-violet" />
+                      <span className="text-muted-foreground">Digestion:</span>
+                      <span className="font-semibold text-foreground">{mealAnalysis.digestionHours}h</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-warning" />
+                      <span className="text-muted-foreground">IG:</span>
+                      <span className="font-semibold text-foreground">{mealAnalysis.glycemicLoad}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Flame className="w-3.5 h-3.5 text-intensity" />
+                      <span className="text-muted-foreground">Charge:</span>
+                      <span className="font-semibold text-foreground">{mealAnalysis.digestionWeight}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed pt-1 border-t border-border">
+                    {mealAnalysis.expertNote}
+                  </p>
+                </div>
+
+                {/* Expandable details */}
+                <button
+                  onClick={() => setDetailsOpen(!detailsOpen)}
+                  className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                >
+                  <span>Détails de l'analyse</span>
+                  {detailsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+
+                {detailsOpen && (
+                  <div className="space-y-3 animate-fade-in">
+                    {/* Ingredients */}
+                    {mealAnalysis.ingredients?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Ingrédients estimés</p>
+                        <div className="space-y-1">
+                          {mealAnalysis.ingredients.map((ing, i) => (
+                            <div key={i} className="flex justify-between text-[11px]">
+                              <span className="text-foreground">{ing.name}</span>
+                              <span className="text-muted-foreground mono">{ing.qty}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quality bar */}
+                    <div>
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className="text-muted-foreground uppercase tracking-wider">Qualité nutritionnelle</span>
+                        <span className="mono text-foreground font-semibold">{mealAnalysis.nutritionalQuality}/100</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${mealAnalysis.nutritionalQuality}%`,
+                            background:
+                              mealAnalysis.nutritionalQuality >= 70
+                                ? "hsl(var(--energy))"
+                                : mealAnalysis.nutritionalQuality >= 40
+                                ? "hsl(var(--warning))"
+                                : "hsl(var(--intensity))",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Strengths / Weaknesses */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-energy/5 border border-energy/15 rounded-lg p-2">
+                        <p className="text-[10px] uppercase tracking-wider text-energy mb-1">Atouts</p>
+                        <ul className="space-y-0.5">
+                          {mealAnalysis.strengths?.map((s, i) => (
+                            <li key={i} className="text-[10px] text-foreground">• {s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="bg-intensity/5 border border-intensity/15 rounded-lg p-2">
+                        <p className="text-[10px] uppercase tracking-wider text-intensity mb-1">Attentions</p>
+                        <ul className="space-y-0.5">
+                          {mealAnalysis.weaknesses?.map((w, i) => (
+                            <li key={i} className="text-[10px] text-foreground">• {w}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Circadian + advice */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px] bg-secondary/40 rounded-lg p-2">
+                        <span className="text-muted-foreground">Timing circadien</span>
+                        <span className="text-foreground font-medium">
+                          {mealAnalysis.circadianFit} · idéal {mealAnalysis.bestTimeWindow}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 items-start text-[11px] text-foreground">
+                        <Droplet className="w-3.5 h-3.5 text-energy shrink-0 mt-0.5" />
+                        <span>{mealAnalysis.hydrationTip}</span>
+                      </div>
+                      <div className="flex gap-2 items-start text-[11px] text-foreground">
+                        <Utensils className="w-3.5 h-3.5 text-ai-violet shrink-0 mt-0.5" />
+                        <span>{mealAnalysis.nextMealAdvice}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
