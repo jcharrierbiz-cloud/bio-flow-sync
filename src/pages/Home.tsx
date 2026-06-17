@@ -10,15 +10,17 @@ import ScanCards from "@/components/ScanCards";
 import AnimatedScore from "@/components/AnimatedScore";
 import WeeklySportSummary from "@/components/WeeklySportSummary";
 import ProfileDrawer from "@/components/ProfileDrawer";
-import { Bot, TrendingUp, Moon, Sparkles, ArrowRight } from "lucide-react";
+import { Bot, TrendingUp, Moon, Sparkles, ArrowRight, Activity, Utensils, Dumbbell, ScanLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useScanStore } from "@/lib/scanStore";
+import { useEnergyScore } from "@/hooks/useEnergyScore";
 
 const Home = () => {
   const navigate = useNavigate();
   const { dateLabel, greeting, emoji, userName, shouldPlayAudio, markPlayed } = useGreeting();
-  const { morningScan, additionalScans, energyScore, loadTodayScans } = useScanStore();
+  const { morningScan, additionalScans, loadTodayScans } = useScanStore();
+  const energy = useEnergyScore();
 
   useEffect(() => {
     loadTodayScans();
