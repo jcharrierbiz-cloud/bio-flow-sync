@@ -1,6 +1,8 @@
-import { Sparkles, Zap, BatteryLow, Clock, Flag } from "lucide-react";
+import { useState } from "react";
+import { Sparkles, Zap, BatteryLow, Clock, Flag, CalendarDays, List } from "lucide-react";
 import { useAgendaStore, defaultTasks } from "@/lib/agendaStore";
 import AgendaTodoList from "@/components/AgendaTodoList";
+import AgendaCalendar from "@/components/AgendaCalendar";
 
 const optimizedTasks = [
   { id: 1, time: "09:00", duration: "1h30", title: "Deep Work — Maquettes", priority: "high" as const, energy: "high" as const, category: "Travail" },
@@ -20,6 +22,7 @@ const priorityColors: Record<string, string> = {
 
 const Agenda = () => {
   const { tasks, optimized, setTasks, setOptimized } = useAgendaStore();
+  const [view, setView] = useState<"calendar" | "list">("calendar");
 
   const handleOptimize = () => {
     if (optimized) {
@@ -51,6 +54,32 @@ const Agenda = () => {
         </button>
       </div>
 
+      {/* View toggle */}
+      <div className="flex gap-1 p-1 rounded-xl bg-muted/30 border border-glass-border">
+        <button
+          onClick={() => setView("calendar")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            view === "calendar"
+              ? "bg-energy/15 text-energy"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <CalendarDays className="w-3.5 h-3.5" />
+          Calendrier
+        </button>
+        <button
+          onClick={() => setView("list")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            view === "list"
+              ? "bg-energy/15 text-energy"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <List className="w-3.5 h-3.5" />
+          Liste
+        </button>
+      </div>
+
       {optimized && (
         <div className="glass-card p-3 border-ai-violet/20 glow-violet">
           <p className="text-xs text-secondary-foreground">
@@ -60,38 +89,41 @@ const Agenda = () => {
         </div>
       )}
 
-      {/* To-Do List (replaces weekly chart) */}
-      <AgendaTodoList />
-
-      {/* Agenda tasks */}
-      <div className="space-y-3">
-        {tasks.map((task) => (
-          <div key={task.id} className="glass-card p-4 flex gap-4 items-start">
-            <div className="flex flex-col items-center min-w-[44px]">
-              <span className="mono text-sm font-medium text-foreground">{task.time}</span>
-              <span className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
-                <Clock className="w-2.5 h-2.5" /> {task.duration}
-              </span>
-            </div>
-            <div className="w-px h-full min-h-[40px] bg-glass-border self-stretch" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-foreground truncate">{task.title}</h3>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                  {task.category}
-                </span>
-                <span className={`text-[10px] flex items-center gap-0.5 ${priorityColors[task.priority]}`}>
-                  <Flag className="w-2.5 h-2.5" /> {task.priority === "high" ? "Haute" : task.priority === "medium" ? "Moyenne" : "Basse"}
-                </span>
-                <span className={`text-[10px] flex items-center gap-0.5 ${task.energy === "high" ? "text-intensity" : "text-energy"}`}>
-                  {task.energy === "high" ? <Zap className="w-2.5 h-2.5" /> : <BatteryLow className="w-2.5 h-2.5" />}
-                  {task.energy === "high" ? "High Energy" : "Low Energy"}
-                </span>
+      {view === "calendar" ? (
+        <AgendaCalendar />
+      ) : (
+        <>
+          <AgendaTodoList />
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              <div key={task.id} className="glass-card p-4 flex gap-4 items-start">
+                <div className="flex flex-col items-center min-w-[44px]">
+                  <span className="mono text-sm font-medium text-foreground">{task.time}</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
+                    <Clock className="w-2.5 h-2.5" /> {task.duration}
+                  </span>
+                </div>
+                <div className="w-px h-full min-h-[40px] bg-glass-border self-stretch" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-foreground truncate">{task.title}</h3>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                      {task.category}
+                    </span>
+                    <span className={`text-[10px] flex items-center gap-0.5 ${priorityColors[task.priority]}`}>
+                      <Flag className="w-2.5 h-2.5" /> {task.priority === "high" ? "Haute" : task.priority === "medium" ? "Moyenne" : "Basse"}
+                    </span>
+                    <span className={`text-[10px] flex items-center gap-0.5 ${task.energy === "high" ? "text-intensity" : "text-energy"}`}>
+                      {task.energy === "high" ? <Zap className="w-2.5 h-2.5" /> : <BatteryLow className="w-2.5 h-2.5" />}
+                      {task.energy === "high" ? "High Energy" : "Low Energy"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 };
