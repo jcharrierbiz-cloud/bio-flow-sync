@@ -14,3 +14,5 @@ verify_jwt = false
 
 [functions.tts-greeting]
 verify_jwt = false
+[functions.analyze-meal]
+verify_jwt = false
