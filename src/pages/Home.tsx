@@ -80,21 +80,45 @@ const Home = () => {
       {/* Energy Score */}
       <div className="glass-card p-6 flex flex-col items-center glow-energy">
         <p className="text-xs text-muted-foreground font-medium tracking-widest uppercase mb-4">Score d'énergie</p>
-        <EnergyRing score={energyScore || 0} />
-        <div className="flex items-center gap-4 mt-5 text-xs">
-          {morningScan ? (
-            <>
-              <div className="flex items-center gap-1.5 text-energy">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>Basé sur {1 + additionalScans.length} scan{additionalScans.length > 0 ? "s" : ""}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Moon className="w-3.5 h-3.5" />
-                <span>HRV: {Math.round(morningScan.hrv_rmssd)} ms</span>
-              </div>
-            </>
+        <EnergyRing score={energy.total || 0} />
+
+        {/* Pillar breakdown */}
+        <div className="grid grid-cols-4 gap-2 mt-5 w-full">
+          {[
+            { label: "Scan", icon: ScanLine, value: energy.scan },
+            { label: "Sommeil", icon: Moon, value: energy.sleep },
+            { label: "Nutrition", icon: Utensils, value: energy.nutrition },
+            { label: "Effort", icon: Dumbbell, value: energy.effort },
+          ].map(({ label, icon: Icon, value }) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center gap-1 rounded-lg p-2 border ${
+                value != null ? "border-energy/30 bg-energy/5" : "border-border bg-muted/20 opacity-50"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 text-energy" />
+              <span className="text-[10px] text-muted-foreground">{label}</span>
+              <span className="text-xs font-bold mono text-foreground">
+                {value != null ? value : "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 mt-4 text-xs">
+          {energy.contributors > 0 ? (
+            <div className="flex items-center gap-1.5 text-energy">
+              <Activity className="w-3.5 h-3.5" />
+              <span>{energy.contributors} source{energy.contributors > 1 ? "s" : ""} active{energy.contributors > 1 ? "s" : ""}</span>
+            </div>
           ) : (
             <span className="text-muted-foreground">Fais ton scan matinal pour calibrer</span>
+          )}
+          {morningScan && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>HRV: {Math.round(morningScan.hrv_rmssd)} ms</span>
+            </div>
           )}
         </div>
       </div>
