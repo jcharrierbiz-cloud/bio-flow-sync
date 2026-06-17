@@ -1,10 +1,13 @@
-import { Camera, Utensils, Dumbbell, Flame, Sparkles } from "lucide-react";
+import { Camera, Utensils, Dumbbell, Flame, Sparkles, Loader2, Zap, Clock, Activity, Droplet, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { takePhoto } from "@/lib/camera";
 import { toast } from "sonner";
 import { useEffortStore, EffortSession, getSportIcon } from "@/lib/effortStore";
 import SportJournal from "@/components/SportJournal";
 import SportAnalysisCard from "@/components/SportAnalysisCard";
+import { supabase } from "@/integrations/supabase/client";
+import { getCachedProfile } from "@/lib/profileStore";
+import { useScanStore } from "@/lib/scanStore";
 import {
   Dialog,
   DialogContent,
@@ -18,31 +21,113 @@ const intensityConfig = {
   intense: { label: "Intense", color: "text-intensity", bg: "bg-intensity/15 border-intensity/20", dbValue: "Intense" },
 };
 
+interface MealAnalysis {
+  dishName: string;
+  cuisine: string;
+  confidence: number;
+  ingredients: { name: string; qty: string }[];
+  portion: string;
+  calories: number;
+  macros: { protein: number; carbs: number; fat: number; fiber: number };
+  glycemicLoad: string;
+  digestionWeight: string;
+  digestionHours: number;
+  energyImpactPct: number;
+  impactDurationHours: number;
+  nutritionalQuality: number;
+  strengths: string[];
+  weaknesses: string[];
+  circadianFit: string;
+  bestTimeWindow: string;
+  expertNote: string;
+  nextMealAdvice: string;
+  hydrationTip: string;
+  tags: string[];
+}
+
 const Log = () => {
-  const [mealLogged, setMealLogged] = useState(false);
   const [mealPhoto, setMealPhoto] = useState<string | null>(null);
+  const [mealAnalysis, setMealAnalysis] = useState<MealAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [sportDuration, setSportDuration] = useState(30);
   const [sportIntensity, setSportIntensity] = useState<"light" | "moderate" | "intense">("moderate");
   const [currentSession, setCurrentSession] = useState<EffortSession | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<EffortSession | null>(null);
 
   const { sessions, loading, loadSessions, saveSession, addFollowupNote } = useEffortStore();
+  const energyScore = useScanStore((s) => s.energyScore);
 
   useEffect(() => {
     loadSessions();
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = localStorage.getItem("bioflow_meal_" + today);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setMealPhoto(parsed.photo || null);
+        setMealAnalysis(parsed.analysis || null);
+      }
+    } catch {}
   }, []);
+
+  const persistMeal = (photo: string | null, analysis: MealAnalysis | null) => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (analysis) {
+      localStorage.setItem("bioflow_meal_" + today, JSON.stringify({ photo, analysis }));
+    } else {
+      localStorage.removeItem("bioflow_meal_" + today);
+    }
+  };
 
   const handleTakePhoto = async () => {
     try {
       const photo = await takePhoto();
-      if (photo) {
-        setMealPhoto(photo);
-        setMealLogged(true);
-        toast.success("Photo analysée par l'IA !");
+      if (!photo) return;
+      setMealPhoto(photo);
+      setMealAnalysis(null);
+      setAnalyzing(true);
+      toast.loading("Analyse experte du plat en cours…", { id: "meal-analysis" });
+
+      const profile = getCachedProfile();
+      const { data, error } = await supabase.functions.invoke("analyze-meal", {
+        body: {
+          imageBase64: photo,
+          profile,
+          energyScore,
+          hourOfDay: new Date().getHours(),
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error === "no_food_detected") {
+        toast.error("Aucune nourriture détectée sur la photo", { id: "meal-analysis" });
+        setMealPhoto(null);
+        setAnalyzing(false);
+        return;
       }
-    } catch (e) {
-      toast.error("Impossible d'accéder à la caméra");
+      if (data?.error) {
+        toast.error(data.error, { id: "meal-analysis" });
+        setAnalyzing(false);
+        return;
+      }
+
+      setMealAnalysis(data as MealAnalysis);
+      persistMeal(photo, data as MealAnalysis);
+      toast.success(`${data.dishName} identifié`, { id: "meal-analysis" });
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Analyse impossible : " + (e?.message || "erreur"), { id: "meal-analysis" });
+    } finally {
+      setAnalyzing(false);
     }
+  };
+
+  const resetMeal = () => {
+    setMealPhoto(null);
+    setMealAnalysis(null);
+    setDetailsOpen(false);
+    persistMeal(null, null);
   };
 
   const handleLogSport = async () => {
