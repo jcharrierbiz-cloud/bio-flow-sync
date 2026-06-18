@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useEffortStore, EffortSession, getSportIcon } from "@/lib/effortStore";
 import SportJournal from "@/components/SportJournal";
 import SportAnalysisCard from "@/components/SportAnalysisCard";
+import HealthyRecipes from "@/components/HealthyRecipes";
 import { supabase } from "@/integrations/supabase/client";
 import { getCachedProfile } from "@/lib/profileStore";
 import { useScanStore } from "@/lib/scanStore";
