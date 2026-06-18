@@ -355,11 +355,19 @@ const Log = () => {
         )}
       </div>
 
+      {/* Healthy Recipes Section */}
+      <HealthyRecipes />
+
       {/* Sport Section */}
       <div className="glass-card p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-intensity" />
-          <h2 className="text-sm font-semibold text-foreground">Effort</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Dumbbell className="w-4 h-4 text-intensity" />
+            <h2 className="text-sm font-semibold text-foreground">Effort</h2>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-ai-violet/15 text-ai-violet border border-ai-violet/20 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" /> IA · 200 000+ exercices
+          </span>
         </div>
 
         <div className="space-y-4">
