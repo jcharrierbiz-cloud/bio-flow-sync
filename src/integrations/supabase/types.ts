@@ -22,6 +22,7 @@ export type Database = {
           id: string
           log_date: string
           tip_index: number
+          user_id: string | null
         }
         Insert: {
           checked?: boolean
@@ -30,6 +31,7 @@ export type Database = {
           id?: string
           log_date?: string
           tip_index: number
+          user_id?: string | null
         }
         Update: {
           checked?: boolean
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           log_date?: string
           tip_index?: number
+          user_id?: string | null
         }
         Relationships: []
       }
