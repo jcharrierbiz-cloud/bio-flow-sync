@@ -16,6 +16,7 @@ import Log from "./pages/Log";
 import Health from "./pages/Health";
 import Coach from "./pages/Coach";
 import Auth from "./pages/Auth";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import {
   hasDoneMorningScanToday,
@@ -77,6 +78,7 @@ const ProtectedApp = () => {
           <Route path="/health" element={<Health />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomNav />
