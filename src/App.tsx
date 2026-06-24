@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
+import LegalFooter from "@/components/LegalFooter";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
 import FocusLock from "@/components/FocusLock";
@@ -17,6 +18,7 @@ import Health from "./pages/Health";
 import Coach from "./pages/Coach";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
+import Cookies from "./pages/Cookies";
 import NotFound from "./pages/NotFound";
 import {
   hasDoneMorningScanToday,
@@ -79,8 +81,10 @@ const ProtectedApp = () => {
           <Route path="/coach" element={<Coach />} />
           <Route path="/auth" element={<Navigate to="/" replace />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <LegalFooter withBottomNav />
         <BottomNav />
       </div>
       <OnboardingFlow open={showOnboarding} onClose={handleOnboardingClose} />
