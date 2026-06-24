@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import LegalFooter from "@/components/LegalFooter";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -156,6 +157,10 @@ const Auth = () => {
             )}
           </button>
         </div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm mt-10">
+        <LegalFooter />
       </div>
     </div>
   );

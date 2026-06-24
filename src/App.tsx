@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
+import LegalFooter from "@/components/LegalFooter";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
 import FocusLock from "@/components/FocusLock";
@@ -83,6 +84,7 @@ const ProtectedApp = () => {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <LegalFooter withBottomNav />
         <BottomNav />
       </div>
       <OnboardingFlow open={showOnboarding} onClose={handleOnboardingClose} />
