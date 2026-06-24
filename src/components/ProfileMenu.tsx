@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, ChevronDown, Edit2, Volume2, VolumeX, Bell, BellOff, RotateCcw, LogOut, Shield } from "lucide-react";
+import { User, ChevronDown, Edit2, Volume2, VolumeX, Bell, BellOff, RotateCcw, LogOut, Shield, Cookie } from "lucide-react";
 import { getCachedProfile, updateProfileField, type UserProfile, getDeviceId } from "@/lib/profileStore";
 import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { useRewardStore } from "@/lib/rewardStore";
@@ -265,6 +265,19 @@ const ProfileMenu = () => {
           >
             <Shield className="w-3.5 h-3.5 text-muted-foreground" />
             Confidentialité & Sécurité
+          </button>
+
+          {/* Cookies link */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              navigate("/cookies");
+            }}
+            className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-secondary/50 transition-colors text-xs text-foreground"
+            aria-label="Ouvrir la page Cookies & consentement"
+          >
+            <Cookie className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+            Cookies & consentement
           </button>
 
           {/* Footer */}
