@@ -52,6 +52,8 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
   // Screen 5
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [parentalAccepted, setParentalAccepted] = useState(false);
+  const [requiresParentalConsent, setRequiresParentalConsent] = useState(false);
   const termsRef = useRef<HTMLDivElement>(null);
 
   // Loading
