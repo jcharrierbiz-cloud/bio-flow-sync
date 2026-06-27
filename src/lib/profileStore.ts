@@ -123,6 +123,8 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
     morning_scan_enabled: profile.morning_scan_enabled,
     focus_lock_enabled: profile.focus_lock_enabled,
     blocked_categories: profile.blocked_categories,
+    parental_consent: profile.parental_consent ?? null,
+    consent_age: profile.consent_age ?? null,
   };
 
   const { data: existing } = await supabase
