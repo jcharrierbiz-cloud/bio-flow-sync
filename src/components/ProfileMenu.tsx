@@ -282,6 +282,25 @@ const ProfileMenu = () => {
             Cookies & consentement
           </button>
 
+          {/* Sign out */}
+          <button
+            onClick={async () => {
+              setIsOpen(false);
+              try {
+                await signOut();
+                toast.success("Déconnecté");
+              } catch (err) {
+                console.error("signOut error:", err);
+                toast.error("Erreur lors de la déconnexion");
+              }
+            }}
+            className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-destructive/10 transition-colors text-xs text-destructive"
+            aria-label="Se déconnecter de Bio-Flow"
+          >
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+            Se déconnecter
+          </button>
+
           {/* Footer */}
           <div className="pt-1 text-center">
             <p className="text-[9px] text-muted-foreground/50">Bio-Flow v1.0</p>
