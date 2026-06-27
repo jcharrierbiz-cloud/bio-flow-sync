@@ -9,6 +9,7 @@ import HealthyRecipes from "@/components/HealthyRecipes";
 import { supabase } from "@/integrations/supabase/client";
 import { getCachedProfile } from "@/lib/profileStore";
 import { useScanStore } from "@/lib/scanStore";
+import { fireMealLogged, fireSportLogged } from "@/lib/rewardStore";
 import {
   Dialog,
   DialogContent,
