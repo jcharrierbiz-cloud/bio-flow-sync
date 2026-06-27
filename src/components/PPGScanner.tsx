@@ -1,4 +1,4 @@
-import { Heart, Activity, Sparkles, Share2, AlertTriangle, Fingerprint } from "lucide-react";
+import { Heart, Activity, Sparkles, Share2, AlertTriangle, Fingerprint, Info, RotateCcw } from "lucide-react";
 import { type ScanPhase, type HeartRateResult } from "@/hooks/useHeartRate";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ interface PPGScannerProps {
   result: HeartRateResult | null;
   onStop: () => void;
   onFinish?: () => void;
+  onRetry?: () => void;
   compact?: boolean;
 }
 
@@ -73,11 +74,14 @@ const PPGScanner = ({
   result,
   onStop,
   onFinish,
+  onRetry,
   compact,
 }: PPGScannerProps) => {
   const handleShare = async () => {
     if (!result) return;
-    const text = `🫀 Bio-Flow Scan\n❤️ BPM: ${result.bpm}\n💓 VFC: ${result.hrv}ms\n⚡ Readiness: ${result.readiness}%\n😰 Stress: ${result.stressIndex}/100`;
+    const hrvText = result.hrv > 0 ? `${result.hrv}ms` : "non disponible";
+    const stressText = result.stressIndex > 0 ? `${result.stressIndex}/100` : "non disponible";
+    const text = `🫀 Bio-Flow Scan\n❤️ BPM: ${result.bpm}\n💓 VFC: ${hrvText}\n⚡ Readiness: ${result.readiness}%\n😰 Stress: ${stressText}\n\n⚠️ Estimation à visée bien-être, pas un dispositif médical.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Bio-Flow Scan", text });
@@ -189,6 +193,49 @@ const PPGScanner = ({
     );
   }
 
+  // Phase: Failed — honest fail state instead of fake results
+  if (phase === "failed") {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-destructive/15 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-7 h-7 text-destructive" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-foreground">Mesure échouée</h3>
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+            {error || "Le signal n'était pas suffisamment clair pour produire une mesure fiable."}
+          </p>
+        </div>
+        <div className="glass-card p-3 text-left space-y-1.5">
+          <p className="text-[11px] text-muted-foreground font-medium">Conseils :</p>
+          <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Couvre entièrement la caméra avec ton index</li>
+            <li>Reste totalement immobile pendant 30s</li>
+            <li>Active le flash si possible (lumière constante)</li>
+            <li>Évite la lumière directe du soleil</li>
+          </ul>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onStop}
+            className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs font-medium"
+          >
+            Fermer
+          </button>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="flex-1 py-2.5 rounded-xl bg-energy text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Réessayer
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Phase: Done / Results
   if (phase === "done" && result) {
     return (
@@ -206,7 +253,9 @@ const PPGScanner = ({
           </div>
           <div className="glass-card p-4 text-center glow-violet">
             <Heart className="w-5 h-5 text-intensity mx-auto mb-1.5" />
-            <span className="mono text-2xl font-bold text-foreground block">{result.hrv}<span className="text-xs font-normal">ms</span></span>
+            <span className="mono text-2xl font-bold text-foreground block">
+              {result.hrv > 0 ? <>{result.hrv}<span className="text-xs font-normal">ms</span></> : <span className="text-muted-foreground">—</span>}
+            </span>
             <span className="text-[10px] text-muted-foreground">VFC (RMSSD)</span>
           </div>
           <div className="glass-card p-4 text-center">
@@ -216,13 +265,26 @@ const PPGScanner = ({
           </div>
           <div className="glass-card p-4 text-center">
             <div className={`w-5 h-5 mx-auto mb-1.5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-              result.stressIndex < 40 ? "bg-energy/20 text-energy" : result.stressIndex < 70 ? "bg-warning/20 text-warning" : "bg-intensity/20 text-intensity"
+              result.stressIndex === 0 ? "bg-muted text-muted-foreground" :
+              result.stressIndex < 40 ? "bg-energy/20 text-energy" :
+              result.stressIndex < 70 ? "bg-warning/20 text-warning" :
+              "bg-intensity/20 text-intensity"
             }`}>
-              {result.stressIndex < 40 ? "😌" : result.stressIndex < 70 ? "😐" : "😰"}
+              {result.stressIndex === 0 ? "—" : result.stressIndex < 40 ? "😌" : result.stressIndex < 70 ? "😐" : "😰"}
             </div>
-            <span className="mono text-2xl font-bold text-foreground block">{result.stressIndex}</span>
+            <span className="mono text-2xl font-bold text-foreground block">
+              {result.stressIndex > 0 ? result.stressIndex : <span className="text-muted-foreground">—</span>}
+            </span>
             <span className="text-[10px] text-muted-foreground">Stress Index</span>
           </div>
+        </div>
+
+        {/* Medical disclaimer — visible on every results screen */}
+        <div className="flex items-start gap-2 rounded-xl p-3" style={{ background: "rgba(255, 184, 0, 0.06)", border: "1px solid rgba(255, 184, 0, 0.2)" }}>
+          <Info className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            <span className="text-warning font-medium">Estimation à visée bien-être.</span> Bio-Flow n'est pas un dispositif médical. Ces mesures ne remplacent en aucun cas un avis médical professionnel.
+          </p>
         </div>
 
         <div className="flex gap-2">
