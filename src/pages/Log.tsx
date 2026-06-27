@@ -9,6 +9,7 @@ import HealthyRecipes from "@/components/HealthyRecipes";
 import { supabase } from "@/integrations/supabase/client";
 import { getCachedProfile } from "@/lib/profileStore";
 import { useScanStore } from "@/lib/scanStore";
+import { fireMealLogged, fireSportLogged } from "@/lib/rewardStore";
 import {
   Dialog,
   DialogContent,
@@ -115,6 +116,7 @@ const Log = () => {
 
       setMealAnalysis(data as MealAnalysis);
       persistMeal(photo, data as MealAnalysis);
+      fireMealLogged();
       toast.success(`${data.dishName} identifié`, { id: "meal-analysis" });
     } catch (e: any) {
       console.error(e);
@@ -135,6 +137,7 @@ const Log = () => {
     const session = await saveSession(sportDuration, intensityConfig[sportIntensity].dbValue);
     if (session) {
       setCurrentSession(session);
+      fireSportLogged();
       toast.success("Effort enregistré !");
     }
   };

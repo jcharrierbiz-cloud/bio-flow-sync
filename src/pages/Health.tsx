@@ -6,6 +6,7 @@ import PPGScanner from "@/components/PPGScanner";
 import FocusStats from "@/components/FocusStats";
 import { useScanStore } from "@/lib/scanStore";
 import { useSleepStore } from "@/lib/sleepStore";
+import { fireScanCompleted } from "@/lib/rewardStore";
 
 const Health = () => {
   const [scanMode, setScanMode] = useState<"idle" | "choosing" | "scanning">("idle");
@@ -50,6 +51,7 @@ const Health = () => {
         readiness_score: hr.result.readiness,
         is_morning_scan: true, // store logic decides
       });
+      fireScanCompleted();
       toast.success("Scan enregistré !");
     }
   };
