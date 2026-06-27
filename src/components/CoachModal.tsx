@@ -1,22 +1,25 @@
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Bot, Sparkles } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Bot, Sparkles, ArrowRight } from "lucide-react";
+import { type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface CoachModalProps {
   children: ReactNode;
 }
 
+/**
+ * CoachModal — lightweight drawer that points users to the real Coach chat.
+ *
+ * The previous implementation displayed hardcoded fake claims about sleep data
+ * and offered fake "yes/no" responses that didn't reflect any real analysis.
+ * This version simply invites the user to open the real Coach page (which is
+ * backed by the live coach-chat edge function).
+ */
 const CoachModal = ({ children }: CoachModalProps) => {
-  const [answered, setAnswered] = useState(false);
-  const [answer, setAnswer] = useState<string | null>(null);
-
-  const handleAnswer = (a: string) => {
-    setAnswer(a);
-    setAnswered(true);
-  };
+  const navigate = useNavigate();
 
   return (
-    <Drawer onOpenChange={() => { setAnswered(false); setAnswer(null); }}>
+    <Drawer>
       <DrawerTrigger asChild>{children}</DrawerTrigger>
       <DrawerContent className="bg-card/95 backdrop-blur-2xl border-glass-border mx-auto max-w-lg">
         <div className="px-6 pt-4 pb-8 space-y-5">
@@ -28,45 +31,26 @@ const CoachModal = ({ children }: CoachModalProps) => {
             <div>
               <h3 className="font-semibold text-foreground">Coach Bio-Flow</h3>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-ai-violet" /> Analyse IA
+                <Sparkles className="w-3 h-3 text-ai-violet" /> Assistant IA
               </span>
             </div>
           </div>
 
-          {/* Message */}
-          <div className="glass-card p-4 glow-violet">
+          {/* Honest invite */}
+          <div className="glass-card p-4">
             <p className="text-sm text-secondary-foreground leading-relaxed">
-              J'ai remarqué que ton sommeil était court cette nuit (6.2h au lieu de 7.5h recommandées).
-              <br /><br />
-              Veux-tu que je décale tes tâches <span className="text-energy font-medium">"High Energy"</span> de cet après-midi vers demain matin, quand ton niveau d'énergie sera meilleur ?
+              Ouvre le Coach pour discuter de ta journée, demander une réorganisation de ton agenda
+              ou des conseils basés sur tes scans et ton historique.
             </p>
           </div>
 
-          {/* Response */}
-          {!answered ? (
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleAnswer("yes")}
-                className="flex-1 py-3 rounded-xl bg-energy/15 text-energy font-medium text-sm border border-energy/20 hover:bg-energy/25 transition-all"
-              >
-                Oui, réorganise
-              </button>
-              <button
-                onClick={() => handleAnswer("no")}
-                className="flex-1 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium text-sm border border-glass-border hover:bg-secondary/80 transition-all"
-              >
-                Non, je maintiens
-              </button>
-            </div>
-          ) : (
-            <div className="glass-card p-4 border-energy/20">
-              <p className="text-sm text-secondary-foreground">
-                {answer === "yes"
-                  ? "✅ C'est noté ! J'ai décalé 2 tâches énergivores à demain 9h-11h. Ton après-midi est maintenant allégé."
-                  : "👍 Compris. Je maintiens ton planning. N'hésite pas à faire une micro-sieste de 20 min vers 14h pour recharger."}
-              </p>
-            </div>
-          )}
+          <button
+            onClick={() => navigate("/coach")}
+            className="w-full py-3 rounded-xl bg-ai-violet/15 text-ai-violet font-medium text-sm border border-ai-violet/20 hover:bg-ai-violet/25 transition-all flex items-center justify-center gap-2"
+          >
+            Ouvrir le Coach
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </DrawerContent>
     </Drawer>
