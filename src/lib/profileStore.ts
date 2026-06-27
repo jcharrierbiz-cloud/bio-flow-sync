@@ -28,6 +28,8 @@ export interface UserProfile {
   morning_scan_enabled: boolean;
   focus_lock_enabled: boolean;
   blocked_categories: string[];
+  parental_consent?: boolean | null;
+  consent_age?: number | null;
 }
 
 export function getDeviceId(): string {
