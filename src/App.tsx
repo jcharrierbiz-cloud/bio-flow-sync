@@ -30,6 +30,22 @@ import { useAgendaStore } from "@/lib/agendaStore";
 
 const queryClient = new QueryClient();
 
+const FullScreenLoader = () => (
+  <div
+    className="min-h-screen flex items-center justify-center bg-background"
+    role="status"
+    aria-label="Chargement de Bio-Flow"
+  >
+    <div
+      className="w-10 h-10 rounded-full border-2 border-transparent animate-spin"
+      style={{
+        borderTopColor: "hsl(var(--energy))",
+        borderRightColor: "hsl(var(--energy))",
+      }}
+    />
+  </div>
+);
+
 const ProtectedApp = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMorningCheckIn, setShowMorningCheckIn] = useState(false);
@@ -38,8 +54,12 @@ const ProtectedApp = () => {
 
   useEffect(() => {
     const init = async () => {
-      await fetchProfile();
-      
+      try {
+        await fetchProfile();
+      } catch (err) {
+        console.error("fetchProfile error:", err);
+      }
+
       if (!isOnboardingComplete()) {
         setShowOnboarding(true);
       } else {
@@ -68,7 +88,7 @@ const ProtectedApp = () => {
     }
   };
 
-  if (!ready) return null;
+  if (!ready) return <FullScreenLoader />;
 
   return (
     <>
@@ -94,13 +114,32 @@ const ProtectedApp = () => {
   );
 };
 
+const AppRouter = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <FullScreenLoader />;
+
+  if (!user) {
+    // Public legal routes remain accessible; everything else falls back to Auth.
+    return (
+      <Routes>
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/cookies" element={<Cookies />} />
+        <Route path="*" element={<Auth />} />
+      </Routes>
+    );
+  }
+
+  return <ProtectedApp />;
+};
+
 const AppContent = () => {
   return (
     <>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ProtectedApp />
+        <AppRouter />
       </BrowserRouter>
     </>
   );

@@ -179,6 +179,7 @@ export type Database = {
           ai_coach_config: Json | null
           audio_greeting_enabled: boolean
           blocked_categories: string[]
+          consent_age: number | null
           created_at: string
           device_id: string | null
           fitness_level: string | null
@@ -192,6 +193,7 @@ export type Database = {
           notification_enabled: boolean
           onboarding_completed: boolean
           organization_level: string | null
+          parental_consent: boolean | null
           pseudo: string
           reminder_minutes: number
           schedule: string | null
@@ -208,6 +210,7 @@ export type Database = {
           ai_coach_config?: Json | null
           audio_greeting_enabled?: boolean
           blocked_categories?: string[]
+          consent_age?: number | null
           created_at?: string
           device_id?: string | null
           fitness_level?: string | null
@@ -221,6 +224,7 @@ export type Database = {
           notification_enabled?: boolean
           onboarding_completed?: boolean
           organization_level?: string | null
+          parental_consent?: boolean | null
           pseudo: string
           reminder_minutes?: number
           schedule?: string | null
@@ -237,6 +241,7 @@ export type Database = {
           ai_coach_config?: Json | null
           audio_greeting_enabled?: boolean
           blocked_categories?: string[]
+          consent_age?: number | null
           created_at?: string
           device_id?: string | null
           fitness_level?: string | null
@@ -250,6 +255,7 @@ export type Database = {
           notification_enabled?: boolean
           onboarding_completed?: boolean
           organization_level?: string | null
+          parental_consent?: boolean | null
           pseudo?: string
           reminder_minutes?: number
           schedule?: string | null

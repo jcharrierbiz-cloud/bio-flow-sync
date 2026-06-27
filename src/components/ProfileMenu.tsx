@@ -6,6 +6,7 @@ import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { useRewardStore } from "@/lib/rewardStore";
 import LevelBadge from "@/components/LevelBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const fitnessLabels: Record<string, string> = {
@@ -42,6 +43,7 @@ const goalLabels: Record<string, string> = {
 
 const ProfileMenu = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editField, setEditField] = useState<string | null>(null);
@@ -278,6 +280,25 @@ const ProfileMenu = () => {
           >
             <Cookie className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
             Cookies & consentement
+          </button>
+
+          {/* Sign out */}
+          <button
+            onClick={async () => {
+              setIsOpen(false);
+              try {
+                await signOut();
+                toast.success("Déconnecté");
+              } catch (err) {
+                console.error("signOut error:", err);
+                toast.error("Erreur lors de la déconnexion");
+              }
+            }}
+            className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-destructive/10 transition-colors text-xs text-destructive"
+            aria-label="Se déconnecter de Bio-Flow"
+          >
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+            Se déconnecter
           </button>
 
           {/* Footer */}

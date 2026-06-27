@@ -28,6 +28,8 @@ export interface UserProfile {
   morning_scan_enabled: boolean;
   focus_lock_enabled: boolean;
   blocked_categories: string[];
+  parental_consent?: boolean | null;
+  consent_age?: number | null;
 }
 
 export function getDeviceId(): string {
@@ -87,6 +89,8 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     morning_scan_enabled: data.morning_scan_enabled,
     focus_lock_enabled: (data as any).focus_lock_enabled || false,
     blocked_categories: (data as any).blocked_categories || [],
+    parental_consent: (data as any).parental_consent ?? null,
+    consent_age: (data as any).consent_age ?? null,
   };
   cacheProfile(profile);
   return profile;
@@ -119,6 +123,8 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
     morning_scan_enabled: profile.morning_scan_enabled,
     focus_lock_enabled: profile.focus_lock_enabled,
     blocked_categories: profile.blocked_categories,
+    parental_consent: profile.parental_consent ?? null,
+    consent_age: profile.consent_age ?? null,
   };
 
   const { data: existing } = await supabase

@@ -52,6 +52,8 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
   // Screen 5
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [parentalAccepted, setParentalAccepted] = useState(false);
+  const [requiresParentalConsent, setRequiresParentalConsent] = useState(false);
   const termsRef = useRef<HTMLDivElement>(null);
 
   // Loading
@@ -82,10 +84,19 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
 
   const handleContinueScreen1 = () => {
     const pErr = validatePseudo(pseudo.trim());
-    const aErr = !age || Number(age) < 1 || Number(age) > 120 ? "Âge entre 1 et 120" : "";
+    const ageNum = Number(age);
+    let aErr = "";
+    if (!age || ageNum < 1 || ageNum > 120) {
+      aErr = "Âge entre 1 et 120";
+    } else if (ageNum < 13) {
+      aErr = "Bio-Flow n'est pas accessible aux moins de 13 ans.";
+    }
     setPseudoError(pErr);
     setAgeError(aErr);
-    if (!pErr && !aErr) goTo(2);
+    if (!pErr && !aErr) {
+      setRequiresParentalConsent(ageNum < 15);
+      goTo(2);
+    }
   };
 
   const handleTermsScroll = () => {
@@ -155,6 +166,8 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
         morning_scan_enabled: true,
         focus_lock_enabled: focusLockEnabled,
         blocked_categories: blockedCategories,
+        parental_consent: requiresParentalConsent ? parentalAccepted : null,
+        consent_age: Number(age),
       };
 
       setUserName(pseudo.trim());
@@ -190,6 +203,8 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
         morning_scan_enabled: true,
         focus_lock_enabled: focusLockEnabled,
         blocked_categories: blockedCategories,
+        parental_consent: requiresParentalConsent ? parentalAccepted : null,
+        consent_age: Number(age),
       };
       setUserName(pseudo.trim());
       markOnboarded();
@@ -569,13 +584,31 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 style={{ maxHeight: "55vh", background: "rgba(255,255,255,0.03)", borderRadius: 12 }}
               >
                 <p><strong className="text-foreground">1. Données personnelles</strong><br />Bio-Flow collecte ton pseudo, âge, poids (optionnel), taille (optionnel), niveau sportif et objectifs dans le seul but de personnaliser ton expérience. Ces données sont stockées de manière sécurisée et ne sont jamais vendues ni partagées avec des tiers.</p>
-                <p><strong className="text-foreground">2. Données biométriques</strong><br />Les mesures effectuées via le scanner PPG (fréquence cardiaque, HRV estimée) sont des estimations à visée bien-être uniquement. Bio-Flow n'est pas un dispositif médical. Ces données ne remplacent en aucun cas un avis médical professionnel.</p>
+                <p><strong className="text-foreground">2. Données biométriques</strong><br />Les mesures effectuées via le scanner PPG (fréquence cardiaque, HRV estimée) sont des estimations à visée bien-être uniquement. Bio-Flow n'est pas un dispositif médical. Ces données ne remplacent en aucun cas un avis médical professionnel. Ces données biométriques sont conservées localement sur ton appareil ainsi que dans notre base sécurisée (Supabase). Tu peux à tout moment demander leur suppression en écrivant à support@bioflow.app.</p>
                 <p><strong className="text-foreground">3. Intelligence artificielle</strong><br />Le coach BIO est un assistant IA. Ses recommandations sont personnalisées mais restent des suggestions. En cas de problème de santé, consulte un professionnel.</p>
                 <p><strong className="text-foreground">4. Focus Lock</strong><br />La fonctionnalité Focus Lock crée un environnement de concentration via l'interface de l'app. L'utilisateur reste libre de quitter à tout moment. Bio-Flow décline toute responsabilité en cas d'utilisation inappropriée.</p>
-                <p><strong className="text-foreground">5. Âge et responsabilité</strong><br />Bio-Flow est accessible à tous les âges. Pour les utilisateurs mineurs, l'utilisation est sous la responsabilité des parents ou tuteurs légaux.</p>
+                <p><strong className="text-foreground">5. Âge et données de santé</strong><br />Bio-Flow traite des données de santé (fréquence cardiaque, variabilité cardiaque, indicateurs de stress) considérées comme des données sensibles au sens du RGPD. L'application est réservée aux personnes de 13 ans et plus. Les utilisateurs de moins de 15 ans doivent disposer de l'accord explicite d'un parent ou titulaire de l'autorité parentale, conformément à l'article 8 du RGPD et au droit français. Cet accord est recueilli lors de l'inscription. Le parent ou tuteur peut à tout moment demander l'accès, la rectification ou la suppression des données en contactant support@bioflow.app.</p>
                 <p><strong className="text-foreground">6. Modifications</strong><br />Bio-Flow se réserve le droit de modifier ces conditions. Les utilisateurs seront notifiés de tout changement majeur.</p>
                 <p><strong className="text-foreground">7. Contact</strong><br />Pour toute question : support@bioflow.app</p>
               </div>
+
+              {requiresParentalConsent && (
+                <div
+                  role="note"
+                  className="rounded-xl p-3 text-[12px] leading-relaxed"
+                  style={{
+                    background: "rgba(255, 184, 0, 0.08)",
+                    border: "1px solid rgba(255, 184, 0, 0.4)",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  <strong className="text-warning">⚠ Accord parental requis.</strong>{" "}
+                  Tu as moins de 15 ans. En France, l'utilisation d'une application
+                  traitant des données de santé nécessite l'accord d'un parent ou
+                  tuteur légal. En cochant les cases ci-dessous, tu confirmes qu'un
+                  parent ou tuteur a lu et accepté ces conditions.
+                </div>
+              )}
 
               <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${!hasScrolledToBottom ? "opacity-40 pointer-events-none" : "animate-in zoom-in-95 duration-300"}`}>
                 <input
@@ -588,9 +621,26 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
                 <span className="text-sm text-foreground">J'ai lu et j'accepte les conditions d'utilisation de Bio-Flow</span>
               </label>
 
+              {requiresParentalConsent && (
+                <label className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${!hasScrolledToBottom ? "opacity-40 pointer-events-none" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={parentalAccepted}
+                    onChange={(e) => setParentalAccepted(e.target.checked)}
+                    disabled={!hasScrolledToBottom}
+                    className="w-5 h-5 rounded accent-primary mt-0.5"
+                  />
+                  <span className="text-sm text-foreground leading-snug">
+                    Un parent ou tuteur légal a pris connaissance et donné son
+                    accord pour l'utilisation de Bio-Flow et le traitement des
+                    données de santé associées.
+                  </span>
+                </label>
+              )}
+
               <button
                 onClick={handleFinish}
-                disabled={!termsAccepted}
+                disabled={!termsAccepted || (requiresParentalConsent && !parentalAccepted)}
                 className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-40"
                 style={{ height: 48, borderRadius: 12 }}
               >
