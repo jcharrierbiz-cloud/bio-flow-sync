@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-export type ScanPhase = "idle" | "placing" | "stabilizing" | "measuring" | "done";
+export type ScanPhase = "idle" | "placing" | "stabilizing" | "measuring" | "done" | "failed";
 
 export interface HeartRateResult {
   bpm: number;
@@ -24,6 +24,8 @@ const MEASURE_MS = 30000;
 const WAVEFORM_LENGTH = 150; // 5s * 30fps
 const MOVING_AVG_WINDOW = 5;
 const NO_PEAK_TIMEOUT = 10000;
+const MIN_PEAKS_FOR_BPM = 5;   // require enough beats for stable measurement
+const MIN_PEAKS_FOR_HRV = 6;   // RMSSD needs more samples for stability
 
 function movingAverage(arr: number[], window: number): number[] {
   return arr.map((_, i) => {
@@ -237,21 +239,10 @@ export function useHeartRate() {
           }));
 
           if (elapsed >= MEASURE_MS) {
-            // Final calculation
+            // Final calculation — HONEST version, no fake fallbacks
             const finalSmoothed = movingAverage(rawSamples.current, MOVING_AVG_WINDOW);
             const finalPeaks = findPeaks(finalSmoothed, 3);
-            const bpm = finalPeaks.length >= 2
-              ? Math.max(40, Math.min(200, calculateBPMFromPeaks(finalPeaks, SAMPLE_INTERVAL)))
-              : 68; // fallback
-            const hrv = finalPeaks.length >= 3
-              ? Math.round(calculateRMSSD(finalPeaks, SAMPLE_INTERVAL))
-              : Math.round(20 + Math.random() * 30);
-            const stressIndex = hrv > 0 ? Math.round(Math.max(10, Math.min(100, 100 - hrv * 1.2))) : 50;
-            const readiness = Math.min(100, Math.round(
-              50 + (hrv > 40 ? 20 : hrv > 25 ? 10 : 0) + (bpm < 70 ? 15 : bpm < 80 ? 10 : 0) + Math.random() * 10
-            ));
 
-            phaseRef.current = "done";
             clearInterval(timerRef.current);
             timerRef.current = 0;
             if (streamRef.current) {
@@ -259,7 +250,49 @@ export function useHeartRate() {
               streamRef.current = null;
             }
 
-            setState((s) => ({ ...s, phase: "done", progress: 100, bpmLive: bpm, waveform: normalized }));
+            // If we don't have enough peaks for a reliable measurement,
+            // fail honestly instead of fabricating values.
+            if (finalPeaks.length < MIN_PEAKS_FOR_BPM) {
+              phaseRef.current = "failed";
+              setState((s) => ({
+                ...s,
+                phase: "failed",
+                progress: 100,
+                error: "Mesure invalide — signal trop faible. Réessaie en couvrant entièrement la caméra avec ton doigt.",
+              }));
+              setResult(null);
+              return;
+            }
+
+            const bpm = Math.max(40, Math.min(200, calculateBPMFromPeaks(finalPeaks, SAMPLE_INTERVAL)));
+
+            // HRV requires more peaks. If not enough, omit it (0) — caller must handle.
+            const hrv = finalPeaks.length >= MIN_PEAKS_FOR_HRV
+              ? Math.round(calculateRMSSD(finalPeaks, SAMPLE_INTERVAL))
+              : 0;
+
+            // Stress index only computed when HRV is valid
+            const stressIndex = hrv > 0
+              ? Math.round(Math.max(10, Math.min(100, 100 - hrv * 1.2)))
+              : 0;
+
+            // Readiness: deterministic formula, NO random noise
+            // Combines BPM proximity to resting (lower = better) and HRV (higher = better)
+            let readiness = 50;
+            if (hrv > 0) {
+              if (hrv > 50) readiness += 25;
+              else if (hrv > 35) readiness += 15;
+              else if (hrv > 20) readiness += 5;
+              else readiness -= 10;
+            }
+            if (bpm < 60) readiness += 20;
+            else if (bpm < 75) readiness += 10;
+            else if (bpm < 90) readiness += 0;
+            else readiness -= 10;
+            readiness = Math.max(0, Math.min(100, readiness));
+
+            phaseRef.current = "done";
+            setState((s) => ({ ...s, phase: "done", progress: 100, bpmLive: bpm, waveform: normalized, error: null }));
             setResult({ bpm, hrv, readiness, stressIndex });
           }
         }
