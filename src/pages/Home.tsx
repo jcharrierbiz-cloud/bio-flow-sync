@@ -7,7 +7,6 @@ import NutritionCard from "@/components/NutritionCard";
 import StreakBadge from "@/components/StreakBadge";
 import LevelBadge from "@/components/LevelBadge";
 import ScanCards from "@/components/ScanCards";
-import AnimatedScore from "@/components/AnimatedScore";
 import WeeklySportSummary from "@/components/WeeklySportSummary";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Bot, TrendingUp, Moon, Sparkles, ArrowRight, Activity, Utensils, Dumbbell, ScanLine } from "lucide-react";
@@ -25,6 +24,14 @@ const Home = () => {
   useEffect(() => {
     loadTodayScans();
   }, []);
+
+  // Honest CTA subtitle — reflects real app state, no fake "1 recommandation en attente"
+  const coachSubtitle =
+    energy.contributors === 0
+      ? "Commence par ton scan matinal"
+      : morningScan && morningScan.hrv_rmssd < 30
+      ? "Ton HRV est basse — parle au coach"
+      : "Discute avec ton coach IA";
 
   return (
     <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6">
@@ -52,7 +59,7 @@ const Home = () => {
         />
       </div>
 
-      {/* AI Coach CTA */}
+      {/* AI Coach CTA — subtitle is honest and dynamic */}
       <button
         onClick={() => navigate("/coach")}
         className="w-full relative overflow-hidden rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition-all group"
@@ -67,11 +74,10 @@ const Home = () => {
           <h3 className="text-base font-bold text-white">Coach Bio-Flow</h3>
           <p className="text-xs text-white/80 mt-0.5 flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            1 recommandation en attente
+            {coachSubtitle}
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse-glow" />
           <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform" />
         </div>
         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
