@@ -84,10 +84,19 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
 
   const handleContinueScreen1 = () => {
     const pErr = validatePseudo(pseudo.trim());
-    const aErr = !age || Number(age) < 1 || Number(age) > 120 ? "Âge entre 1 et 120" : "";
+    const ageNum = Number(age);
+    let aErr = "";
+    if (!age || ageNum < 1 || ageNum > 120) {
+      aErr = "Âge entre 1 et 120";
+    } else if (ageNum < 13) {
+      aErr = "Bio-Flow n'est pas accessible aux moins de 13 ans.";
+    }
     setPseudoError(pErr);
     setAgeError(aErr);
-    if (!pErr && !aErr) goTo(2);
+    if (!pErr && !aErr) {
+      setRequiresParentalConsent(ageNum < 15);
+      goTo(2);
+    }
   };
 
   const handleTermsScroll = () => {
