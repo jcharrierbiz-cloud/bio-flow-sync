@@ -43,6 +43,7 @@ const goalLabels: Record<string, string> = {
 
 const ProfileMenu = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editField, setEditField] = useState<string | null>(null);
