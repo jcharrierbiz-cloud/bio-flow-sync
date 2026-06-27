@@ -6,6 +6,7 @@ import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { useRewardStore } from "@/lib/rewardStore";
 import LevelBadge from "@/components/LevelBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const fitnessLabels: Record<string, string> = {
