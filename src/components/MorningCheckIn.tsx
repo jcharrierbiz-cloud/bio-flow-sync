@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import PPGScanner from "@/components/PPGScanner";
 import { useScanStore } from "@/lib/scanStore";
 import { useSleepStore } from "@/lib/sleepStore";
+import { fireScanCompleted, fireCheckinCompleted, fireSleepLogged } from "@/lib/rewardStore";
 
 interface Props {
   open: boolean;
@@ -30,8 +31,10 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
   if (!open) return null;
 
   const handleSleepSelect = (index: number) => {
+    const isFirst = selectedSleep === null;
     setSelectedSleep(index);
     setQualityFromCheckIn(index);
+    if (isFirst) fireSleepLogged();
   };
 
   const handleNextToScan = () => {
@@ -55,6 +58,7 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
 
   const handleSkipScan = () => {
     markMorningScanDone();
+    fireCheckinCompleted();
     onClose();
     toast.success("Check-in matinal enregistré !");
   };
@@ -72,6 +76,8 @@ const MorningCheckIn = ({ open, onClose }: Props) => {
       });
     }
     markMorningScanDone();
+    fireScanCompleted();
+    fireCheckinCompleted();
     onClose();
     toast.success("Journée calibrée ! Bonne journée 💪");
   };

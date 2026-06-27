@@ -50,6 +50,7 @@ const Health = () => {
         readiness_score: hr.result.readiness,
         is_morning_scan: true, // store logic decides
       });
+      fireScanCompleted();
       toast.success("Scan enregistré !");
     }
   };

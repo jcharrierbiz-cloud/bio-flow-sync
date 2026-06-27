@@ -115,6 +115,7 @@ const Log = () => {
 
       setMealAnalysis(data as MealAnalysis);
       persistMeal(photo, data as MealAnalysis);
+      fireMealLogged();
       toast.success(`${data.dishName} identifié`, { id: "meal-analysis" });
     } catch (e: any) {
       console.error(e);
@@ -135,6 +136,7 @@ const Log = () => {
     const session = await saveSession(sportDuration, intensityConfig[sportIntensity].dbValue);
     if (session) {
       setCurrentSession(session);
+      fireSportLogged();
       toast.success("Effort enregistré !");
     }
   };
