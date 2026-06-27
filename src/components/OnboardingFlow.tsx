@@ -166,6 +166,8 @@ const OnboardingFlow = ({ open, onClose }: Props) => {
         morning_scan_enabled: true,
         focus_lock_enabled: focusLockEnabled,
         blocked_categories: blockedCategories,
+        parental_consent: requiresParentalConsent ? parentalAccepted : null,
+        consent_age: Number(age),
       };
 
       setUserName(pseudo.trim());
