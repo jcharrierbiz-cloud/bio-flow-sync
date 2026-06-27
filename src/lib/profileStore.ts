@@ -89,6 +89,8 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     morning_scan_enabled: data.morning_scan_enabled,
     focus_lock_enabled: (data as any).focus_lock_enabled || false,
     blocked_categories: (data as any).blocked_categories || [],
+    parental_consent: (data as any).parental_consent ?? null,
+    consent_age: (data as any).consent_age ?? null,
   };
   cacheProfile(profile);
   return profile;
