@@ -1,7 +1,4 @@
 import ValuePropScreen from "@/components/ValuePropScreen";
-const [showValue, setShowValue] = useState(true);
-// ... au tout début du return, quand l'onboarding s'ouvre :
-if (open && showValue) return <ValuePropScreen onStart={() => setShowValue(false)} />;
 import { useState, useRef, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { saveProfile, getDeviceId, type UserProfile } from "@/lib/profileStore";
