@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, ChevronDown, Edit2, Volume2, VolumeX, Bell, BellOff, RotateCcw, LogOut, Shield, Cookie } from "lucide-react";
+import { User, ChevronDown, Edit2, Volume2, VolumeX, Bell, BellOff, RotateCcw, LogOut, Shield, Cookie, Download, Trash2, AlertTriangle } from "lucide-react";
 import { getCachedProfile, updateProfileField, type UserProfile, getDeviceId } from "@/lib/profileStore";
 import { setUserName, setAudioGreetingEnabled } from "@/hooks/useGreeting";
-import { useRewardStore } from "@/lib/rewardStore";
+import { useRewardStore, levelFromXP, xpForLevel, getTier } from "@/lib/rewardStore";
+import { exportMyData, deleteAccount } from "@/lib/account";
 import LevelBadge from "@/components/LevelBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,13 +50,18 @@ const ProfileMenu = () => {
   const [editField, setEditField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [recalibrating, setRecalibrating] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Niveau cohérent avec la vraie courbe du rewardStore (50 × N^1.5),
+  // au lieu de l'ancienne formule linéaire xp/100.
   const xp = useRewardStore((s) => s.xp);
-  const level = Math.floor(xp / 100) + 1;
-  const xpInLevel = {
-    current: xp % 100,
-    needed: 100,
-  };
+  const level = levelFromXP(xp);
+  const tier = getTier(level);
+  const base = xpForLevel(level);
+  const next = xpForLevel(level + 1);
+  const xpInLevel = { current: xp - base, needed: Math.max(1, next - base) };
 
   useEffect(() => {
     setProfile(getCachedProfile());
@@ -66,6 +72,7 @@ const ProfileMenu = () => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setIsOpen(false);
         setEditField(null);
+        setConfirmDelete(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -136,6 +143,35 @@ const ProfileMenu = () => {
     setRecalibrating(false);
   };
 
+  const handleExport = async () => {
+    setBusy(true);
+    try {
+      await exportMyData();
+      toast.success("Export téléchargé (JSON).");
+    } catch (err) {
+      console.error("export error:", err);
+      toast.error("Erreur lors de l'export.");
+    }
+    setBusy(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setBusy(true);
+    const res = await deleteAccount();
+    setBusy(false);
+    if (res.ok) {
+      toast.success("Compte et données supprimés.");
+      // L'écouteur d'auth (useAuth) renvoie automatiquement vers la page de login.
+    } else {
+      toast.error(res.error || "Erreur lors de la suppression.");
+      setConfirmDelete(false);
+    }
+  };
+
   const renderField = (emoji: string, label: string, field: string, displayValue: string, lookupMap?: Record<string, string>) => (
     <div className="flex items-center justify-between py-1.5">
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -197,12 +233,12 @@ const ProfileMenu = () => {
           <div className="space-y-1">
             <div className="flex justify-between text-[10px]">
               <span className="text-muted-foreground">{xp} XP total</span>
-              <span className="text-primary">{xpInLevel.current}/{xpInLevel.needed} → Lv.{level + 1}</span>
+              <span className="text-primary">{xpInLevel.current}/{xpInLevel.needed} → {getTier(level + 1).name} Lv.{level + 1}</span>
             </div>
             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-500"
-                style={{ width: `${(xpInLevel.current / xpInLevel.needed) * 100}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (xpInLevel.current / xpInLevel.needed) * 100)}%`, backgroundColor: `hsl(${tier.color})` }}
               />
             </div>
           </div>
@@ -281,6 +317,40 @@ const ProfileMenu = () => {
             <Cookie className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
             Cookies & consentement
           </button>
+
+          <div className="h-px bg-border" />
+
+          {/* Mes données — RGPD (droit d'accès / portabilité / effacement) */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-muted-foreground px-1 uppercase tracking-wide">Mes données (RGPD)</p>
+            <button
+              onClick={handleExport}
+              disabled={busy}
+              className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-secondary/50 transition-colors text-xs text-foreground disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+              Exporter mes données (JSON)
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={busy}
+              className={`w-full flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs disabled:opacity-50 ${confirmDelete ? "bg-destructive/15 text-destructive font-medium" : "hover:bg-destructive/10 text-destructive"}`}
+              aria-label="Supprimer définitivement mon compte et mes données"
+            >
+              {confirmDelete ? <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />}
+              {busy ? "Suppression en cours..." : confirmDelete ? "Confirmer la suppression définitive ?" : "Supprimer mon compte"}
+            </button>
+            {confirmDelete && !busy && (
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="w-full text-[10px] text-muted-foreground hover:text-foreground py-1"
+              >
+                Annuler
+              </button>
+            )}
+          </div>
+
+          <div className="h-px bg-border" />
 
           {/* Sign out */}
           <button
