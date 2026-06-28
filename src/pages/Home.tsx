@@ -34,7 +34,7 @@ const Home = () => {
       : "Discute avec ton coach IA";
 
   return (
-    <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6">
+    <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6 stagger-children">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <span className="text-primary font-bold text-sm tracking-wider">BIO-FLOW</span>
