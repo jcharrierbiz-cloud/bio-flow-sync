@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, CalendarDays, PlusCircle, Heart } from "lucide-react";
+import { Home, CalendarDays, PlusCircle, Heart, Bot } from "lucide-react";
 
 const tabs = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/agenda", icon: CalendarDays, label: "Agenda" },
   { path: "/log", icon: PlusCircle, label: "Log" },
+  { path: "/coach", icon: Bot, label: "Coach" },
   { path: "/health", icon: Heart, label: "Santé" },
 ];
 
@@ -21,7 +22,7 @@ const BottomNav = () => {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 transition-all duration-300 ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 transition-all duration-300 ${
                 isActive
                   ? "text-energy"
                   : "text-muted-foreground hover:text-foreground"
