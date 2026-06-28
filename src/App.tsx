@@ -26,6 +26,7 @@ import {
   scheduleAgendaReminders,
 } from "@/lib/notifications";
 import { isOnboardingComplete, fetchProfile } from "@/lib/profileStore";
+import { claimLegacyData } from "@/lib/account";
 import { useAgendaStore } from "@/lib/agendaStore";
 
 const queryClient = new QueryClient();
@@ -55,9 +56,12 @@ const ProtectedApp = () => {
   useEffect(() => {
     const init = async () => {
       try {
+        // Rattache les anciennes données (device_id) au compte connecté,
+        // avant de charger le profil — pour que rien ne disparaisse au login.
+        await claimLegacyData();
         await fetchProfile();
       } catch (err) {
-        console.error("fetchProfile error:", err);
+        console.error("init error:", err);
       }
 
       if (!isOnboardingComplete()) {
