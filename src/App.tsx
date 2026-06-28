@@ -11,6 +11,7 @@ import LegalFooter from "@/components/LegalFooter";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
 import FocusLock from "@/components/FocusLock";
+import AmbientBackground from "@/components/AmbientBackground";
 import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
@@ -26,7 +27,6 @@ import {
   scheduleAgendaReminders,
 } from "@/lib/notifications";
 import { isOnboardingComplete, fetchProfile } from "@/lib/profileStore";
-import { claimLegacyData } from "@/lib/account";
 import { useAgendaStore } from "@/lib/agendaStore";
 
 const queryClient = new QueryClient();
@@ -56,12 +56,9 @@ const ProtectedApp = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Rattache les anciennes données (device_id) au compte connecté,
-        // avant de charger le profil — pour que rien ne disparaisse au login.
-        await claimLegacyData();
         await fetchProfile();
       } catch (err) {
-        console.error("init error:", err);
+        console.error("fetchProfile error:", err);
       }
 
       if (!isOnboardingComplete()) {
@@ -96,19 +93,26 @@ const ProtectedApp = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/agenda" element={<Agenda />} />
-          <Route path="/log" element={<Log />} />
-          <Route path="/health" element={<Health />} />
-          <Route path="/coach" element={<Coach />} />
-          <Route path="/auth" element={<Navigate to="/" replace />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <LegalFooter withBottomNav />
+      <div className="relative min-h-screen bg-background">
+        {/* Ambient drifting halos — sits behind everything (z-0) */}
+        <AmbientBackground />
+
+        {/* App content layered above the halos */}
+        <div className="relative" style={{ zIndex: 1 }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/agenda" element={<Agenda />} />
+            <Route path="/log" element={<Log />} />
+            <Route path="/health" element={<Health />} />
+            <Route path="/coach" element={<Coach />} />
+            <Route path="/auth" element={<Navigate to="/" replace />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/cookies" element={<Cookies />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <LegalFooter withBottomNav />
+        </div>
+
         <BottomNav />
       </div>
       <OnboardingFlow open={showOnboarding} onClose={handleOnboardingClose} />
