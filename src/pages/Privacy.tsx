@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import LegalFooter from "@/components/LegalFooter";
 
+// Adresse de contact RGPD réelle. ⚠️ Remplace-la par une adresse dédiée
+// (ex. contact@bio-flow.app) si tu ne veux pas exposer ton email personnel.
+const SUPPORT_EMAIL = "johan.chrr05@gmail.com";
+
 const Section = ({
   icon: Icon,
   title,
@@ -72,7 +76,7 @@ const Privacy = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-foreground">Confidentialité & Sécurité</h1>
-            <p className="text-[11px] text-muted-foreground">Mis à jour le 24 juin 2026</p>
+            <p className="text-[11px] text-muted-foreground">Mis à jour le 28 juin 2026</p>
           </div>
         </div>
 
@@ -111,7 +115,11 @@ const Privacy = () => {
             <li>Données biologiques enregistrées : scans HR/HRV, sommeil, repas, sessions sportives, tâches d'agenda.</li>
             <li>Métadonnées techniques minimales (date des actions, identifiant d'appareil local).</li>
           </ul>
-          <p>Aucune donnée n'est vendue à des tiers.</p>
+          <p>
+            Les scans (fréquence cardiaque, VFC, indice de stress) sont des données de santé,
+            relevant de l'article 9 du RGPD (catégorie particulière). Elles sont protégées par
+            Row-Level Security et accessibles à toi seul. Aucune donnée n'est vendue à des tiers.
+          </p>
         </Section>
 
         <Section icon={UserCheck} title="Comment nous utilisons tes données" id="data-use">
@@ -128,8 +136,9 @@ const Privacy = () => {
             <li>Authentification gérée par notre fournisseur backend (sessions JWT, tokens rafraîchis).</li>
             <li>Vérification des mots de passe contre la base Have I Been Pwned activée.</li>
             <li>
-              Row-Level Security activée sur l'ensemble des tables sensibles : chaque ligne
-              est filtrée par <code className="text-xs text-energy">auth.uid()</code>.
+              Row-Level Security activée sur l'ensemble des tables de données personnelles :
+              chaque ligne est filtrée par <code className="text-xs text-energy">auth.uid()</code>{" "}
+              et n'est lisible que par son propriétaire.
             </li>
             <li>Communications chiffrées en transit (HTTPS/TLS).</li>
             <li>Aucun accès anonyme aux tables contenant des données personnelles.</li>
@@ -162,9 +171,9 @@ const Privacy = () => {
 
         <Section icon={Trash2} title="Conservation & suppression" id="retention">
           <p>
-            Tes données sont conservées <strong>tant que ton compte est actif</strong>. À
-            la suppression du compte, les données associées sont supprimées des bases
-            opérationnelles.
+            Tes données sont conservées <strong>tant que ton compte est actif</strong>. Tu peux
+            supprimer ton compte et toutes tes données <strong>à tout moment et immédiatement</strong>{" "}
+            depuis le menu Profil → « Supprimer mon compte ». La suppression est définitive.
           </p>
         </Section>
 
@@ -184,9 +193,8 @@ const Privacy = () => {
                 Obtenir une copie des données personnelles que nous détenons à ton sujet.
               </p>
               <p className="text-xs text-foreground/80 mt-1">
-                <strong>Comment l'exercer :</strong> Profil → « Recalibrer mon coach »
-                affiche l'ensemble des données utilisées. Pour un export complet, envoie
-                une demande par email (voir Contact).
+                <strong>Comment l'exercer :</strong> Profil → « Exporter mes données » télécharge
+                immédiatement un fichier JSON complet de toutes tes données.
               </p>
             </article>
 
@@ -211,8 +219,8 @@ const Privacy = () => {
                 Demander la suppression de ton compte et de toutes tes données.
               </p>
               <p className="text-xs text-foreground/80 mt-1">
-                <strong>Comment l'exercer :</strong> envoie un email avec l'objet
-                « Suppression de compte ». La suppression est effective sous 30 jours.
+                <strong>Comment l'exercer :</strong> Profil → « Supprimer mon compte ».
+                L'effacement de tes données est immédiat et définitif, sans délai d'attente.
               </p>
             </article>
 
@@ -224,8 +232,8 @@ const Privacy = () => {
                 Récupérer tes données dans un format structuré et lisible (JSON).
               </p>
               <p className="text-xs text-foreground/80 mt-1">
-                <strong>Comment l'exercer :</strong> envoie une demande d'export par
-                email — un fichier JSON consolidé te sera transmis sous 30 jours.
+                <strong>Comment l'exercer :</strong> Profil → « Exporter mes données ». Le fichier
+                JSON obtenu est réutilisable et transférable.
               </p>
             </article>
 
@@ -256,9 +264,20 @@ const Privacy = () => {
 
         <Section icon={Mail} title="Contact & signalement" id="contact">
           <p>
-            Pour exercer tes droits ou signaler une vulnérabilité, écris à l'équipe
-            Bio-Flow via l'adresse de contact configurée par l'éditeur dans les
-            paramètres de publication.
+            La plupart de tes droits s'exercent directement dans l'app (Profil → export ou
+            suppression). Pour toute autre demande, question sur tes données, ou pour signaler
+            une vulnérabilité, écris-nous à&nbsp;:
+          </p>
+          <p>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}?subject=Bio-Flow%20%E2%80%94%20Demande%20RGPD`}
+              className="text-energy hover:underline font-medium"
+            >
+              {SUPPORT_EMAIL}
+            </a>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Nous répondons aux demandes RGPD dans un délai maximal d'un mois (art. 12 RGPD).
           </p>
         </Section>
 
