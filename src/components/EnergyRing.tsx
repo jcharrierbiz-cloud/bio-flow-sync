@@ -1,11 +1,11 @@
 import AnimatedScore from "@/components/AnimatedScore";
+import { useEffect, useState } from "react";
 
 interface EnergyRingProps {
   score: number;
   size?: number;
 }
 
-// Status text derived from the score so the empty space inside the ring carries meaning
 const getStatus = (score: number) => {
   if (score <= 0) return { label: "À calibrer", color: "text-muted-foreground" };
   if (score < 40) return { label: "Fatigué", color: "text-intensity" };
@@ -18,11 +18,23 @@ const EnergyRing = ({ score, size = 200 }: EnergyRingProps) => {
   const strokeWidth = 11;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
   const status = getStatus(score);
 
+  // Animate the stroke offset on mount/score change so the ring "draws" itself
+  const [animatedScore, setAnimatedScore] = useState(0);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setAnimatedScore(score));
+    return () => cancelAnimationFrame(t);
+  }, [score]);
+
+  const offset = circumference - (animatedScore / 100) * circumference;
+  const isHigh = score >= 80;
+
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className={`relative flex items-center justify-center ${isHigh ? "ring-breathe" : ""}`}
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2} cy={size / 2} r={radius}
@@ -32,8 +44,10 @@ const EnergyRing = ({ score, size = 200 }: EnergyRingProps) => {
           cx={size / 2} cy={size / 2} r={radius}
           fill="none" stroke="url(#energyGradient)" strokeWidth={strokeWidth}
           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          className="transition-all duration-[1200ms] ease-out"
-          style={{ filter: "drop-shadow(0 0 8px hsl(175 80% 45% / 0.4))" }}
+          style={{
+            transition: "stroke-dashoffset 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
+            filter: "drop-shadow(0 0 8px hsl(175 80% 45% / 0.4))",
+          }}
         />
         <defs>
           <linearGradient id="energyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
