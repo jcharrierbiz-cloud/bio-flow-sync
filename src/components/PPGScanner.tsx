@@ -23,11 +23,22 @@ function WaveformSVG({ data, active }: { data: number[]; active: boolean }) {
   const height = 80;
   const step = width / (data.length - 1);
 
-  const points = data.map((v, i) => `${i * step},${height - v * height * 0.85 - height * 0.05}`);
+  const points = data.map(
+    (v, i) => `${i * step},${height - v * height * 0.85 - height * 0.05}`
+  );
   const pathD = `M ${points.join(" L ")}`;
 
+  // Coordonnées du dernier point — on y pose un "point de tête" lumineux quand actif
+  const lastV = data[data.length - 1];
+  const headX = width;
+  const headY = height - lastV * height * 0.85 - height * 0.05;
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-20" preserveAspectRatio="none">
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full h-20"
+      preserveAspectRatio="none"
+    >
       <defs>
         <linearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="hsl(var(--intensity))" stopOpacity="0.3" />
@@ -38,7 +49,15 @@ function WaveformSVG({ data, active }: { data: number[]; active: boolean }) {
           <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity="0.2" />
           <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity="0.5" />
         </linearGradient>
+        {/* Dégradé vertical du balayage : invisible en haut/bas, lumineux au centre */}
+        <linearGradient id="scanGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(var(--energy))" stopOpacity="0" />
+          <stop offset="50%" stopColor="hsl(var(--energy))" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="hsl(var(--energy))" stopOpacity="0" />
+        </linearGradient>
       </defs>
+
+      {/* La courbe */}
       <path
         d={pathD}
         fill="none"
@@ -48,6 +67,37 @@ function WaveformSVG({ data, active }: { data: number[]; active: boolean }) {
         strokeLinejoin="round"
         className={active ? "drop-shadow-[0_0_6px_hsl(var(--intensity)/0.4)]" : ""}
       />
+
+      {active && (
+        <>
+          {/* Ligne de balayage qui glisse de gauche à droite en boucle */}
+          <rect x="0" y="0" width="2" height={height} fill="url(#scanGrad)">
+            <animate
+              attributeName="x"
+              from="0"
+              to={width}
+              dur="2.4s"
+              repeatCount="indefinite"
+            />
+          </rect>
+
+          {/* Point lumineux en tête de courbe qui pulse */}
+          <circle cx={headX} cy={headY} r="3" fill="hsl(var(--energy))">
+            <animate
+              attributeName="r"
+              values="2.5;4;2.5"
+              dur="1s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="opacity"
+              values="1;0.5;1"
+              dur="1s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </>
+      )}
     </svg>
   );
 }
