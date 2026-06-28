@@ -41,6 +41,16 @@ export function getDeviceId(): string {
   return id;
 }
 
+/** Identifiant du compte authentifié (null si non connecté). */
+export async function getUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getCachedProfile(): UserProfile | null {
   try {
     const raw = localStorage.getItem(PROFILE_CACHE_KEY);
@@ -54,17 +64,8 @@ function cacheProfile(profile: UserProfile) {
   localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
 }
 
-export async function fetchProfile(): Promise<UserProfile | null> {
-  const deviceId = getDeviceId();
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("device_id", deviceId)
-    .maybeSingle();
-
-  if (error || !data) return getCachedProfile();
-  
-  const profile: UserProfile = {
+function mapRow(data: any, deviceId: string): UserProfile {
+  return {
     id: data.id,
     device_id: data.device_id || deviceId,
     pseudo: data.pseudo,
@@ -74,11 +75,11 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     height: data.height,
     height_unit: (data.height_unit as "cm" | "ft") || "cm",
     fitness_level: data.fitness_level || "",
-    sport_history: (data as any).sport_history || "",
+    sport_history: data.sport_history || "",
     organization_level: data.organization_level || "",
     status: data.status || "",
-    schedule: (data as any).schedule || data.status || "",
-    workload: (data as any).workload || data.organization_level || "",
+    schedule: data.schedule || data.status || "",
+    workload: data.workload || data.organization_level || "",
     main_goal: data.main_goal || "",
     goal_details: data.goal_details || "",
     ai_coach_config: data.ai_coach_config as Record<string, unknown> | null,
@@ -87,20 +88,57 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     notification_enabled: data.notification_enabled,
     reminder_minutes: data.reminder_minutes,
     morning_scan_enabled: data.morning_scan_enabled,
-    focus_lock_enabled: (data as any).focus_lock_enabled || false,
-    blocked_categories: (data as any).blocked_categories || [],
-    parental_consent: (data as any).parental_consent ?? null,
-    consent_age: (data as any).consent_age ?? null,
+    focus_lock_enabled: data.focus_lock_enabled || false,
+    blocked_categories: data.blocked_categories || [],
+    parental_consent: data.parental_consent ?? null,
+    consent_age: data.consent_age ?? null,
   };
+}
+
+export async function fetchProfile(): Promise<UserProfile | null> {
+  const deviceId = getDeviceId();
+  const userId = await getUserId();
+
+  let data: any = null;
+
+  // 1) Source de vérité : le profil rattaché au compte.
+  if (userId) {
+    const res = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    data = res.data;
+  }
+
+  // 2) Fallback legacy : profil créé par device_id, pas encore réclamé.
+  if (!data) {
+    const res = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("device_id", deviceId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    data = res.data;
+  }
+
+  if (!data) return getCachedProfile();
+
+  const profile = mapRow(data, deviceId);
   cacheProfile(profile);
   return profile;
 }
 
 export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<UserProfile | null> {
   const deviceId = getDeviceId();
+  const userId = await getUserId();
 
   const dbPayload: any = {
     device_id: deviceId,
+    user_id: userId, // rattache la ligne au compte (le défaut SQL auth.uid() prend aussi le relais)
     pseudo: profile.pseudo,
     age: profile.age,
     weight: profile.weight,
@@ -127,19 +165,24 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
     consent_age: profile.consent_age ?? null,
   };
 
-  const { data: existing } = await supabase
-    .from("user_profiles")
-    .select("id")
-    .eq("device_id", deviceId)
-    .maybeSingle();
+  // Cherche un profil existant : par compte d'abord, sinon par appareil.
+  let existing: { id: string } | null = null;
+  if (userId) {
+    const r = await supabase
+      .from("user_profiles").select("id").eq("user_id", userId)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    existing = r.data;
+  }
+  if (!existing) {
+    const r = await supabase
+      .from("user_profiles").select("id").eq("device_id", deviceId)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    existing = r.data;
+  }
 
   if (existing) {
     const { data, error } = await supabase
-      .from("user_profiles")
-      .update(dbPayload)
-      .eq("id", existing.id)
-      .select()
-      .single();
+      .from("user_profiles").update(dbPayload).eq("id", existing.id).select().single();
     if (error) { console.error("Update profile error:", error); return null; }
     const updated = { ...profile, id: data.id } as UserProfile;
     cacheProfile(updated);
@@ -147,10 +190,7 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
   }
 
   const { data, error } = await supabase
-    .from("user_profiles")
-    .insert(dbPayload)
-    .select()
-    .single();
+    .from("user_profiles").insert(dbPayload).select().single();
   if (error) { console.error("Insert profile error:", error); return null; }
   const created = { ...profile, id: data.id } as UserProfile;
   cacheProfile(created);
@@ -159,12 +199,14 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
 
 export async function updateProfileField(field: string, value: unknown): Promise<void> {
   const deviceId = getDeviceId();
-  const { error } = await supabase
-    .from("user_profiles")
-    .update({ [field]: value })
-    .eq("device_id", deviceId);
+  const userId = await getUserId();
+
+  const query = supabase.from("user_profiles").update({ [field]: value });
+  const { error } = userId
+    ? await query.eq("user_id", userId)
+    : await query.eq("device_id", deviceId);
   if (error) console.error("Update field error:", error);
-  
+
   const cached = getCachedProfile();
   if (cached) {
     (cached as any)[field] = value;
