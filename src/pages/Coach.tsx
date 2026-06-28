@@ -1,6 +1,4 @@
 import UnlocksCard from "@/components/UnlocksCard";
-// ... dans le JSX :
-<UnlocksCard />
 import { useState, useRef, useEffect } from "react";
 import { Bot, Sparkles, Send, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
