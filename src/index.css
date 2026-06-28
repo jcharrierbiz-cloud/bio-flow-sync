@@ -2,61 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   Bio-Flow — Light "MedLink × Docuverse" design system
+   Warm cream background, sage primary, emerald accents,
+   nude beige highlights, fully rounded, soft ambient shadows.
+   ============================================================ */
 
 @layer base {
   :root {
-    --background: 222 47% 5%;
-    --foreground: 210 20% 92%;
+    /* Surfaces */
+    --background: 37 33% 94%;          /* #F5F0E8 warm cream */
+    --foreground: 0 0% 10%;            /* #1A1A1A charcoal */
 
-    --card: 222 35% 8%;
-    --card-foreground: 210 20% 92%;
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
 
-    --popover: 222 35% 8%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 175 80% 45%;
-    --primary-foreground: 222 47% 5%;
+    /* Brand */
+    --primary: 95 20% 51%;             /* #7C9A6A sage */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 25% 14%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 50 25% 97%;           /* #FAFAF5 off-white */
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 222 20% 12%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 37 20% 90%;
+    --muted-foreground: 0 0% 42%;      /* #6B6B6B warm gray */
 
-    --accent: 270 75% 60%;
-    --accent-foreground: 210 20% 95%;
+    --accent: 25 47% 84%;              /* #E8D5C4 nude */
+    --accent-foreground: 0 0% 15%;
 
-    --destructive: 15 90% 55%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive: 12 55% 55%;         /* warm clay (no harsh red) */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 20% 14%;
-    --input: 222 20% 14%;
-    --ring: 175 80% 45%;
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 95 20% 51%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;                 /* 20px — premium rounded */
 
-    /* Custom Bio-Flow tokens */
-    --energy: 175 80% 45%;
-    --energy-glow: 175 80% 45%;
-    --ai-violet: 270 75% 60%;
-    --ai-violet-glow: 270 75% 70%;
-    --intensity: 15 90% 55%;
-    --intensity-glow: 25 95% 60%;
-    --warning: 45 95% 55%;
+    /* Bio-Flow semantic accents (remapped to sage/emerald) */
+    --energy: 95 20% 51%;              /* sage — primary metric */
+    --energy-glow: 142 71% 58%;        /* emerald glow */
+    --ai-violet: 142 71% 58%;          /* #4ADE80 emerald — was violet */
+    --ai-violet-glow: 142 71% 70%;
+    --intensity: 12 55% 55%;           /* warm clay */
+    --intensity-glow: 18 65% 62%;
+    --warning: 35 75% 55%;             /* warm amber */
 
-    --glass-bg: 222 35% 10%;
-    --glass-border: 222 20% 18%;
-    --glass-highlight: 222 20% 22%;
+    /* Glassmorphism */
+    --glass-bg: 0 0% 100%;
+    --glass-border: 30 15% 88%;
+    --glass-highlight: 50 25% 97%;
 
-    --sidebar-background: 222 47% 5%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 175 80% 45%;
-    --sidebar-primary-foreground: 222 47% 5%;
-    --sidebar-accent: 222 25% 14%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 222 20% 14%;
-    --sidebar-ring: 175 80% 45%;
+    /* Sidebar */
+    --sidebar-background: 37 33% 94%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 95 20% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 50 25% 97%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 30 15% 88%;
+    --sidebar-ring: 95 20% 51%;
   }
 }
 
@@ -65,46 +75,68 @@
     @apply border-border;
   }
 
-  body {
+  html, body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
+
+  h1 { letter-spacing: -0.02em; }
+  h2 { letter-spacing: -0.015em; }
 }
 
 @layer utilities {
+  /* Premium glass card — white/70 with soft ambient shadow */
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-glass-border rounded-2xl;
+    @apply bg-white/70 backdrop-blur-xl border border-glass-border rounded-[20px];
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:border-glass-highlight hover:bg-card/80;
+    @apply glass-card transition-all duration-300;
+  }
+  .glass-card-hover:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
   }
 
-  /* Secondary surface — for lower-priority cards so they don't compete with the hero */
+  /* Secondary surface — off-white card */
   .surface-card {
-    @apply bg-secondary/30 border border-border/50 rounded-2xl;
+    @apply bg-[hsl(var(--secondary))] border border-border/60 rounded-[20px];
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
   }
 
+  /* Ambient glows — softened, never neon */
   .glow-energy {
-    box-shadow: 0 0 20px hsl(175 80% 45% / 0.15), 0 0 60px hsl(175 80% 45% / 0.05);
+    box-shadow: 0 4px 24px hsl(95 20% 51% / 0.12), 0 0 60px hsl(142 71% 58% / 0.06);
   }
 
   .glow-violet {
-    box-shadow: 0 0 20px hsl(270 75% 60% / 0.15), 0 0 60px hsl(270 75% 60% / 0.05);
+    box-shadow: 0 4px 24px hsl(142 71% 58% / 0.14), 0 0 60px hsl(142 71% 58% / 0.06);
   }
 
   .glow-intensity {
-    box-shadow: 0 0 20px hsl(15 90% 55% / 0.15), 0 0 60px hsl(15 90% 55% / 0.05);
+    box-shadow: 0 4px 24px hsl(12 55% 55% / 0.10), 0 0 50px hsl(18 65% 62% / 0.05);
   }
 
   .text-gradient-energy {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(175 80% 45%), hsl(175 80% 65%));
+    background-image: linear-gradient(135deg, hsl(95 20% 51%), hsl(142 71% 58%));
   }
 
   .text-gradient-violet {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(270 75% 60%), hsl(270 75% 75%));
+    background-image: linear-gradient(135deg, hsl(142 71% 58%), hsl(95 30% 65%));
+  }
+
+  /* Organic emerald blob — biological, liquid backdrop */
+  .organic-blob {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsl(142 71% 58% / 0.22), hsl(95 20% 51% / 0.08) 60%, transparent 75%);
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .safe-bottom {
@@ -114,6 +146,11 @@
   .mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* iOS-style pill button micro-interaction */
+  .press-scale {
+    @apply transition-transform duration-150 active:scale-[0.96];
+  }
 }
 
 @keyframes draw {
@@ -121,7 +158,6 @@
   to { stroke-dashoffset: 0; }
 }
 
-/* fade-in — referenced as `animate-fade-in` across Home/Log but was never defined */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

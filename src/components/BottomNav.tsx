@@ -28,7 +28,7 @@ const BottomNav = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? "drop-shadow-[0_0_6px_hsl(175,80%,45%)]" : ""}`} strokeWidth={isActive ? 2.5 : 1.5} />
+              <Icon className={`w-5 h-5 ${isActive ? "drop-shadow-[0_0_6px_hsl(95,20%,51%)]" : ""}`} strokeWidth={isActive ? 2.2 : 1.5} />
               <span className="text-[10px] font-medium">{label}</span>
             </button>
           );
