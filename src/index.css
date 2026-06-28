@@ -80,6 +80,11 @@
     @apply glass-card transition-all duration-300 hover:border-glass-highlight hover:bg-card/80;
   }
 
+  /* Secondary surface — for lower-priority cards so they don't compete with the hero */
+  .surface-card {
+    @apply bg-secondary/30 border border-border/50 rounded-2xl;
+  }
+
   .glow-energy {
     box-shadow: 0 0 20px hsl(175 80% 45% / 0.15), 0 0 60px hsl(175 80% 45% / 0.05);
   }
@@ -114,4 +119,18 @@
 @keyframes draw {
   from { stroke-dashoffset: 283; }
   to { stroke-dashoffset: 0; }
+}
+
+/* fade-in — referenced as `animate-fade-in` across Home/Log but was never defined */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in { animation: none; }
 }
