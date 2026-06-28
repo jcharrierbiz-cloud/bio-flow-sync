@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           checked: boolean
           created_at: string
-          device_id: string
+          device_id: string | null
           id: string
           log_date: string
           tip_index: number
@@ -27,7 +27,7 @@ export type Database = {
         Insert: {
           checked?: boolean
           created_at?: string
-          device_id: string
+          device_id?: string | null
           id?: string
           log_date?: string
           tip_index: number
@@ -36,7 +36,7 @@ export type Database = {
         Update: {
           checked?: boolean
           created_at?: string
-          device_id?: string
+          device_id?: string | null
           id?: string
           log_date?: string
           tip_index?: number
@@ -50,7 +50,7 @@ export type Database = {
           analyzed_at: string | null
           created_at: string
           day_date: string
-          device_id: string
+          device_id: string | null
           duration_minutes: number
           followup_notes: string[] | null
           id: string
@@ -66,7 +66,7 @@ export type Database = {
           analyzed_at?: string | null
           created_at?: string
           day_date?: string
-          device_id: string
+          device_id?: string | null
           duration_minutes?: number
           followup_notes?: string[] | null
           id?: string
@@ -82,7 +82,7 @@ export type Database = {
           analyzed_at?: string | null
           created_at?: string
           day_date?: string
-          device_id?: string
+          device_id?: string | null
           duration_minutes?: number
           followup_notes?: string[] | null
           id?: string
@@ -136,7 +136,7 @@ export type Database = {
           bpm: number
           created_at: string
           day_date: string
-          device_id: string
+          device_id: string | null
           hrv_rmssd: number
           id: string
           is_morning_scan: boolean
@@ -149,7 +149,7 @@ export type Database = {
           bpm: number
           created_at?: string
           day_date?: string
-          device_id: string
+          device_id?: string | null
           hrv_rmssd: number
           id?: string
           is_morning_scan?: boolean
@@ -162,7 +162,7 @@ export type Database = {
           bpm?: number
           created_at?: string
           day_date?: string
-          device_id?: string
+          device_id?: string | null
           hrv_rmssd?: number
           id?: string
           is_morning_scan?: boolean
@@ -272,7 +272,7 @@ export type Database = {
       weekly_summaries: {
         Row: {
           created_at: string
-          device_id: string
+          device_id: string | null
           generated_at: string
           id: string
           sport_synthesis: string | null
@@ -281,7 +281,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          device_id: string
+          device_id?: string | null
           generated_at?: string
           id?: string
           sport_synthesis?: string | null
@@ -290,7 +290,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          device_id?: string
+          device_id?: string | null
           generated_at?: string
           id?: string
           sport_synthesis?: string | null
@@ -304,7 +304,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_device_data: { Args: { p_device_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
