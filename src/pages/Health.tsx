@@ -17,6 +17,10 @@ const Health = () => {
   const sleepQuality = quality ?? (sleep >= 7.5 ? "Optimal" : sleep >= 6 ? "Insuffisant" : "Critique");
   const sleepColor = sleep >= 7.5 ? "text-energy" : sleep >= 6 ? "text-warning" : "text-intensity";
 
+  // Visible fill for the sleep slider (range 3h–10h)
+  const sleepPct = ((sleep - 3) / (10 - 3)) * 100;
+  const sleepTrack = `linear-gradient(to right, hsl(var(--ai-violet)) ${sleepPct}%, hsl(var(--secondary)) ${sleepPct}%)`;
+
   const handleStartScan = () => setScanMode("choosing");
 
   const handleWatchConnect = () => {
@@ -58,9 +62,15 @@ const Health = () => {
 
   return (
     <div className="px-5 pt-12 pb-24 max-w-lg mx-auto space-y-6">
-      <div>
-        <p className="text-muted-foreground text-sm">Biométrie</p>
-        <h1 className="text-xl font-bold text-foreground mt-0.5">Santé</h1>
+      {/* Colored page header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-ai-violet/15 flex items-center justify-center shrink-0">
+          <Heart className="w-5 h-5 text-ai-violet" />
+        </div>
+        <div>
+          <p className="text-muted-foreground text-sm">Biométrie</p>
+          <h1 className="text-xl font-bold text-foreground mt-0.5">Santé</h1>
+        </div>
       </div>
 
       {/* Morning Scan */}
@@ -153,7 +163,8 @@ const Health = () => {
             <input
               type="range" min="3" max="10" step="0.1" value={sleep}
               onChange={(e) => setSleep(Number(e.target.value))}
-              className="w-full h-1.5 rounded-full appearance-none bg-secondary cursor-pointer
+              style={{ background: sleepTrack }}
+              className="w-full h-1.5 rounded-full appearance-none cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-ai-violet [&::-webkit-slider-thumb]:shadow-[0_0_10px_hsl(270,75%,60%,0.4)]
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-ai-violet [&::-moz-range-thumb]:border-0"
             />
