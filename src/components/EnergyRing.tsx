@@ -5,11 +5,21 @@ interface EnergyRingProps {
   size?: number;
 }
 
-const EnergyRing = ({ score, size = 180 }: EnergyRingProps) => {
-  const strokeWidth = 10;
+// Status text derived from the score so the empty space inside the ring carries meaning
+const getStatus = (score: number) => {
+  if (score <= 0) return { label: "À calibrer", color: "text-muted-foreground" };
+  if (score < 40) return { label: "Fatigué", color: "text-intensity" };
+  if (score < 65) return { label: "Modéré", color: "text-warning" };
+  if (score < 85) return { label: "En forme", color: "text-energy" };
+  return { label: "Optimal", color: "text-energy" };
+};
+
+const EnergyRing = ({ score, size = 200 }: EnergyRingProps) => {
+  const strokeWidth = 11;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
+  const status = getStatus(score);
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -33,10 +43,11 @@ const EnergyRing = ({ score, size = 180 }: EnergyRingProps) => {
         </defs>
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-bold mono text-gradient-energy">
+        <span className="text-5xl font-bold mono text-gradient-energy leading-none">
           <AnimatedScore value={score} />
         </span>
-        <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase mt-1">/ 100</span>
+        <span className="text-[11px] text-muted-foreground font-medium tracking-wider uppercase mt-1">/ 100</span>
+        <span className={`text-xs font-semibold mt-2 ${status.color}`}>{status.label}</span>
       </div>
     </div>
   );
