@@ -69,17 +69,6 @@ const Coach = () => {
       const decoder = new TextDecoder();
       let textBuffer = "";
 
-      const upsert = (chunk: string) => {
-        assistantSoFar += chunk;
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant") {
-            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-          }
-          return [...prev, { role: "assistant", content: assistantSoFar }];
-        });
-      };
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -97,12 +86,18 @@ const Coach = () => {
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content;
-            if (content) upsert(content);
+            if (content) assistantSoFar += content;
           } catch {
             textBuffer = line + "\n" + textBuffer;
             break;
           }
         }
+      }
+
+      // Only display the assistant message once fully received (no streaming text)
+      const cleaned = assistantSoFar.replace(/```json_agenda[\s\S]*?```/g, "").trim();
+      if (cleaned) {
+        setMessages((prev) => [...prev, { role: "assistant", content: cleaned }]);
       }
 
       parseAgendaFromResponse(assistantSoFar);
@@ -162,15 +157,15 @@ const Coach = () => {
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
                 msg.role === "user"
                   ? "bg-ai-violet/20 text-foreground rounded-br-md"
                   : "glass-card text-secondary-foreground rounded-bl-md"
               }`}
             >
               {msg.role === "assistant" ? (
-                <div className="prose prose-invert prose-sm max-w-none [&_p]:my-1">
-                  <ReactMarkdown>{msg.content.replace(/```json_agenda[\s\S]*?```/g, "✅ *Agenda mis à jour !*")}</ReactMarkdown>
+                <div className="prose prose-invert prose-sm max-w-none [&_p]:my-1.5 [&_ul]:my-1.5 [&_li]:my-0.5 [&_strong]:text-foreground text-[13px]">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
                 msg.content
@@ -179,7 +174,7 @@ const Coach = () => {
           </div>
         ))}
 
-        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+        {isLoading && (
           <div className="flex justify-start">
             <div className="glass-card rounded-2xl rounded-bl-md px-4 py-3">
               <div className="flex gap-1">
