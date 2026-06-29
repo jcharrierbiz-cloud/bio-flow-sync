@@ -28,11 +28,11 @@ const AmbientBackground = () => {
           maxHeight: 620,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, hsl(175 80% 45% / 0.10) 0%, hsl(175 80% 45% / 0.03) 45%, transparent 70%)",
+            "radial-gradient(circle, hsl(142 71% 58% / 0.18) 0%, hsl(142 71% 58% / 0.06) 45%, transparent 70%)",
           filter: "blur(60px)",
         }}
       />
-      {/* Violet halo — bottom, drifts on a different rhythm */}
+      {/* Sage halo — bottom, drifts on a different rhythm */}
       <div
         className="ambient-blob ambient-blob--violet"
         style={{
@@ -45,7 +45,7 @@ const AmbientBackground = () => {
           maxHeight: 560,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, hsl(270 75% 60% / 0.09) 0%, hsl(270 75% 60% / 0.025) 45%, transparent 70%)",
+            "radial-gradient(circle, hsl(95 20% 51% / 0.14) 0%, hsl(95 20% 51% / 0.04) 45%, transparent 70%)",
           filter: "blur(70px)",
         }}
       />
