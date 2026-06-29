@@ -22,3 +22,6 @@ verify_jwt = true
 
 [functions.export-my-data]
 verify_jwt = true
+
+[functions.claim-device-data]
+verify_jwt = true
