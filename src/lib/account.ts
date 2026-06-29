@@ -20,7 +20,9 @@ export async function claimLegacyData(): Promise<void> {
   try {
     const deviceId = getDeviceId();
     if (!deviceId) return;
-    await supabase.rpc("claim_device_data", { p_device_id: deviceId });
+    await supabase.functions.invoke("claim-device-data", {
+      body: { device_id: deviceId },
+    });
   } catch (e) {
     console.error("claimLegacyData error:", e);
   }
