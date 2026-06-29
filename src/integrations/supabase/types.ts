@@ -304,7 +304,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_device_data: { Args: { p_device_id: string }; Returns: undefined }
+      claim_device_data: {
+        Args: { p_device_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
