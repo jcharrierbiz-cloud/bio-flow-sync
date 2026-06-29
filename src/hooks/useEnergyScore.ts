@@ -70,18 +70,37 @@ export function useEnergyScore(): EnergyBreakdown {
         .select("checked")
         .eq("device_id", deviceId)
         .eq("log_date", today);
-      if (!data || data.length === 0) {
-        setNutrition(null);
-        return;
+
+      // Tips score (0-100) — null if no tips logged
+      let tipsScore: number | null = null;
+      if (data && data.length > 0) {
+        const checked = data.filter((d) => d.checked).length;
+        const expected = Math.max(data.length, 4);
+        tipsScore = Math.round((checked / expected) * 100);
       }
-      const total = data.length;
-      const checked = data.filter((d) => d.checked).length;
-      // Always at least 4 expected tips; reward proportionally
-      const expected = Math.max(total, 4);
-      setNutrition(Math.round((checked / expected) * 100));
+
+      // Meal scan score (0-100) — from localStorage meal analysis
+      let mealScore: number | null = null;
+      try {
+        const raw = localStorage.getItem("bioflow_meal_" + today);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const q = parsed?.analysis?.nutritionalQuality;
+          if (typeof q === "number") {
+            mealScore = Math.max(0, Math.min(100, Math.round(q)));
+          }
+        }
+      } catch {}
+
+      const parts = [tipsScore, mealScore].filter((v): v is number => v != null);
+      if (parts.length === 0) {
+        setNutrition(null);
+      } else {
+        setNutrition(Math.round(parts.reduce((a, b) => a + b, 0) / parts.length));
+      }
     };
     load();
-    const interval = setInterval(load, 30000);
+    const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
   }, []);
 
