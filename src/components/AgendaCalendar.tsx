@@ -112,17 +112,17 @@ const AgendaCalendar = () => {
   return (
     <div className="space-y-4">
       {/* Month header */}
-      <div className="glass-card p-4 space-y-3">
+      <div className="glass-card p-3 space-y-2">
         <div className="flex items-center justify-between">
           <button
             onClick={goPrev}
-            className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
+            className="w-7 h-7 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
             aria-label="Mois précédent"
           >
-            <ChevronLeft className="w-4 h-4 text-foreground" />
+            <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
           </button>
           <div className="text-center">
-            <h2 className="text-base font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               {monthNames[cursor.getMonth()]} {cursor.getFullYear()}
             </h2>
             <button
@@ -134,19 +134,19 @@ const AgendaCalendar = () => {
           </div>
           <button
             onClick={goNext}
-            className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
+            className="w-7 h-7 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
             aria-label="Mois suivant"
           >
-            <ChevronRight className="w-4 h-4 text-foreground" />
+            <ChevronRight className="w-3.5 h-3.5 text-foreground" />
           </button>
         </div>
 
         {/* Weekday labels */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5">
           {weekdays.map((w, i) => (
             <div
               key={i}
-              className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider py-1"
+              className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider py-0.5"
             >
               {w}
             </div>
@@ -154,7 +154,7 @@ const AgendaCalendar = () => {
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5">
           {grid.map((d, i) => {
             const inMonth = d.getMonth() === cursor.getMonth();
             const isToday = sameDay(d, today);
@@ -164,7 +164,7 @@ const AgendaCalendar = () => {
               <button
                 key={i}
                 onClick={() => setSelected(d)}
-                className={`relative aspect-square rounded-lg p-1 flex flex-col items-center justify-start transition-all border
+                className={`relative rounded-md p-0.5 flex flex-col items-center justify-start transition-all border
                   ${isSelected
                     ? "bg-energy/15 border-energy/50 ring-1 ring-energy/40"
                     : isToday
@@ -173,7 +173,7 @@ const AgendaCalendar = () => {
                   ${!inMonth ? "opacity-30" : ""}`}
               >
                 <span
-                  className={`text-[11px] font-medium ${
+                  className={`text-[10px] font-medium ${
                     isToday ? "text-energy" : "text-foreground"
                   }`}
                 >
@@ -181,17 +181,17 @@ const AgendaCalendar = () => {
                 </span>
                 {/* Category dots */}
                 {items.length > 0 && (
-                  <div className="flex gap-0.5 mt-auto mb-0.5 flex-wrap justify-center">
+                  <div className="flex gap-[2px] mt-auto mb-[1px] flex-wrap justify-center">
                     {items.slice(0, 3).map((it) => (
                       <span
                         key={it.id}
-                        className={`w-1.5 h-1.5 rounded-full ${
+                        className={`w-1 h-1 rounded-full ${
                           categoryDot[it.category] || categoryDot.Autre
                         }`}
                       />
                     ))}
                     {items.length > 3 && (
-                      <span className="text-[8px] text-muted-foreground leading-none">
+                      <span className="text-[7px] text-muted-foreground leading-none">
                         +{items.length - 3}
                       </span>
                     )}
@@ -204,7 +204,7 @@ const AgendaCalendar = () => {
       </div>
 
       {/* Selected day panel */}
-      <div className="glass-card p-4 space-y-3">
+      <div className="glass-card p-3 space-y-2">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -220,9 +220,9 @@ const AgendaCalendar = () => {
           </div>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className="w-8 h-8 rounded-full bg-energy/15 flex items-center justify-center hover:bg-energy/25 transition-colors"
+            className="w-7 h-7 rounded-full bg-energy/15 flex items-center justify-center hover:bg-energy/25 transition-colors"
           >
-            {showAdd ? <X className="w-4 h-4 text-energy" /> : <Plus className="w-4 h-4 text-energy" />}
+            {showAdd ? <X className="w-3.5 h-3.5 text-energy" /> : <Plus className="w-3.5 h-3.5 text-energy" />}
           </button>
         </div>
 
