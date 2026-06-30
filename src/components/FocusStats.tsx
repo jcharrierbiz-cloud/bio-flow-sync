@@ -1,84 +1,101 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Timer, Target, Flame } from "lucide-react";
+import { useFocusStats } from "@/hooks/useFocusStats";
 
-interface Stats {
-  totalMinutes: number;
-  completionRate: number;
-  streak: number;
-}
+const GREEN = "#6BD089";
+const GREEN_DEEP = "#3C9A5E";
 
-const FocusStats = () => {
-  const [stats, setStats] = useState<Stats>({ totalMinutes: 0, completionRate: 0, streak: 0 });
+const fmt = (s: number) => {
+  if (!s) return "0m";
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return h ? `${h}h${String(m).padStart(2, "0")}` : `${m}m`;
+};
 
-  useEffect(() => {
-    const load = async () => {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
+export default function FocusStats() {
+  const { stats, loading } = useFocusStats();
 
-      const { data } = await supabase
-        .from("focus_sessions")
-        .select("*")
-        .gte("started_at", weekAgo.toISOString())
-        .order("started_at", { ascending: false });
+  if (loading)
+    return (
+      <div style={{ color: "#9AA6BD", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, padding: 16 }}>
+        Chargement…
+      </div>
+    );
 
-      if (!data || data.length === 0) return;
+  if (stats.sessionCount === 0)
+    return (
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          textAlign: "center",
+          background: "rgba(255,255,255,.03)",
+          border: "1px solid rgba(255,255,255,.08)",
+        }}
+      >
+        <div style={{ fontSize: 15, color: "#E8EDF7", marginBottom: 6 }}>Aucune session pour l'instant</div>
+        <div style={{ fontSize: 13, color: "#9AA6BD" }}>Lance ton premier Focus Lock — tes stats apparaîtront ici.</div>
+      </div>
+    );
 
-      const totalSecs = data.reduce((s, r) => s + (r.duration_seconds || 0), 0);
-      const completed = data.filter((r) => r.completed).length;
-      const rate = Math.round((completed / data.length) * 100);
+  const maxDay = Math.max(...stats.last7Days.map((d) => d.seconds), 1);
 
-      // Streak: consecutive days with >=1 completed session
-      const today = new Date();
-      let streak = 0;
-      for (let d = 0; d < 30; d++) {
-        const day = new Date(today);
-        day.setDate(day.getDate() - d);
-        const dayStr = day.toISOString().slice(0, 10);
-        const hasCompleted = data.some(
-          (r) => r.completed && r.started_at?.slice(0, 10) === dayStr
-        );
-        if (hasCompleted) streak++;
-        else if (d > 0) break; // allow today to be incomplete
-      }
-
-      setStats({ totalMinutes: Math.round(totalSecs / 60), completionRate: rate, streak });
-    };
-    load();
-  }, []);
+  const Stat = ({ label, value }: { label: string; value: string }) => (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 110,
+        padding: 14,
+        borderRadius: 14,
+        background: "rgba(255,255,255,.03)",
+        border: "1px solid rgba(255,255,255,.08)",
+      }}
+    >
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 600, color: GREEN }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 12, color: "#9AA6BD", marginTop: 4 }}>{label}</div>
+    </div>
+  );
 
   return (
-    <div className="glass-card p-5 space-y-3">
-      <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-        <Timer className="w-4 h-4 text-energy" />
-        Focus Stats
-      </h2>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="glass-card p-3 text-center">
-          <span className="mono text-lg font-bold text-foreground block">
-            {stats.totalMinutes < 60
-              ? `${stats.totalMinutes}m`
-              : `${(stats.totalMinutes / 60).toFixed(1)}h`}
-          </span>
-          <span className="text-[10px] text-muted-foreground">Cette semaine</span>
-        </div>
-        <div className="glass-card p-3 text-center">
-          <span className="mono text-lg font-bold text-foreground block flex items-center justify-center gap-1">
-            <Target className="w-3.5 h-3.5 text-energy" />
-            {stats.completionRate}%
-          </span>
-          <span className="text-[10px] text-muted-foreground">Complétion</span>
-        </div>
-        <div className="glass-card p-3 text-center">
-          <span className="mono text-lg font-bold text-foreground block flex items-center justify-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-intensity" />
-            {stats.streak}j
-          </span>
-          <span className="text-[10px] text-muted-foreground">Série</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        <Stat label="Aujourd'hui" value={fmt(stats.todaySeconds)} />
+        <Stat label="Série" value={`${stats.currentStreak} j`} />
+        <Stat label="7 jours" value={fmt(stats.weekSeconds)} />
+        <Stat label="Session moy." value={fmt(stats.avgSeconds)} />
+        <Stat label="Plus longue" value={fmt(stats.longestSeconds)} />
+        <Stat label="Aboutissement" value={`${Math.round(stats.completionRate * 100)}%`} />
+      </div>
+
+      <div
+        style={{
+          padding: 16,
+          borderRadius: 16,
+          background: "rgba(255,255,255,.03)",
+          border: "1px solid rgba(255,255,255,.08)",
+        }}
+      >
+        <div style={{ fontSize: 12, color: "#9AA6BD", marginBottom: 12 }}>Focus — 7 derniers jours</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 90 }}>
+          {stats.last7Days.map((d) => {
+            const h = Math.max(4, Math.round((d.seconds / maxDay) * 80));
+            const dow = new Date(d.date).toLocaleDateString("fr-FR", { weekday: "narrow" });
+            return (
+              <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div
+                  style={{
+                    width: "100%",
+                    height: h,
+                    borderRadius: 6,
+                    background: `linear-gradient(180deg, ${GREEN}, ${GREEN_DEEP})`,
+                    opacity: d.seconds ? 1 : 0.25,
+                  }}
+                />
+                <span style={{ fontSize: 10, color: "#7A879E" }}>{dow}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
-};
-
-export default FocusStats;
+}
