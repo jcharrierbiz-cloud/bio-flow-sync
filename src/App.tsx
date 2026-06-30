@@ -1,3 +1,22 @@
+import { useEffect, useState } from "react";
+import SplashScreen from "@/components/SplashScreen";
+import { initSound } from "@/lib/sound";
+import { supabase } from "@/integrations/supabase/client";
+
+// ... à l'intérieur de ton composant App :
+const [booted, setBooted] = useState(false);
+const [showSplash, setShowSplash] = useState(true);
+
+useEffect(() => {
+  initSound();
+  (async () => {
+    await supabase.auth.getSession();
+    setBooted(true);
+  })();
+}, []);
+
+// dans le JSX :
+{showSplash && <SplashScreen ready={booted} onFinish={() => setShowSplash(false)} />}
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
