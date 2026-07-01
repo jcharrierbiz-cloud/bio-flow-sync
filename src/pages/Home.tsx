@@ -9,6 +9,8 @@ import LevelBadge from "@/components/LevelBadge";
 import ScanCards from "@/components/ScanCards";
 import WeeklySportSummary from "@/components/WeeklySportSummary";
 import ProfileDrawer from "@/components/ProfileDrawer";
+import SettingsGearButton from "@/components/SettingsGearButton";
+import DailyActionCard from "@/components/DailyActionCard";
 import { Bot, TrendingUp, Moon, Sparkles, ArrowRight, Activity, Utensils, Dumbbell, ScanLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGreeting } from "@/hooks/useGreeting";
@@ -34,23 +36,26 @@ const Home = () => {
       : "Discute avec ton coach IA";
 
   return (
-    <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6 stagger-children">
+    <div className="px-5 pt-4 pb-24 max-w-lg mx-auto space-y-6">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <span className="text-primary font-bold text-sm tracking-wider">BIO-FLOW</span>
-        <ProfileDrawer />
+        <div className="flex items-center gap-1">
+          <SettingsGearButton />
+          <ProfileDrawer />
+        </div>
       </div>
 
-      {/* Header — greeting on its own line, badges on a dedicated row below */}
+      {/* Header */}
       <div>
-        <p className="text-muted-foreground text-sm capitalize">{dateLabel}</p>
-        <h1 className="text-2xl font-bold text-foreground mt-1 animate-fade-in">
-          {greeting}, {userName} {emoji}
-        </h1>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2">
+          <p className="text-muted-foreground text-sm capitalize">{dateLabel}</p>
           <StreakBadge />
-          <LevelBadge />
         </div>
+        <h1 className="text-2xl font-bold text-foreground mt-1 animate-fade-in flex items-center gap-2">
+          {greeting}, {userName} {emoji}
+          <LevelBadge />
+        </h1>
         <AudioGreeting
           greeting={greeting}
           userName={userName}
@@ -59,56 +64,10 @@ const Home = () => {
         />
       </div>
 
-      {/* Energy Score — HERO, now the first thing the user sees */}
-      <div className="glass-card p-6 flex flex-col items-center glow-energy">
-        <p className="text-xs text-muted-foreground font-medium tracking-widest uppercase mb-4">Score d'énergie</p>
-        <EnergyRing score={energy.total || 0} />
+      {/* Action du jour — la boucle quotidienne (Tâche 4) : UNE action concrète */}
+      <DailyActionCard />
 
-        {/* Pillar breakdown — bigger, readable labels and values */}
-        <div className="grid grid-cols-4 gap-2.5 mt-6 w-full">
-          {[
-            { label: "Scan", icon: ScanLine, value: energy.scan },
-            { label: "Sommeil", icon: Moon, value: energy.sleep },
-            { label: "Nutrition", icon: Utensils, value: energy.nutrition },
-            { label: "Effort", icon: Dumbbell, value: energy.effort },
-          ].map(({ label, icon: Icon, value }) => (
-            <div
-              key={label}
-              className={`flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 min-h-[72px] border transition-colors ${
-                value != null ? "border-energy/30 bg-energy/10" : "border-border bg-muted/20"
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${value != null ? "text-energy" : "text-muted-foreground"}`} />
-              <span className="text-[11px] text-muted-foreground leading-none">{label}</span>
-              <span className="text-base font-bold mono text-foreground leading-none">
-                {value != null ? value : "—"}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-4 mt-5 text-xs">
-          {energy.contributors > 0 ? (
-            <div className="flex items-center gap-1.5 text-energy">
-              <Activity className="w-3.5 h-3.5" />
-              <span>{energy.contributors} source{energy.contributors > 1 ? "s" : ""} active{energy.contributors > 1 ? "s" : ""}</span>
-            </div>
-          ) : (
-            <span className="text-muted-foreground">Fais ton scan matinal pour calibrer</span>
-          )}
-          {morningScan && (
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>HRV: {Math.round(morningScan.hrv_rmssd)} ms</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Scan Cards */}
-      <ScanCards morningScan={morningScan} additionalScans={additionalScans} />
-
-      {/* AI Coach CTA — demoted below the score, still prominent but no longer competing with the hero */}
+      {/* AI Coach CTA — subtitle is honest and dynamic */}
       <button
         onClick={() => navigate("/coach")}
         className="w-full relative overflow-hidden rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition-all group"
@@ -131,6 +90,55 @@ const Home = () => {
         </div>
         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
       </button>
+
+      {/* Energy Score */}
+      <div className="glass-card p-6 flex flex-col items-center glow-energy">
+        <p className="text-xs text-muted-foreground font-medium tracking-widest uppercase mb-4">Score d'énergie</p>
+        <EnergyRing score={energy.total || 0} />
+
+        {/* Pillar breakdown */}
+        <div className="grid grid-cols-4 gap-2 mt-5 w-full">
+          {[
+            { label: "Scan", icon: ScanLine, value: energy.scan },
+            { label: "Sommeil", icon: Moon, value: energy.sleep },
+            { label: "Nutrition", icon: Utensils, value: energy.nutrition },
+            { label: "Effort", icon: Dumbbell, value: energy.effort },
+          ].map(({ label, icon: Icon, value }) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center gap-1 rounded-lg p-2 border ${
+                value != null ? "border-energy/30 bg-energy/5" : "border-border bg-muted/20 opacity-50"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 text-energy" />
+              <span className="text-[10px] text-muted-foreground">{label}</span>
+              <span className="text-xs font-bold mono text-foreground">
+                {value != null ? value : "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 mt-4 text-xs">
+          {energy.contributors > 0 ? (
+            <div className="flex items-center gap-1.5 text-energy">
+              <Activity className="w-3.5 h-3.5" />
+              <span>{energy.contributors} source{energy.contributors > 1 ? "s" : ""} active{energy.contributors > 1 ? "s" : ""}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Fais ton scan matinal pour calibrer</span>
+          )}
+          {morningScan && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>HRV: {Math.round(morningScan.hrv_rmssd)} ms</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Scan Cards */}
+      <ScanCards morningScan={morningScan} additionalScans={additionalScans} />
 
       {/* Nutrition Card */}
       <NutritionCard />
