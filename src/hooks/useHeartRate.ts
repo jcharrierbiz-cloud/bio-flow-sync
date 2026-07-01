@@ -461,7 +461,7 @@ export function useHeartRate() {
       const px = ROI * ROI;
       samplesRef.current.push({ t, r: rSum / px, g: gSum / px });
       
-      const coverage = scanRef.current.onFrameData(imageData.data);
+      scanRef.current.onFrameData(data);
 
       const elapsed = Date.now() - phaseStartRef.current;
       const phase = phaseRef.current;
@@ -586,11 +586,6 @@ export function useHeartRate() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        const torch = await scanRef.current.begin(stream);   // ⚡ force le flash
-if (!torch.supported) {
-  // iOS : message honnête au lieu d'un scan cassé
-  toast.error(torch.reason ?? "Flash indisponible sur cet appareil.");
-}
         video: {
           facingMode: "environment",
           width: { ideal: 640 },
@@ -695,14 +690,4 @@ if (!torch.supported) {
       state.phase === "measuring" ||
       state.phase === "placing",
   };
-}
-const m = scanRef.current.finish();
-if (m.valid) {
-  await saveScan({
-    scanned_at: new Date().toISOString(),
-    bpm: m.bpm,
-    hrv_rmssd: m.rmssd,          // ← VFC RMSSD réelle
-    stress_index: m.stressIndex, // ← indice de stress réel
-    readiness_score: /* garde TON calcul existant ici */ 0,
-  });
 }

@@ -258,7 +258,7 @@ const Settings = () => {
   const { signOut } = useAuth();
   const { feedback, soundEnabled, hapticsEnabled, setSoundEnabled, setHapticsEnabled } = useFeedback();
 
-  const [profile, setProfile] = useState<UserProfile | null>(() => getCachedProfile());
+  let [profile, setProfile] = useState<UserProfile | null>(() => getCachedProfile());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -323,12 +323,30 @@ const Settings = () => {
     }
   };
 
+  // Pas de loader bloquant : on affiche immédiatement l'UI avec des valeurs
+  // par défaut, et fetchProfile hydrate la carte "Mon compte" à l'arrivée.
   if (!profile) {
-    return (
-      <div className="min-h-dvh bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Chargement…</p>
-      </div>
-    );
+    profile = {
+      device_id: "",
+      pseudo: "",
+      age: 0,
+      sex: "unspecified",
+      weight: null,
+      weight_unit: "kg",
+      height: null,
+      height_unit: "cm",
+      fitness_level: "",
+      organization_level: "",
+      status: "",
+      main_goal: "",
+      onboarding_completed: true,
+      audio_greeting_enabled: false,
+      notification_enabled: false,
+      reminder_minutes: 10,
+      morning_scan_enabled: false,
+      focus_lock_enabled: false,
+      blocked_categories: [],
+    } as UserProfile;
   }
 
   const sex = profile.sex ?? "unspecified";
