@@ -58,7 +58,7 @@ export function useScanHistory() {
       .order("scanned_at", { ascending: false });
 
     if (qErr) { setError(qErr.message); setLoading(false); return; }
-    setHistory((data ?? []) as ScanRow[]);
+    setHistory((data ?? []) as unknown as ScanRow[]);
     setLoading(false);
   }, []);
 
