@@ -691,13 +691,3 @@ export function useHeartRate() {
       state.phase === "placing",
   };
 }
-const m = scanRef.current.finish();
-if (m.valid) {
-  await saveScan({
-    scanned_at: new Date().toISOString(),
-    bpm: m.bpm,
-    hrv_rmssd: m.rmssd,          // ← VFC RMSSD réelle
-    stress_index: m.stressIndex, // ← indice de stress réel
-    readiness_score: /* garde TON calcul existant ici */ 0,
-  });
-}
