@@ -8,6 +8,9 @@ export interface UserProfile {
   device_id: string;
   pseudo: string;
   age: number;
+  // Sexe biologique déclaré. Optionnel (l'onboarding ne le collecte pas encore),
+  // renseignable dans Réglages. Utile aux interprétations FC/VFC & au coach.
+  sex?: "male" | "female" | "unspecified";
   weight?: number | null;
   weight_unit: "kg" | "lbs";
   height?: number | null;
@@ -70,6 +73,7 @@ function mapRow(data: any, deviceId: string): UserProfile {
     device_id: data.device_id || deviceId,
     pseudo: data.pseudo,
     age: data.age,
+    sex: (data.sex as "male" | "female" | "unspecified") || "unspecified",
     weight: data.weight,
     weight_unit: (data.weight_unit as "kg" | "lbs") || "kg",
     height: data.height,
@@ -164,6 +168,10 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
     parental_consent: profile.parental_consent ?? null,
     consent_age: profile.consent_age ?? null,
   };
+
+  // N'envoie `sex` que s'il est défini → évite toute erreur si la migration
+  // qui ajoute la colonne n'a pas encore été exécutée (l'onboarding ne le fixe pas).
+  if (profile.sex !== undefined) dbPayload.sex = profile.sex;
 
   // Cherche un profil existant : par compte d'abord, sinon par appareil.
   let existing: { id: string } | null = null;
