@@ -3,8 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
 import LegalFooter from "@/components/LegalFooter";
+
+/**
+ * Auth.tsx — Connexion / inscription Bio-Flow
+ * ---------------------------------------------------------------------------
+ * Changements vs version précédente :
+ *  - try/catch autour des appels Supabase : plus JAMAIS d'écran muet. Toute
+ *    erreur (réseau, config, serveur) affiche un message + est loguée console.
+ *  - setLoading(false) garanti via finally (le spinner ne reste plus bloqué).
+ *  - Gère les deux cas de config Supabase :
+ *      • "Confirm email" ON  → message "vérifie ton email", retour au login.
+ *      • "Confirm email" OFF → session créée direct → l'app entre toute seule
+ *        (le onAuthStateChange de useAuth prend le relais, pas de redirection
+ *        manuelle nécessaire).
+ */
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -20,16 +34,29 @@ const Auth = () => {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) {
-      if (error.message.includes("Email not confirmed")) {
-        toast.error("Vérifie ton email avant de te connecter");
-      } else if (error.message.includes("Invalid login")) {
-        toast.error("Email ou mot de passe incorrect");
-      } else {
-        toast.error(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          toast.error("Vérifie ton email avant de te connecter");
+        } else if (error.message.includes("Invalid login")) {
+          toast.error("Email ou mot de passe incorrect");
+        } else {
+          toast.error(error.message);
+        }
       }
+      // Succès : useAuth (onAuthStateChange) détecte la session et entre dans l'app.
+    } catch (err) {
+      // Erreur réseau / config : on la REND VISIBLE au lieu d'un écran muet.
+      console.error("[Auth] signIn a levé une exception :", err);
+      toast.error(
+        "Connexion impossible : le serveur ne répond pas. Vérifie ta connexion (ou la configuration Supabase)."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,43 +75,56 @@ const Auth = () => {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      // Si une session est déjà présente → "Confirm email" est OFF → on est
+      // connecté immédiatement, l'app entre toute seule.
+      if (data.session) {
+        toast.success("Compte créé ! Bienvenue sur Bio-Flow 💪");
+        return;
+      }
+
+      // Sinon → "Confirm email" est ON → un mail de confirmation a été envoyé.
       toast.success("Compte créé ! Vérifie ton email pour confirmer ton inscription.");
       setMode("login");
+    } catch (err) {
+      console.error("[Auth] signUp a levé une exception :", err);
+      toast.error(
+        "Inscription impossible : le serveur ne répond pas. Vérifie ta connexion (ou la configuration Supabase)."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[hsl(var(--energy)/0.06)] blur-[120px]" />
         <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] rounded-full bg-[hsl(var(--ai-violet)/0.05)] blur-[100px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-sm space-y-8">
-        {/* Logo */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--energy))] to-[hsl(var(--ai-violet))] shadow-lg shadow-[hsl(var(--energy)/0.3)]">
             <Sparkles className="w-8 h-8 text-background" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Bio-Flow
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Bio-Flow</h1>
           <p className="text-muted-foreground text-sm">
             {mode === "login" ? "Content de te revoir !" : "Crée ton compte pour commencer"}
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-4">
           <div className="space-y-3">
             <div className="relative">
@@ -140,7 +180,6 @@ const Auth = () => {
           </Button>
         </form>
 
-        {/* Toggle */}
         <div className="text-center">
           <button
             onClick={() => {
