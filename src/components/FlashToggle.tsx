@@ -1,6 +1,6 @@
 import { Zap, ZapOff } from "lucide-react";
 import { useTorch } from "@/hooks/useTorch";
-import { useSound } from "@/hooks/useSound";
+
 
 /**
  * FlashToggle — case "Activer le flash" pour l'écran de scan.
@@ -22,11 +22,9 @@ export function FlashToggle({
   track: MediaStreamTrack | null | undefined;
 }) {
   const { supported, on, toggle } = useTorch(track);
-  const { play } = useSound();
 
   const handleToggle = () => {
     if (!supported) return;
-    play("tap");
     toggle();
   };
 
