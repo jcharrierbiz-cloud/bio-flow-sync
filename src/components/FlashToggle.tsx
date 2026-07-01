@@ -22,11 +22,9 @@ export function FlashToggle({
   track: MediaStreamTrack | null | undefined;
 }) {
   const { supported, on, toggle } = useTorch(track);
-  const { play } = useSound();
 
   const handleToggle = () => {
     if (!supported) return;
-    play("tap");
     toggle();
   };
 
