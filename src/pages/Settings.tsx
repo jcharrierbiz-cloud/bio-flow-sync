@@ -258,7 +258,7 @@ const Settings = () => {
   const { signOut } = useAuth();
   const { feedback, soundEnabled, hapticsEnabled, setSoundEnabled, setHapticsEnabled } = useFeedback();
 
-  const [profile, setProfile] = useState<UserProfile | null>(() => getCachedProfile());
+  let [profile, setProfile] = useState<UserProfile | null>(() => getCachedProfile());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
