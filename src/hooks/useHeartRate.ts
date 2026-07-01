@@ -461,7 +461,7 @@ export function useHeartRate() {
       const px = ROI * ROI;
       samplesRef.current.push({ t, r: rSum / px, g: gSum / px });
       
-      const coverage = scanRef.current.onFrameData(imageData.data);
+      scanRef.current.onFrameData(data);
 
       const elapsed = Date.now() - phaseStartRef.current;
       const phase = phaseRef.current;
