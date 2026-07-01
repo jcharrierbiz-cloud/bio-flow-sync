@@ -46,7 +46,7 @@ export function useTorch(track: MediaStreamTrack | null | undefined) {
       if (!track || !supported) return false;
       try {
         await track.applyConstraints({
-          advanced: [{ torch: value } as TorchConstraint],
+          advanced: [{ torch: value } as unknown as MediaTrackConstraintSet],
         });
         setOn(value);
         return true;
