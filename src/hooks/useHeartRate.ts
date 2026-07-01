@@ -54,6 +54,7 @@
  * Le code reflète ces limites : il préfère omettre une métrique que la falsifier.
  */
 
+import { ScanEnhancer } from "@/lib/scanEnhancements";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 export type ScanPhase = "idle" | "placing" | "stabilizing" | "measuring" | "done" | "failed";
@@ -95,6 +96,7 @@ const DFT_STEP = 0.01;         // résolution du balayage fréquentiel (Hz)
 const BPM_MIN = 40;
 const BPM_MAX = 200;
 
+const scanRef = useRef(new ScanEnhancer());
 const REFRACTORY_S = 0.30;     // 300 ms → max 200 bpm entre deux pics
 const IBI_MIN_MS = 300;
 const IBI_MAX_MS = 1500;       // 40 bpm
@@ -458,10 +460,14 @@ export function useHeartRate() {
       }
       const px = ROI * ROI;
       samplesRef.current.push({ t, r: rSum / px, g: gSum / px });
+      
+      const coverage = scanRef.current.onFrameData(imageData.data);
 
       const elapsed = Date.now() - phaseStartRef.current;
       const phase = phaseRef.current;
       const waveform = buildWaveform(samplesRef.current);
+
+      scanRef.current.onBeat();
 
       if (phase === "stabilizing") {
         const progress = Math.min(100, (elapsed / STABILIZE_MS) * 100);
@@ -580,6 +586,11 @@ export function useHeartRate() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
+        const torch = await scanRef.current.begin(stream);   // ⚡ force le flash
+if (!torch.supported) {
+  // iOS : message honnête au lieu d'un scan cassé
+  toast.error(torch.reason ?? "Flash indisponible sur cet appareil.");
+}
         video: {
           facingMode: "environment",
           width: { ideal: 640 },
@@ -684,4 +695,14 @@ export function useHeartRate() {
       state.phase === "measuring" ||
       state.phase === "placing",
   };
+}
+const m = scanRef.current.finish();
+if (m.valid) {
+  await saveScan({
+    scanned_at: new Date().toISOString(),
+    bpm: m.bpm,
+    hrv_rmssd: m.rmssd,          // ← VFC RMSSD réelle
+    stress_index: m.stressIndex, // ← indice de stress réel
+    readiness_score: /* garde TON calcul existant ici */ 0,
+  });
 }
