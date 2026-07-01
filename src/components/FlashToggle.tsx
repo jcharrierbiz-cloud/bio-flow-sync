@@ -1,6 +1,6 @@
 import { Zap, ZapOff } from "lucide-react";
 import { useTorch } from "@/hooks/useTorch";
-import { useSound } from "@/hooks/useSound";
+
 
 /**
  * FlashToggle — case "Activer le flash" pour l'écran de scan.
