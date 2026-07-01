@@ -105,7 +105,7 @@ export function useScanHistory() {
         .gte("scanned_at", cutoffIso())
         .order("scanned_at", { ascending: false });
 
-      const hist = (fresh ?? []) as ScanRow[];
+      const hist = (fresh ?? []) as unknown as ScanRow[];
       setHistory(hist);
 
       const today: ScanRow = {
