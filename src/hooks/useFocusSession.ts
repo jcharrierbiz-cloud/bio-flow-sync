@@ -29,8 +29,8 @@ export function useFocusSession() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data, error } = await supabase
-      .from("focus_sessions")
+    const { data, error } = await (supabase
+      .from("focus_sessions") as any)
       .insert({
         user_id: user.id,
         started_at: new Date(startedAtMs).toISOString(),
