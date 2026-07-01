@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // @ts-ignore
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import MorningCheckIn from "@/components/MorningCheckIn";
 import FocusLock from "@/components/FocusLock";
-import AmbientBackground from "@/components/AmbientBackground";
 import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
@@ -21,6 +19,7 @@ import Coach from "./pages/Coach";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
 import Cookies from "./pages/Cookies";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import {
   hasDoneMorningScanToday,
@@ -28,7 +27,10 @@ import {
   scheduleAgendaReminders,
 } from "@/lib/notifications";
 import { isOnboardingComplete, fetchProfile } from "@/lib/profileStore";
+import { claimLegacyData } from "@/lib/account";
 import { useAgendaStore } from "@/lib/agendaStore";
+import { initTheme } from "@/lib/theme";
+import { useGlobalTapFeedback } from "@/hooks/useGlobalTapFeedback";
 
 const queryClient = new QueryClient();
 
@@ -57,9 +59,12 @@ const ProtectedApp = () => {
   useEffect(() => {
     const init = async () => {
       try {
+        // Rattache les anciennes données (device_id) au compte connecté,
+        // avant de charger le profil — pour que rien ne disparaisse au login.
+        await claimLegacyData();
         await fetchProfile();
       } catch (err) {
-        console.error("fetchProfile error:", err);
+        console.error("init error:", err);
       }
 
       if (!isOnboardingComplete()) {
@@ -94,26 +99,20 @@ const ProtectedApp = () => {
 
   return (
     <>
-      <div className="relative min-h-screen bg-background">
-        {/* Ambient drifting halos — sits behind everything (z-0) */}
-        <AmbientBackground />
-
-        {/* App content layered above the halos */}
-        <div className="relative" style={{ zIndex: 1 }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/agenda" element={<Agenda />} />
-            <Route path="/log" element={<Log />} />
-            <Route path="/health" element={<Health />} />
-            <Route path="/coach" element={<Coach />} />
-            <Route path="/auth" element={<Navigate to="/" replace />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/cookies" element={<Cookies />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <LegalFooter withBottomNav />
-        </div>
-
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/log" element={<Log />} />
+          <Route path="/health" element={<Health />} />
+          <Route path="/coach" element={<Coach />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <LegalFooter withBottomNav />
         <BottomNav />
       </div>
       <OnboardingFlow open={showOnboarding} onClose={handleOnboardingClose} />
@@ -143,6 +142,13 @@ const AppRouter = () => {
 };
 
 const AppContent = () => {
+  // Retour sonore + haptique global sur tous les boutons (« un peu de vie »).
+  useGlobalTapFeedback();
+  // Applique le thème (clair/sombre/système) + écoute les changements système.
+  useEffect(() => {
+    initTheme();
+  }, []);
+
   return (
     <>
       <Toaster />
