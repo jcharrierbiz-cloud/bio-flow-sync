@@ -586,11 +586,6 @@ export function useHeartRate() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        const torch = await scanRef.current.begin(stream);   // ⚡ force le flash
-if (!torch.supported) {
-  // iOS : message honnête au lieu d'un scan cassé
-  toast.error(torch.reason ?? "Flash indisponible sur cet appareil.");
-}
         video: {
           facingMode: "environment",
           width: { ideal: 640 },
