@@ -1,29 +1,11 @@
 import { useEffect, useState } from "react";
-import SplashScreen from "@/components/SplashScreen";
-import { initSound } from "@/lib/sound";
-import { supabase } from "@/integrations/supabase/client";
 
-// ... à l'intérieur de ton composant App :
-const [booted, setBooted] = useState(false);
-const [showSplash, setShowSplash] = useState(true);
-
-useEffect(() => {
-  initSound();
-  (async () => {
-    await supabase.auth.getSession();
-    setBooted(true);
-  })();
-}, []);
-
-// dans le JSX :
-{showSplash && <SplashScreen ready={booted} onFinish={() => setShowSplash(false)} />}
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // @ts-ignore
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
