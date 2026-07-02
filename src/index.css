@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Bio-Flow Light Theme — warm cream, sage, emerald */
-    --background: 37 33% 94%;          /* #F5F0E8 warm cream */
+    --background: 38 44% 91%;          /* #F1E8D8 crème plus chaud (comme avant) */
     --foreground: 0 0% 10%;            /* #1A1A1A charcoal */
 
     --card: 0 0% 100%;                 /* #FFFFFF */
@@ -50,7 +50,7 @@
     --glass-border: 0 0% 90%;
     --glass-highlight: 60 22% 97%;
 
-    --sidebar-background: 37 33% 94%;
+    --sidebar-background: 38 44% 91%;
     --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 95 20% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
