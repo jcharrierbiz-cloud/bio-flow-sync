@@ -22,8 +22,8 @@ const SLEEP_QUALITY_SCORE: Record<string, number> = {
   Excellente: 95,
 };
 
-function sleepScore(quality: string | null, hours: number): number | null {
-  if (!quality && hours === 6.2) return null; // default, never set
+function sleepScore(quality: string | null, hours: number, isSet: boolean): number | null {
+  if (!isSet) return null; // l'utilisateur n'a pas encore renseigné son sommeil
   if (quality && SLEEP_QUALITY_SCORE[quality] != null) {
     return SLEEP_QUALITY_SCORE[quality];
   }
@@ -52,6 +52,7 @@ export function useEnergyScore(): EnergyBreakdown {
   const { morningScan, additionalScans, energyScore } = useScanStore();
   const sleepQuality = useSleepStore((s) => s.quality);
   const sleepHours = useSleepStore((s) => s.totalHours);
+  const sleepIsSet = useSleepStore((s) => s.isSet);
   const sessions = useEffortStore((s) => s.sessions);
   const loadSessions = useEffortStore((s) => s.loadSessions);
 
@@ -105,7 +106,7 @@ export function useEnergyScore(): EnergyBreakdown {
   }, []);
 
   const scan = morningScan ? energyScore : null;
-  const sleep = sleepScore(sleepQuality, sleepHours);
+  const sleep = sleepScore(sleepQuality, sleepHours, sleepIsSet);
   const effort = effortScore(sessions as any);
 
   // Weights — re-normalized over contributors that have data
