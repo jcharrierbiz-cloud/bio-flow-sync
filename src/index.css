@@ -59,6 +59,63 @@
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 95 20% 51%;
   }
+
+  /* -------------------------------------------------------------------------
+     Bio-Flow Dark Theme — warm near-black + sage/emerald.
+     Appliqué par .dark sur <html> (theme.ts). Sans ce bloc, sélectionner
+     « Sombre » ajoutait la classe mais ne changeait AUCUN token → écran clair.
+     ------------------------------------------------------------------------- */
+  .dark {
+    --background: 30 8% 10%;            /* warm near-black */
+    --foreground: 37 20% 92%;          /* warm off-white */
+
+    --card: 30 8% 14%;
+    --card-foreground: 37 20% 92%;
+
+    --popover: 30 8% 14%;
+    --popover-foreground: 37 20% 92%;
+
+    --primary: 95 25% 58%;             /* sage, un poil plus clair */
+    --primary-foreground: 30 10% 8%;
+
+    --secondary: 30 6% 18%;
+    --secondary-foreground: 37 20% 92%;
+
+    --muted: 30 6% 20%;
+    --muted-foreground: 37 10% 65%;
+
+    --accent: 25 20% 30%;
+    --accent-foreground: 37 20% 92%;
+
+    --destructive: 12 55% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 24%;
+    --input: 30 6% 24%;
+    --ring: 95 25% 58%;
+
+    /* Custom Bio-Flow tokens (dark) */
+    --energy: 95 25% 58%;
+    --energy-glow: 95 30% 65%;
+    --ai-violet: 142 65% 55%;          /* emerald */
+    --ai-violet-glow: 142 65% 68%;
+    --intensity: 12 60% 60%;
+    --intensity-glow: 25 70% 62%;
+    --warning: 38 75% 60%;
+
+    --glass-bg: 30 8% 14%;
+    --glass-border: 30 6% 26%;
+    --glass-highlight: 30 6% 20%;
+
+    --sidebar-background: 30 8% 10%;
+    --sidebar-foreground: 37 20% 92%;
+    --sidebar-primary: 95 25% 58%;
+    --sidebar-primary-foreground: 30 10% 8%;
+    --sidebar-accent: 30 6% 18%;
+    --sidebar-accent-foreground: 37 20% 92%;
+    --sidebar-border: 30 6% 24%;
+    --sidebar-ring: 95 25% 58%;
+  }
 }
 
 @layer base {
@@ -93,6 +150,21 @@
     @apply rounded-[20px] border;
     background: hsl(60 22% 97%);
     border-color: hsl(0 0% 92%);
+  }
+
+  /* Dark mode : les cartes utilisent du blanc en dur → on les repasse en sombre. */
+  .dark .glass-card {
+    background: hsl(30 8% 14% / 0.7);
+    border-color: hsl(30 6% 26% / 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  }
+  .dark .glass-card-hover:hover {
+    background: hsl(30 8% 16% / 0.85);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  }
+  .dark .surface-card {
+    background: hsl(30 6% 16%);
+    border-color: hsl(30 6% 24%);
   }
 
   .glow-energy {
