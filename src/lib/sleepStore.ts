@@ -10,6 +10,10 @@ interface SleepStore {
   totalHours: number;
   quality: string | null; // from morning check-in
   phases: SleepPhases;
+  // true dès que l'utilisateur a réglé le sommeil (curseur ou check-in) OU qu'une
+  // valeur du jour est en localStorage. Sert de source de vérité au score d'énergie
+  // (fini le sentinelle fragile « hours === 6.2 » qui excluait des vraies valeurs).
+  isSet: boolean;
   setTotalHours: (hours: number) => void;
   setQualityFromCheckIn: (qualityIndex: number) => void;
 }
@@ -65,19 +69,19 @@ const SLEEP_HOURS_MAP: Record<string, number> = {
 
 const QUALITY_LABELS = ["Terrible", "Moyenne", "Correcte", "Bonne", "Excellente"];
 
-// Load from localStorage
-function loadSaved(): { totalHours: number; quality: string | null } {
+// Load from localStorage. isSet=true si une valeur du jour a déjà été enregistrée.
+function loadSaved(): { totalHours: number; quality: string | null; isSet: boolean } {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const raw = localStorage.getItem("bioflow_sleep");
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.date === today) {
-        return { totalHours: parsed.totalHours ?? 6.2, quality: parsed.quality ?? null };
+        return { totalHours: parsed.totalHours ?? 6.2, quality: parsed.quality ?? null, isSet: true };
       }
     }
   } catch {}
-  return { totalHours: 6.2, quality: null };
+  return { totalHours: 6.2, quality: null, isSet: false };
 }
 
 function save(totalHours: number, quality: string | null) {
@@ -91,11 +95,12 @@ export const useSleepStore = create<SleepStore>((set) => ({
   totalHours: initial.totalHours,
   quality: initial.quality,
   phases: computePhases(initial.totalHours, initial.quality),
+  isSet: initial.isSet,
 
   setTotalHours: (hours) => {
     set((s) => {
       save(hours, s.quality);
-      return { totalHours: hours, phases: computePhases(hours, s.quality) };
+      return { totalHours: hours, phases: computePhases(hours, s.quality), isSet: true };
     });
   },
 
@@ -103,6 +108,6 @@ export const useSleepStore = create<SleepStore>((set) => ({
     const quality = QUALITY_LABELS[qualityIndex] ?? null;
     const hours = quality ? SLEEP_HOURS_MAP[quality] ?? 6.2 : 6.2;
     save(hours, quality);
-    set({ quality, totalHours: hours, phases: computePhases(hours, quality) });
+    set({ quality, totalHours: hours, phases: computePhases(hours, quality), isSet: true });
   },
 }));
