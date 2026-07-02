@@ -205,21 +205,81 @@ export async function saveProfile(profile: Omit<UserProfile, "id">): Promise<Use
   return created;
 }
 
-export async function updateProfileField(field: string, value: unknown): Promise<void> {
+/**
+ * Met à jour UN champ du profil et le persiste.
+ *
+ * Robuste : cible la ligne par son `id` (comme saveProfile) au lieu de filtrer
+ * aveuglément par user_id/device_id. Un `UPDATE ... .eq("user_id")` ne matchait
+ * AUCUNE ligne quand le profil n'existait pas encore en base (onboarding qui n'a
+ * créé qu'un cache local) → la modification (poids, taille, sexe, niveau sportif…)
+ * était perdue en silence. Ici, si aucune ligne n'existe, on la CRÉE via
+ * saveProfile au lieu de perdre la valeur.
+ *
+ * Retourne `true` si la persistance a réussi, `false` sinon (l'UI peut alerter).
+ */
+export async function updateProfileField(field: string, value: unknown): Promise<boolean> {
   const deviceId = getDeviceId();
   const userId = await getUserId();
 
-  const query = supabase.from("user_profiles").update({ [field]: value });
-  const { error } = userId
-    ? await query.eq("user_id", userId)
-    : await query.eq("device_id", deviceId);
-  if (error) console.error("Update field error:", error);
+  // 1) Retrouver la ligne existante : compte d'abord, puis appareil (legacy).
+  let existing: { id: string } | null = null;
+  if (userId) {
+    const r = await supabase
+      .from("user_profiles").select("id").eq("user_id", userId)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    existing = r.data;
+  }
+  if (!existing) {
+    const r = await supabase
+      .from("user_profiles").select("id").eq("device_id", deviceId)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    existing = r.data;
+  }
 
+  let ok = false;
+
+  if (existing) {
+    // 2a) Update ciblé par id (+ rattache la ligne au compte si orpheline).
+    const payload: Record<string, unknown> = { [field]: value };
+    if (userId) payload.user_id = userId;
+    const { error } = await supabase
+      .from("user_profiles").update(payload).eq("id", existing.id);
+    if (error) console.error("Update field error:", error);
+    else ok = true;
+  } else {
+    // 2b) Aucune ligne : on crée le profil (cache si dispo, sinon défauts) + champ.
+    const base: UserProfile = getCachedProfile() ?? {
+      device_id: deviceId,
+      pseudo: "",
+      age: 0,
+      weight: null,
+      weight_unit: "kg",
+      height: null,
+      height_unit: "cm",
+      fitness_level: "",
+      organization_level: "",
+      status: "",
+      main_goal: "",
+      onboarding_completed: true,
+      audio_greeting_enabled: false,
+      notification_enabled: false,
+      reminder_minutes: 10,
+      morning_scan_enabled: false,
+      focus_lock_enabled: false,
+      blocked_categories: [],
+    };
+    const saved = await saveProfile({ ...base, [field]: value });
+    ok = saved !== null;
+  }
+
+  // 3) Cache local à jour dans tous les cas (l'UI optimiste est faite en amont).
   const cached = getCachedProfile();
   if (cached) {
     (cached as any)[field] = value;
     cacheProfile(cached);
   }
+
+  return ok;
 }
 
 export function isOnboardingComplete(): boolean {
