@@ -6,14 +6,16 @@
  * src/components/PPGScanner.tsx fonctionne sans modification.
  * (Un champ optionnel `signalQuality` est ajouté en plus — ignoré si non utilisé.)
  *
- * ── CORRECTIF (écran blanc) ────────────────────────────────────────────────
- * BUG : `const scanRef = useRef(new ScanEnhancer());` était déclaré au NIVEAU
- * MODULE (hors du hook). Un Hook React (useRef) appelé hors composant s'exécute
- * à l'import du fichier → "Invalid hook call" → React plante avant tout render
- * → écran vide. Le useRef est désormais instancié DANS useHeartRate().
- * BONUS : `scanRef.current.onBeat()` était appelé à chaque frame (~30–60×/s),
- * ce qui déclenchait son + vibration en continu. Retiré (pas piloté par une
- * vraie détection de battement dans ce fichier).
+ * ── NETTOYAGE (ScanEnhancer retiré) ────────────────────────────────────────
+ * Toute référence à ScanEnhancer / scanEnhancements a été supprimée :
+ *   - import "@/lib/scanEnhancements" retiré
+ *   - useRef(new ScanEnhancer()) retiré (il était au niveau module → écran blanc)
+ *   - appels scanRef.current.onFrameData() / .onBeat() retirés
+ * Le moteur natif ci-dessous (BPM spectral + VFC gatée) est la SEULE source de
+ * vérité. Fichiers désormais orphelins, supprimables :
+ *   src/lib/scanEnhancements.ts, src/lib/torchController.ts,
+ *   src/lib/ppgQuality.ts, src/lib/hrvMetrics.ts
+ * (Garder src/lib/feedback.ts : utilisé ailleurs — useFeedback, tap global.)
  *
  * CE QUI A CHANGÉ vs l'ancienne version, et POURQUOI
  * ---------------------------------------------------------------------------
@@ -63,7 +65,6 @@
  * Le code reflète ces limites : il préfère omettre une métrique que la falsifier.
  */
 
-import { ScanEnhancer } from "@/lib/scanEnhancements";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 export type ScanPhase = "idle" | "placing" | "stabilizing" | "measuring" | "done" | "failed";
@@ -105,8 +106,6 @@ const DFT_STEP = 0.01;         // résolution du balayage fréquentiel (Hz)
 const BPM_MIN = 40;
 const BPM_MAX = 200;
 
-// ⚠️ PAS de useRef ici : un Hook au niveau module casse toute l'app au chargement.
-// L'instance ScanEnhancer est créée dans le corps de useHeartRate() (plus bas).
 const REFRACTORY_S = 0.30;     // 300 ms → max 200 bpm entre deux pics
 const IBI_MIN_MS = 300;
 const IBI_MAX_MS = 1500;       // 40 bpm
@@ -385,12 +384,6 @@ type RVFCVideo = HTMLVideoElement & {
 };
 
 export function useHeartRate() {
-  // ScanEnhancer : instancié DANS le hook (un useRef appelé au niveau module
-  // s'exécute à l'import → "Invalid hook call" → écran blanc au chargement).
-  // Init paresseuse : une seule instance, pas de réallocation à chaque render.
-  const scanRef = useRef<ScanEnhancer>();
-  if (!scanRef.current) scanRef.current = new ScanEnhancer();
-
   const [state, setState] = useState<PPGState>({
     phase: "idle",
     progress: 0,
@@ -477,16 +470,9 @@ export function useHeartRate() {
       const px = ROI * ROI;
       samplesRef.current.push({ t, r: rSum / px, g: gSum / px });
 
-      // Alimente la façade qualité/couverture (retour non utilisé ici).
-      scanRef.current?.onFrameData(data);
-
       const elapsed = Date.now() - phaseStartRef.current;
       const phase = phaseRef.current;
       const waveform = buildWaveform(samplesRef.current);
-
-      // NB : scanRef.current.onBeat() a été RETIRÉ ici — il était appelé à chaque
-      // frame (son + vibration en continu). À rebrancher uniquement sur une vraie
-      // détection de battement si tu veux le feedback haptique/sonore.
 
       if (phase === "stabilizing") {
         const progress = Math.min(100, (elapsed / STABILIZE_MS) * 100);
