@@ -129,9 +129,15 @@ const PPGScanner = ({
 }: PPGScannerProps) => {
   const handleShare = async () => {
     if (!result) return;
-    const hrvText = result.hrv > 0 ? `${result.hrv}ms` : "non disponible";
-    const stressText = result.stressIndex > 0 ? `${result.stressIndex}/100` : "non disponible";
-    const text = `🫀 Bio-Flow Scan\n❤️ BPM: ${result.bpm}\n💓 VFC: ${hrvText}\n⚡ Readiness: ${result.readiness}%\n😰 Stress: ${stressText}\n\n⚠️ Estimation à visée bien-être, pas un dispositif médical.`;
+    // On n'inclut VFC / Stress que s'ils ont une vraie valeur (pas de « — »).
+    const lines = [
+      `🫀 Bio-Flow Scan`,
+      `❤️ BPM: ${result.bpm}`,
+      ...(result.hrv > 0 ? [`💓 VFC: ${result.hrv}ms`] : []),
+      `⚡ Readiness: ${result.readiness}%`,
+      ...(result.stressIndex > 0 ? [`😰 Stress: ${result.stressIndex}/100`] : []),
+    ];
+    const text = `${lines.join("\n")}\n\n⚠️ Estimation à visée bien-être, pas un dispositif médical.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Bio-Flow Scan", text });
@@ -295,38 +301,42 @@ const PPGScanner = ({
           <h3 className="text-lg font-bold text-foreground">Scan terminé</h3>
         </div>
 
+        {/* VFC (RMSSD) et Stress Index ne s'affichent QUE si le signal les a
+            réellement produits (> 0). Sinon on n'affiche pas de carte « — »
+            (cohérent « zéro donnée fabriquée »). La grille se recompose seule. */}
         <div className="grid grid-cols-2 gap-3">
           <div className="glass-card p-4 text-center glow-energy">
             <Activity className="w-5 h-5 text-energy mx-auto mb-1.5" />
             <span className="mono text-2xl font-bold text-foreground block">{result.bpm}</span>
             <span className="text-[10px] text-muted-foreground">BPM repos</span>
           </div>
-          <div className="glass-card p-4 text-center glow-violet">
-            <Heart className="w-5 h-5 text-intensity mx-auto mb-1.5" />
-            <span className="mono text-2xl font-bold text-foreground block">
-              {result.hrv > 0 ? <>{result.hrv}<span className="text-xs font-normal">ms</span></> : <span className="text-muted-foreground">—</span>}
-            </span>
-            <span className="text-[10px] text-muted-foreground">VFC (RMSSD)</span>
-          </div>
+          {result.hrv > 0 && (
+            <div className="glass-card p-4 text-center glow-violet">
+              <Heart className="w-5 h-5 text-intensity mx-auto mb-1.5" />
+              <span className="mono text-2xl font-bold text-foreground block">
+                {result.hrv}<span className="text-xs font-normal">ms</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">VFC (RMSSD)</span>
+            </div>
+          )}
           <div className="glass-card p-4 text-center">
             <Sparkles className="w-5 h-5 text-ai-violet mx-auto mb-1.5" />
             <span className="mono text-2xl font-bold text-foreground block">{result.readiness}%</span>
             <span className="text-[10px] text-muted-foreground">Readiness</span>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className={`w-5 h-5 mx-auto mb-1.5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-              result.stressIndex === 0 ? "bg-muted text-muted-foreground" :
-              result.stressIndex < 40 ? "bg-energy/20 text-energy" :
-              result.stressIndex < 70 ? "bg-warning/20 text-warning" :
-              "bg-intensity/20 text-intensity"
-            }`}>
-              {result.stressIndex === 0 ? "—" : result.stressIndex < 40 ? "😌" : result.stressIndex < 70 ? "😐" : "😰"}
+          {result.stressIndex > 0 && (
+            <div className="glass-card p-4 text-center">
+              <div className={`w-5 h-5 mx-auto mb-1.5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                result.stressIndex < 40 ? "bg-energy/20 text-energy" :
+                result.stressIndex < 70 ? "bg-warning/20 text-warning" :
+                "bg-intensity/20 text-intensity"
+              }`}>
+                {result.stressIndex < 40 ? "😌" : result.stressIndex < 70 ? "😐" : "😰"}
+              </div>
+              <span className="mono text-2xl font-bold text-foreground block">{result.stressIndex}</span>
+              <span className="text-[10px] text-muted-foreground">Stress Index</span>
             </div>
-            <span className="mono text-2xl font-bold text-foreground block">
-              {result.stressIndex > 0 ? result.stressIndex : <span className="text-muted-foreground">—</span>}
-            </span>
-            <span className="text-[10px] text-muted-foreground">Stress Index</span>
-          </div>
+          )}
         </div>
 
         {/* Medical disclaimer — visible on every results screen */}
