@@ -38,6 +38,13 @@ const AudioGreeting = ({ greeting, userName, shouldPlay, onPlayed }: Props) => {
 
         if (!response.ok) throw new Error("TTS failed");
 
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.startsWith("audio/")) {
+          // Fallback JSON (e.g. TTS not configured) — skip silently
+          onPlayed();
+          return;
+        }
+
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);

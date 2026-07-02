@@ -15,13 +15,13 @@ serve(async (req) => {
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
     if (!ELEVENLABS_API_KEY) {
-      return new Response(JSON.stringify({ error: "API key not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Graceful fallback — audio greeting is optional
+      return new Response(
+        JSON.stringify({ error: "TTS_NOT_CONFIGURED", fallback: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Using "Laura" voice — warm, calm, French-friendly
     const voiceId = "FGY2WhTYpPnrIDTdsKH5";
 
     const response = await fetch(
@@ -47,22 +47,20 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`ElevenLabs error: ${err}`);
+      return new Response(
+        JSON.stringify({ error: "TTS_UPSTREAM_ERROR", fallback: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const audioBuffer = await response.arrayBuffer();
-
     return new Response(audioBuffer, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "audio/mpeg",
-      },
+      headers: { ...corsHeaders, "Content-Type": "audio/mpeg" },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  } catch (_error) {
+    return new Response(
+      JSON.stringify({ error: "TTS_FAILED", fallback: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
