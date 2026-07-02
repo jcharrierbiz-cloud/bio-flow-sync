@@ -44,6 +44,7 @@ import {
 } from "@/lib/profileStore";
 import { setAudioGreetingEnabled } from "@/hooks/useGreeting";
 import { exportMyData, deleteAccount } from "@/lib/account";
+import { getPrefs, savePrefs, requestPermission } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedback } from "@/hooks/useFeedback";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -268,9 +269,17 @@ const Settings = () => {
   }, []);
 
   // Met à jour un champ profil de façon optimiste (UI immédiate) puis persiste.
+  // Si la persistance échoue, on annule l'affichage + on prévient (fini le
+  // « Modifier » qui semble marcher mais ne s'enregistre pas).
   const patch = async (field: keyof UserProfile, value: unknown) => {
-    setProfile((prev) => (prev ? ({ ...prev, [field]: value } as UserProfile) : prev));
-    await updateProfileField(field as string, value);
+    const prev = profile;
+    setProfile((p) => (p ? ({ ...p, [field]: value } as UserProfile) : p));
+    const ok = await updateProfileField(field as string, value);
+    if (!ok) {
+      setProfile(prev);
+      feedback.error();
+      toast.error("Impossible d'enregistrer. Vérifie ta connexion.");
+    }
   };
 
   const toggleVoice = async (next: boolean) => {
@@ -281,14 +290,17 @@ const Settings = () => {
 
   const toggleNotif = async (next: boolean) => {
     feedback.toggle(next);
-    // Demande la permission navigateur à l'activation (best-effort).
-    if (next && typeof Notification !== "undefined" && Notification.permission === "default") {
+    // Demande la permission navigateur à l'activation.
+    if (next) {
       try {
-        await Notification.requestPermission();
+        await requestPermission();
       } catch {
         /* noop */
       }
     }
+    // Relie le toggle au VRAI planificateur : App.tsx lit getPrefs() (localStorage),
+    // pas le profil Supabase. Sans ça, activer/couper n'avait aucun effet réel.
+    savePrefs({ ...getPrefs(), enabled: next });
     await patch("notification_enabled", next);
   };
 
@@ -505,7 +517,12 @@ const Settings = () => {
               </span>
               <select
                 value={String(profile.reminder_minutes ?? 10)}
-                onChange={(e) => patch("reminder_minutes", Number(e.target.value))}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  // Mirror vers le planificateur réel (App.tsx lit getPrefs()).
+                  savePrefs({ ...getPrefs(), reminderMinutes: v as 30 | 60 });
+                  patch("reminder_minutes", v);
+                }}
                 className="bg-muted text-xs text-foreground rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-energy"
                 aria-label="Délai de rappel"
               >
@@ -521,6 +538,8 @@ const Settings = () => {
             checked={profile.morning_scan_enabled}
             onChange={(next) => {
               feedback.toggle(next);
+              // Mirror vers le planificateur réel (MorningCheckIn lit getPrefs()).
+              savePrefs({ ...getPrefs(), morningEnabled: next });
               patch("morning_scan_enabled", next);
             }}
             label="Rappel du scan matinal"
