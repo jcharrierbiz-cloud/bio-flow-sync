@@ -1,0 +1,85 @@
+# Bio-Flow — Module « Connexion Montre » (BLE + HealthKit)
+
+Pack prêt à commit. Écrit pour ton repo Lovable/Vite/React (`src/...`).
+
+## Fichiers fournis
+
+| Fichier | Rôle |
+|---|---|
+| `src/lib/wellness.ts` | Heuristique readiness/stress + `rmssdFromRR` (partagé caméra ⇄ montre) |
+| `src/lib/bluetoothHeartRate.ts` | Client **Web Bluetooth** : connexion capteur BLE + parsing FC/RR réel |
+| `src/hooks/useWatchHeartRate.ts` | Hook React : `connect()`, `measure()`, `disconnect()` → `HeartRateResult` |
+| `src/components/WatchConnectButton.tsx` | UI optionnelle (connexion + mesure), style Bio-Flow |
+| `src/lib/healthkit.ts` | **Stub** iPhone natif (Apple Watch via HealthKit) + plan d'implémentation |
+
+Aucune nouvelle dépendance npm requise pour la partie Web Bluetooth. Le typage BLE est inline (pas besoin de `@types/web-bluetooth`).
+
+## Compatibilité réelle (lis ça avant tout)
+
+| Plateforme | Web Bluetooth (ce module) | Verdict |
+|---|---|---|
+| Android — Chrome/Edge/Samsung | ✅ oui | **Fonctionne** (ceinture/montre BLE) |
+| Desktop — Chrome/Edge | ✅ oui | Fonctionne |
+| **iPhone / iPad — tous navigateurs** | ❌ non (WebKit) | **Ne marche pas en web** → HealthKit natif |
+
+- Capteurs BLE compatibles : Polar H9/H10, Garmin HRM, Wahoo TICKR, Coospo, etc. (service Heart Rate standard `0x180D`).
+- **L'Apple Watch ne se connecte PAS** en Web Bluetooth (ni sur Android ni sur iPhone) : ses données passent uniquement par HealthKit, en natif.
+- Le hook expose `supported` (= `false` sur iPhone web) → l'UI affiche un message clair au lieu de planter.
+
+## Bonus mesure
+
+Une ceinture/montre BLE renvoie les **intervalles RR** → **vraie VFC (RMSSD)**, bien plus fiable que l'estimation caméra (qui, elle, est limitée par le ~30 fps). `measure(60s)` collecte les RR et calcule la RMSSD ; si le capteur n'envoie pas de RR, tu obtiens quand même le BPM (VFC = 0, non affichée).
+
+## Câblage minimal (exemple)
+
+Dans ton écran de scan, ajoute la montre comme source alternative à la caméra :
+
+```tsx
+import WatchConnectButton from "@/components/WatchConnectButton";
+
+// ... dans le JSX, à côté du bouton "Scanner avec la caméra" :
+<WatchConnectButton
+  measureSeconds={60}
+  onResult={(result) => {
+    // même type que la caméra → réutilise ton écran de résultats / ton store
+    saveScan(result); // ex: scanStore / useScanHistory
+  }}
+/>
+```
+
+Ou en direct via le hook, sans l'UI fournie :
+
+```tsx
+const w = useWatchHeartRate();
+await w.connect();            // ouvre le sélecteur (doit être dans un onClick)
+const result = await w.measure(60_000);
+w.disconnect();
+```
+
+### (Optionnel) dédupliquer l'heuristique
+Dans `src/hooks/useHeartRate.ts`, tu peux remplacer la fonction locale `computeWellness` par :
+```ts
+import { computeWellness } from "@/lib/wellness";
+```
+(le calcul est identique, c'est juste pour éviter la duplication).
+
+## Chemin iPhone natif (quand tu y seras)
+
+`src/lib/healthkit.ts` est un stub. Pour lire l'Apple Watch sur iPhone :
+
+1. `npm i @capacitor/core @capacitor/cli` puis `npx cap init` et `npx cap add ios`.
+2. `npm i @perfood/capacitor-healthkit` (ou `capacitor-health`).
+3. Xcode : activer la capability **HealthKit** + ajouter dans `Info.plist` :
+   `NSHealthShareUsageDescription`, `NSHealthUpdateUsageDescription`.
+4. Décommenter l'implémentation dans `healthkit.ts` et l'appeler quand
+   `Capacitor.isNativePlatform()` est vrai (iOS).
+
+⚠️ Deux points à ne pas oublier :
+- **SDNN ≠ RMSSD.** HealthKit donne la VFC en **SDNN**. Ta caméra et le BLE donnent du **RMSSD**. Ne les mélange pas dans le même score sans le préciser — labelle la source.
+- **Compte Apple Developer (99 $/an) requis + entité 18+** pour publier sur l'App Store. C'est le même sujet que ton statut de mineur : à cadrer avec un parent avant de t'y engager.
+
+## Limites honnêtes (à garder en tête)
+
+- `connect()` **doit** être déclenché par un clic utilisateur (exigence navigateur).
+- La fenêtre de 60 s est un compromis ; monte à 120–180 s pour une RMSSD plus stable.
+- Ce module ne rend pas ton app "médicale" : ça reste du bien-être, garde ton disclaimer.
