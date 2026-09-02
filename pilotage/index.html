@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f1814">
 <meta name="description" content="CALYRE — console de pilotage : tâches, objectifs, finances, notes.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CALYRE">
+<meta name="application-name" content="CALYRE">
 <title>CALYRE-pilotage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,8 +41,8 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   [hidden]{display:none!important}
-  html{background:var(--deep)}
-  body{background:var(--deep);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;padding-bottom:72px}
+  html{background:var(--deep);overscroll-behavior-y:none}
+  body{background:var(--deep);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;overscroll-behavior-y:none;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   .wrap{max-width:780px;margin:0 auto;padding:0 16px}
   button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;text-align:left}
   input,select,textarea{font:inherit;color:var(--ink);background:var(--deep);border:1px solid var(--line);border-radius:var(--r);padding:10px 11px;width:100%;font-size:15px}
@@ -46,7 +54,7 @@
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
   /* ── Bandeau ────────────────────────────────────────────── */
-  header{background:var(--panel);border-bottom:1px solid var(--line);padding:16px 0 14px}
+  header{background:var(--panel);border-bottom:1px solid var(--line);padding:calc(16px + env(safe-area-inset-top,0px)) 0 14px}
   .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .mark{font-family:var(--disp);font-weight:700;font-size:23px;letter-spacing:.16em;color:var(--ink);line-height:1}
   .mark b{color:var(--brass);font-weight:700}
@@ -209,7 +217,7 @@
   }
   .sheetHead{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line-soft)}
   .sheetHead h3{flex:1;font-family:var(--disp);font-size:18px;letter-spacing:.03em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .sheetBody{padding:14px 16px 18px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sheetBody{padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch}
   .fld{margin-bottom:12px}
   .fld>label,.lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
   .tones{display:flex;gap:7px;flex-wrap:wrap}
@@ -350,6 +358,7 @@
   </section>
 
   <div class="foot">
+    <button class="ghost" id="install" hidden>Installer l'application</button>
     <button class="ghost" id="exp">Exporter / sauvegarder</button>
     <button class="ghost" id="impBtn">Importer</button>
     <button class="ghost" id="reset">Tout effacer</button>
@@ -474,7 +483,8 @@
     var el = $("toast"), act = $("toastAct");
     $("toastMsg").textContent = msg;
     el.hidden = false;
-    requestAnimationFrame(function(){ el.classList.add("on"); });
+    void el.offsetWidth;
+    el.classList.add("on");
     act.hidden = !undoFn;
     undo = undoFn || null;
     clearTimeout(undoTimer);
@@ -822,19 +832,28 @@
 
   /* ═══ Feuille (panneau d'édition) ══════════════════════ */
   var sheetOpen = false, onSheetClose = null;
+  var sheetPushed = false, pendingPop = 0;
   function openSheet(title, html, tone, onClose){
+    if(!sheetOpen && !sheetPushed){
+      try{ history.pushState({calyreSheet:1}, ""); sheetPushed = true; }catch(e){}
+    }
     var b = $("sheetBody");
     b.onclick = null; b.oninput = null; b.onchange = null;
     $("sheetTitle").textContent = title;
     b.innerHTML = html;
     $("sheet").style.setProperty("--a", tone || "var(--brass)");
     $("scrim").hidden = false; $("sheet").hidden = false;
-    requestAnimationFrame(function(){ $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    void $("sheet").offsetWidth;
+    $("scrim").classList.add("on"); $("sheet").classList.add("on");
     sheetOpen = true; onSheetClose = onClose || null;
   }
-  function closeSheet(){
+  function closeSheet(fromBack){
     if(!sheetOpen) return;
     sheetOpen = false;
+    if(sheetPushed){
+      sheetPushed = false;
+      if(!fromBack){ try{ pendingPop++; history.back(); }catch(e){ pendingPop--; } }
+    }
     $("scrim").classList.remove("on"); $("sheet").classList.remove("on");
     setTimeout(function(){
       if(sheetOpen) return;
@@ -845,6 +864,12 @@
   $("sheetClose").onclick = closeSheet;
   $("scrim").onclick = closeSheet;
   document.addEventListener("keydown", function(e){ if(e.key==="Escape" && sheetOpen) closeSheet(); });
+  window.addEventListener("popstate", function(){
+    /* Retour déclenché par la page elle-même : déjà traité. */
+    if(pendingPop > 0){ pendingPop--; return; }
+    if(sheetOpen) closeSheet(true);
+    else sheetPushed = false;
+  });
 
   function tonePicker(sel){
     return '<div class="tones">' + TONES.map(function(t){
@@ -1688,6 +1713,38 @@
   state = saved ? normalize(saved) : seed();
   if(!readRaw(KEY)) save();
   renderAll();
+
+  /* Installation sur l'ecran d'accueil */
+  var installEvent = null;
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    installEvent = e;
+    $("install").hidden = false;
+  });
+  $("install").onclick = function(){
+    if(!installEvent) return;
+    var ev = installEvent; installEvent = null;
+    $("install").hidden = true;
+    ev.prompt();
+    if(ev.userChoice && ev.userChoice.then){
+      ev.userChoice.then(function(c){
+        if(c && c.outcome==="accepted") toast("CALYRE est sur ton écran d'accueil");
+      }, function(){});
+    }
+  };
+  window.addEventListener("appinstalled", function(){ $("install").hidden = true; installEvent = null; });
+
+  /* Fonctionnement hors connexion : uniquement en page hébergée et hors cadre */
+  (function(){
+    if(!("serviceWorker" in navigator)) return;
+    if(location.protocol !== "https:" && location.hostname !== "localhost") return;
+    var isTop = true;
+    try{ isTop = (window.self === window.top); }catch(e){ isTop = false; }
+    if(!isTop) return;
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  })();
 
   /* Bascule de jour pendant que l'app reste ouverte */
   document.addEventListener("visibilitychange", function(){
