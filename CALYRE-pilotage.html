@@ -462,6 +462,9 @@
     return NOTE_KINDS[0];
   };
 
+  var dlPromise = null;
+  try{ if(window.claude && typeof window.claude.use === "function") dlPromise = window.claude.use("downloads"); }catch(e){}
+
   function save(){
     if(!writeRaw(KEY, state)){ storageOK = false; renderAlert(); }
   }
@@ -1508,11 +1511,20 @@
         } else toast(ok ? "Sauvegarde copiée" : "Copie refusée : sélectionne le texte à la main.");
       }
       if(b.dataset.act==="dl"){
+        var name = "calyre-pilotage-"+TODAY+".json";
+        if(dlPromise){
+          dlPromise.then(function(d){
+            if(!d){ toast("Téléchargement indisponible ici — utilise « Copier »."); return; }
+            d.save({filename:name, data:json}).then(function(){ toast("Sauvegarde enregistrée"); },
+              function(e){ toast(e && e.code==="declined" ? "Enregistrement annulé" : "Enregistrement refusé — utilise « Copier »."); });
+          }, function(){ toast("Téléchargement indisponible ici — utilise « Copier »."); });
+          return;
+        }
         try{
           var blob = new Blob([json],{type:"application/json"});
           var a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
-          a.download = "calyre-pilotage-"+TODAY+".json";
+          a.download = name;
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1500);
         }catch(err){ toast("Téléchargement bloqué ici — utilise « Copier »."); }
