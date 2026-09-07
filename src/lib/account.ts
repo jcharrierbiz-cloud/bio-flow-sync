@@ -29,6 +29,30 @@ export async function claimLegacyData(): Promise<void> {
 }
 
 /**
+ * Données stockées uniquement sur l'appareil (pas de table Supabase).
+ * Elles doivent quand même figurer dans l'export RGPD, sinon « exporter mes
+ * données » ne rend qu'une partie de ce que l'app détient.
+ */
+const LOCAL_DATA_KEYS = [
+  "bioflow_todos",
+  "bioflow_journal_v1",
+  "bioflow_reminders_v1",
+] as const;
+
+function collectLocalData(): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of LOCAL_DATA_KEYS) {
+    try {
+      const raw = localStorage.getItem(key);
+      out[key] = raw ? JSON.parse(raw) : [];
+    } catch {
+      out[key] = [];
+    }
+  }
+  return out;
+}
+
+/**
  * Export RGPD : télécharge un JSON de toutes les données de l'utilisateur.
  * Tente d'abord la fonction edge `export-my-data` ; si elle n'est pas déployée,
  * reconstruit l'export côté client (RLS garantit qu'on ne voit que ses données).
@@ -56,7 +80,11 @@ export async function exportMyData(): Promise<void> {
     payload = out;
   }
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  // Les tâches, le journal horaire et les rappels vivent sur l'appareil :
+  // on les ajoute à l'export quelle que soit la source du reste.
+  const full = { ...(payload as Record<string, unknown>), local_data: collectLocalData() };
+
+  const blob = new Blob([JSON.stringify(full, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -96,6 +124,7 @@ export async function deleteAccount(): Promise<{ ok: boolean; error?: string }> 
       [
         "bioflow_profile_cache", "bioflow_xp", "bioflow_streak",
         "bioflow_xp_daily", "bioflow_xp_categories",
+        ...LOCAL_DATA_KEYS,
       ].forEach((k) => localStorage.removeItem(k));
     } catch { /* ignore */ }
 

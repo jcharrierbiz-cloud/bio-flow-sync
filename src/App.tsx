@@ -14,6 +14,7 @@ import FocusLock from "@/components/FocusLock";
 import Home from "./pages/Home";
 import Agenda from "./pages/Agenda";
 import Log from "./pages/Log";
+import Journal from "./pages/Journal";
 import Health from "./pages/Health";
 import Coach from "./pages/Coach";
 import Auth from "./pages/Auth";
@@ -25,10 +26,13 @@ import {
   hasDoneMorningScanToday,
   getPrefs,
   scheduleAgendaReminders,
+  scheduleTodoReminders,
 } from "@/lib/notifications";
 import { isOnboardingComplete, fetchProfile } from "@/lib/profileStore";
 import { claimLegacyData } from "@/lib/account";
 import { useAgendaStore } from "@/lib/agendaStore";
+import { useTodoStore } from "@/lib/todoStore";
+import { useReminderScheduler } from "@/hooks/useReminderScheduler";
 import { initTheme } from "@/lib/theme";
 import { useGlobalTapFeedback } from "@/hooks/useGlobalTapFeedback";
 
@@ -55,6 +59,10 @@ const ProtectedApp = () => {
   const [showMorningCheckIn, setShowMorningCheckIn] = useState(false);
   const [ready, setReady] = useState(false);
   const tasks = useAgendaStore((s) => s.tasks);
+  const todos = useTodoStore((s) => s.todos);
+
+  // Rappels personnels (écran Journal) — tourne tant que l'app est ouverte.
+  useReminderScheduler();
 
   useEffect(() => {
     const init = async () => {
@@ -83,9 +91,13 @@ const ProtectedApp = () => {
   useEffect(() => {
     const prefs = getPrefs();
     if (!prefs.enabled) return;
-    const timers = scheduleAgendaReminders(tasks, prefs.reminderMinutes);
+    // Rythme suggéré (agenda) + tâches réellement planifiées (todoStore).
+    const timers = [
+      ...scheduleAgendaReminders(tasks, prefs.reminderMinutes),
+      ...scheduleTodoReminders(todos, prefs.reminderMinutes),
+    ];
     return () => timers.forEach(clearTimeout);
-  }, [tasks]);
+  }, [tasks, todos]);
 
   const handleOnboardingClose = () => {
     setShowOnboarding(false);
@@ -104,6 +116,7 @@ const ProtectedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/agenda" element={<Agenda />} />
           <Route path="/log" element={<Log />} />
+          <Route path="/journal" element={<Journal />} />
           <Route path="/health" element={<Health />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/settings" element={<Settings />} />
