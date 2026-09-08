@@ -18,7 +18,14 @@ self.addEventListener("install", function(e){
 self.addEventListener("activate", function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
-      return Promise.all(keys.map(function(k){ return k===VERSION ? null : caches.delete(k); }));
+      return Promise.all(keys.map(function(k){
+        /* Le stockage de cache est partagé par ORIGINE, pas par portée :
+           supprimer « tout ce qui n'est pas ma version » effaçait aussi le
+           cache hors-ligne de Bio-Flow, servi à la racine du même domaine.
+           On ne nettoie donc que les anciennes versions de CALYRE. */
+        if(k.indexOf("calyre-") !== 0) return null;
+        return k===VERSION ? null : caches.delete(k);
+      }));
     }).then(function(){ return self.clients.claim(); })
   );
 });

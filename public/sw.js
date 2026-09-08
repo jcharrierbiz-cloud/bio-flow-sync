@@ -12,7 +12,8 @@
  * hors ligne. Seule une page de repli minimale est mise en cache.
  */
 
-const OFFLINE_CACHE = "bioflow-offline-v1";
+const CACHE_PREFIX = "bioflow-";
+const OFFLINE_CACHE = CACHE_PREFIX + "offline-v1";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -30,7 +31,15 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== OFFLINE_CACHE).map((k) => caches.delete(k)))
+        Promise.all(
+          keys
+            // Le stockage de cache est partagé par ORIGINE, pas par portée :
+            // effacer « tout ce qui n'est pas à moi » détruisait le cache
+            // hors-ligne de CALYRE (/pilotage/), qui vit sur la même origine.
+            // On ne nettoie donc que nos propres versions.
+            .filter((k) => k.startsWith(CACHE_PREFIX) && k !== OFFLINE_CACHE)
+            .map((k) => caches.delete(k))
+        )
       )
       .then(() => self.clients.claim())
   );
