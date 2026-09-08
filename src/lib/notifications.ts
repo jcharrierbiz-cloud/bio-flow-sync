@@ -112,3 +112,40 @@ export function scheduleAgendaReminders(
 
   return timers;
 }
+
+/**
+ * Programme les rappels des **vraies** tâches planifiées (todoStore).
+ *
+ * `scheduleAgendaReminders` ne couvrait que le rythme suggéré (données de
+ * démonstration) : aucune tâche réellement saisie ne déclenchait de rappel.
+ * Ici on part de `scheduledAt`, on ignore ce qui est déjà fait ou déjà passé,
+ * et on renvoie les timers pour que l'appelant puisse les nettoyer.
+ */
+export function scheduleTodoReminders(
+  todos: { id: string; title: string; done: boolean; scheduledAt?: string }[],
+  reminderMinutes: number
+): number[] {
+  const timers: number[] = [];
+  const now = Date.now();
+
+  for (const todo of todos) {
+    if (todo.done || !todo.scheduledAt) continue;
+    const due = new Date(todo.scheduledAt).getTime();
+    if (Number.isNaN(due)) continue;
+
+    const delayMs = due - reminderMinutes * 60_000 - now;
+    // setTimeout sature au-delà de ~24,8 jours : on ne programme que le proche.
+    if (delayMs <= 0 || delayMs > 24 * 3600_000) continue;
+
+    timers.push(
+      scheduleNotification(
+        `⏰ ${todo.title}`,
+        `À faire dans ${reminderMinutes} min.`,
+        delayMs,
+        `todo-${todo.id}`
+      )
+    );
+  }
+
+  return timers;
+}

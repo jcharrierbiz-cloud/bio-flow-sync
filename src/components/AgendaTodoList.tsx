@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTodoStore, TodoItem } from "@/lib/todoStore";
 import { Plus, X, CheckCircle2, Circle, Clock, Lock, Pencil, ChevronDown, ChevronUp, CalendarIcon } from "lucide-react";
 import { useRewardStore, fireTaskConfetti, fireDailyCompletion } from "@/lib/rewardStore";
+import { ACTIVE_GROUP_ORDER, GROUP_LABELS, groupTodos } from "@/lib/taskStats";
+import OverdueTasks from "@/components/OverdueTasks";
 
 const categories = ["Perso", "Sport", "Travail", "Santé", "Autre"];
 
@@ -13,48 +15,6 @@ const categoryColors: Record<string, string> = {
   Autre: "bg-secondary text-secondary-foreground",
 };
 
-function groupTasks(todos: TodoItem[]): Record<string, TodoItem[]> {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-  const weekEnd = new Date(now);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-  const weekEndStr = weekEnd.toISOString().slice(0, 10);
-
-  const groups: Record<string, TodoItem[]> = {
-    "Aujourd'hui": [],
-    "Demain": [],
-    "Cette semaine": [],
-    "Plus tard": [],
-    "Sans date": [],
-  };
-
-  for (const t of todos) {
-    if (t.done) continue;
-    const dateStr = t.scheduledAt?.slice(0, 10) || t.createdAt.slice(0, 10);
-    if (!t.scheduledAt) {
-      // No scheduled date — put in today if created today, else sans date
-      if (t.createdAt.slice(0, 10) === todayStr) groups["Aujourd'hui"].push(t);
-      else groups["Sans date"].push(t);
-    } else if (dateStr === todayStr) {
-      groups["Aujourd'hui"].push(t);
-    } else if (dateStr === tomorrowStr) {
-      groups["Demain"].push(t);
-    } else if (dateStr <= weekEndStr && dateStr > tomorrowStr) {
-      groups["Cette semaine"].push(t);
-    } else if (dateStr > weekEndStr) {
-      groups["Plus tard"].push(t);
-    } else {
-      // Past dates go to today
-      groups["Aujourd'hui"].push(t);
-    }
-  }
-
-  return groups;
-}
-
 const AgendaTodoList = () => {
   const { todos, addTodo, toggleTodo, removeTodo } = useTodoStore();
   const [title, setTitle] = useState("");
@@ -65,9 +25,12 @@ const AgendaTodoList = () => {
   const [showForm, setShowForm] = useState(false);
   const [showDone, setShowDone] = useState(false);
 
-  const activeTodos = todos.filter((t) => !t.done);
-  const doneTodos = todos.filter((t) => t.done);
-  const groups = groupTasks(todos);
+  // Le tri (dont l'extraction du retard) vit dans taskStats — testé à part.
+  const groups = useMemo(() => groupTodos(todos), [todos]);
+  const doneTodos = groups.done;
+  // « Actives » = ce qui est encore à l'ordre du jour, retard exclu : une tâche
+  // périmée ne doit ni remonter en haut de page, ni déclencher la fête du soir.
+  const activeTodos = ACTIVE_GROUP_ORDER.flatMap((g) => groups[g]);
 
   const handleAdd = () => {
     if (!title.trim()) return;
@@ -101,8 +64,6 @@ const AgendaTodoList = () => {
       }
     }
   };
-
-  const groupOrder = ["Aujourd'hui", "Demain", "Cette semaine", "Plus tard", "Sans date"];
 
   return (
     <div className="glass-card p-5 space-y-4">
@@ -204,23 +165,27 @@ const AgendaTodoList = () => {
       )}
 
       {/* Empty state */}
-      {activeTodos.length === 0 && doneTodos.length === 0 && !showForm && (
+      {activeTodos.length === 0 &&
+        doneTodos.length === 0 &&
+        groups.overdue.length === 0 &&
+        groups.setAside.length === 0 &&
+        !showForm && (
         <div className="flex flex-col items-center py-8 text-center">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mb-3 text-energy/30">
             <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
             <path d="M16 24l5 5 11-11" stroke="hsl(175, 80%, 45%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="text-sm text-muted-foreground">Aucune tâche — profite ou planifie 🎯</p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Grouped tasks */}
-      {groupOrder.map((group) => {
+      {/* Grouped tasks — le retard est volontairement absent d'ici */}
+      {ACTIVE_GROUP_ORDER.map((group) => {
         const items = groups[group];
         if (!items || items.length === 0) return null;
         return (
           <div key={group} className="space-y-1.5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{group}</h3>
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{GROUP_LABELS[group]}</h3>
             {items.map((todo) => (
               <div key={todo.id} className="flex items-center gap-3 py-2 px-1 group">
                 <button onClick={() => handleToggle(todo)} className="shrink-0">
@@ -249,6 +214,9 @@ const AgendaTodoList = () => {
           </div>
         );
       })}
+
+      {/* Espace « À rattraper » — volontairement sous les tâches à venir */}
+      <OverdueTasks overdue={groups.overdue} setAside={groups.setAside} />
 
       {/* Completed tasks */}
       {doneTodos.length > 0 && (
