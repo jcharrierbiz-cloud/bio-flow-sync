@@ -169,12 +169,24 @@ La fonction renvoie un décompte à chaque appel :
 - Un abonnement mort (application désinstallée, permission retirée) est supprimé
   automatiquement à la première erreur 404/410 du service de push.
 
-## Ce qui est vérifié par les tests
+## Ce qui a été vérifié avant tout déploiement
 
-`src/test/sendReminders.test.ts` couvre la logique de décision de la fonction —
-notamment les fuseaux horaires (`localParts`, occurrences, anti-doublon), et les
-tests passent à l'identique quel que soit le fuseau de la machine.
+| Maillon | Vérification | État |
+|---|---|---|
+| Logique de décision (quel rappel, quand) | `src/test/sendReminders.test.ts` — fuseaux, occurrences, anti-doublon ; identique sous `TZ=UTC`, `Europe/Paris`, `America/Los_Angeles` | ✅ |
+| Clés VAPID du script | Acceptées par `web-push` : 87 caractères pour la publique (65 octets, préfixe `0x04`), 43 pour la privée | ✅ |
+| Construction de l'envoi | `generateRequestDetails` avec les mêmes arguments que la fonction : en-tête `Authorization: vapid` contenant la clé publique, `Content-Encoding: aes128gcm`, `TTL: 3600`, charge chiffrée (196 octets pour 93 octets en clair) | ✅ |
+| Réception par le service worker | Notification push réelle livrée à `public/sw.js` via le protocole DevTools, puis relecture de ce qui a été affiché : titre, corps, `tag`, `data.url` et icône corrects ; repli correct sur charge illisible et sur charge vide | ✅ |
+| Service worker enregistré et actif, manifeste, page hors ligne | Sur le build de production, avec une vraie coupure de serveur | ✅ |
 
-Ce qui n'est **pas** couvert automatiquement : l'envoi réel (signature VAPID,
-chiffrement du message, dialogue avec le service de push). Cette partie ne peut
-être validée qu'une fois déployée, avec le test manuel décrit plus haut.
+### Ce qui reste non vérifié, et pourquoi
+
+- **Le dialogue réseau avec le service de push** (Google, Apple, Mozilla) : il
+  demande un endpoint d'abonnement réel. Seul le test manuel ci-dessus le couvre.
+- **La compatibilité de `npm:web-push` avec le runtime Deno de Supabase** : Deno
+  n'était pas installable dans l'environnement de développement (`deno.land`
+  bloqué). L'import est donc dynamique et encapsulé : en cas d'échec, la
+  fonction répond `503` avec un message explicite plutôt que de refuser de
+  démarrer. Repli documenté dans `loadWebPush()`.
+- **Le clic sur la notification** (mise au premier plan, ouverture de
+  `/journal`) : aucun moyen de simuler un clic système hors d'un vrai appareil.

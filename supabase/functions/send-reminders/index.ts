@@ -14,8 +14,34 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import webpush from "npm:web-push@3.6.7";
 import { collectDueRows, type ReminderRow } from "./due.ts";
+
+/**
+ * `web-push` est un paquet npm chargé par le runtime Deno de Supabase. Cette
+ * compatibilité n'a pas pu être vérifiée avant déploiement (pas de Deno dans
+ * l'environnement de développement utilisé). L'import est donc dynamique et
+ * encapsulé : si le paquet ne se charge pas, la fonction répond une erreur
+ * explicite au lieu de refuser de démarrer avec un message opaque.
+ *
+ * Repli si le chargement échoue en production : remplacer par un build esm.sh
+ * (`https://esm.sh/web-push@3.6.7`), ou signer et chiffrer avec WebCrypto.
+ */
+async function loadWebPush() {
+  try {
+    const mod = await import("npm:web-push@3.6.7");
+    return (mod.default ?? mod) as {
+      setVapidDetails: (subject: string, publicKey: string, privateKey: string) => void;
+      sendNotification: (
+        subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+        payload: string,
+        options?: { TTL?: number }
+      ) => Promise<unknown>;
+    };
+  } catch (e) {
+    console.error("web-push import failed:", e);
+    return null;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +74,18 @@ serve(async (req) => {
   }
   if (req.headers.get("x-cron-secret") !== cronSecret) {
     return json({ error: "Forbidden" }, 403);
+  }
+
+  const webpush = await loadWebPush();
+  if (!webpush) {
+    return json(
+      {
+        error:
+          "web-push n'a pas pu être chargé par le runtime. Voir le commentaire " +
+          "loadWebPush() dans cette fonction pour les solutions de repli.",
+      },
+      503
+    );
   }
 
   const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
