@@ -1,6 +1,6 @@
 # Rappels qui sonnent application fermée
 
-Ce document décrit les **quatre étapes que Claude ne peut pas faire à ta place** :
+Ce document décrit les **cinq étapes que Claude ne peut pas faire à ta place** :
 elles demandent l'accès à ton projet Supabase (secrets, déploiement, tâche
 planifiée). Tant qu'elles ne sont pas faites, l'application reste dans son
 comportement précédent — les rappels se déclenchent pendant que Bio-Flow est
@@ -25,9 +25,38 @@ navigateur                Supabase                        service de push
     │◀────────────── le service worker affiche la notification ───┘
 ```
 
-Trois pièces sont déjà dans le dépôt : la table (`supabase/migrations/…_reminders_and_push.sql`),
-la fonction (`supabase/functions/send-reminders/`) et le service worker
-(`public/sw.js`). Il manque les clés et le déclencheur.
+Trois pièces sont déjà dans le dépôt : la migration
+(`supabase/migrations/…_reminders_and_push.sql`), la fonction
+(`supabase/functions/send-reminders/`) et le service worker (`public/sw.js`).
+Il manque leur application, les clés et le déclencheur.
+
+---
+
+## 0. Appliquer la migration
+
+Les tables `reminders` et `push_subscriptions` doivent exister avant tout le
+reste. **Ne compte pas sur l'intégration GitHub de Supabase pour le faire :**
+sur la PR qui a introduit ces fichiers, le contrôle « Supabase Preview » a
+répondu *« This git branch is not associated with any Supabase Branch »*, et il
+pointe vers un projet (`ahmhqinkrbtubpkxnoql`) **différent** de celui que
+l'application utilise (`qiugyurwxmxjhsezysnn`, cf. `.env` et
+`supabase/config.toml`). Autrement dit : rien ne garantit que la migration soit
+appliquée automatiquement au bon projet.
+
+Applique-la explicitement, au choix :
+
+```bash
+supabase link --project-ref qiugyurwxmxjhsezysnn
+supabase db push
+```
+
+ou bien colle le contenu de
+`supabase/migrations/20260908060000_reminders_and_push.sql` dans l'éditeur SQL
+du projet, une fois.
+
+Pour vérifier que c'est fait : la console du navigateur n'affiche plus
+« table `reminders` absente ». Tant qu'elle l'affiche, les rappels restent sur
+l'appareil et ne peuvent pas être envoyés par le serveur.
 
 ---
 
