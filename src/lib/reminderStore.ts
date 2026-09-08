@@ -6,15 +6,25 @@
 // jours de semaine / chaque semaine). Le déclenchement est fait par
 // `useReminderScheduler`, qui interroge `collectDue()` toutes les 30 s.
 //
-// LIMITE HONNÊTE, à ne pas masquer dans l'interface : sans serveur de push ni
-// service worker, un navigateur ne peut PAS réveiller l'app fermée. Les rappels
-// se déclenchent donc quand Bio-Flow est ouvert (onglet actif ou en arrière-plan
-// récent). Les occurrences ratées sont marquées `lastMissedAt` et affichées
-// telles quelles, plutôt que de laisser croire à une alarme fiable.
+// Deux chemins de déclenchement, complémentaires :
+//   • app ouverte  → `useReminderScheduler` (ce store, en local) ;
+//   • app fermée   → Web Push, envoyé par la fonction `send-reminders` à partir
+//                    de la copie Supabase (voir reminderSync.ts + push.ts).
+// Les deux se partagent la même clé d'occurrence (`lastSentKey`, heure locale
+// "AAAA-MM-JJTHH:MM") : le premier qui la revendique empêche l'autre de
+// notifier une seconde fois.
+//
+// Quand le push n'est pas activé (permission refusée, navigateur sans support,
+// iPhone non installé), le comportement reste celui d'avant : déclenchement
+// pendant que l'app est ouverte, occurrences ratées marquées `lastMissedAt` et
+// affichées telles quelles. L'écran Rappels dit lequel des deux régimes
+// s'applique plutôt que de laisser croire à une alarme fiable.
 // -----------------------------------------------------------------------------
 
 import { create } from "zustand";
 import { dayKey, parseDayKey } from "./dateUtils";
+import { deviceTimezone } from "./push";
+import { deleteRemoteReminder, pushRemoteReminder } from "./reminderSync";
 
 const STORAGE_KEY = "bioflow_reminders_v1";
 
@@ -44,11 +54,17 @@ export interface Reminder {
   /** 0 = dimanche … 6 = samedi, uniquement pour `repeat === "weekly"`. */
   weekday?: number;
   enabled: boolean;
+  /** Fuseau IANA de création — le serveur en a besoin pour situer "18:00". */
+  timezone?: string;
+  /** Occurrence déjà notifiée, en heure locale : "AAAA-MM-JJTHH:MM". */
+  lastSentKey?: string;
   /** Dernière occurrence effectivement notifiée (ISO). */
   lastFiredAt?: string;
   /** Dernière occurrence passée sans notification possible (app fermée). */
   lastMissedAt?: string;
   createdAt: string;
+  /** Dernière modification, utilisée pour départager local et serveur. */
+  updatedAt?: string;
 }
 
 // --- Persistance -------------------------------------------------------------
@@ -70,9 +86,12 @@ function sanitize(raw: unknown): Reminder | null {
     date: r.date ? String(r.date) : undefined,
     weekday: typeof r.weekday === "number" ? r.weekday : undefined,
     enabled: r.enabled !== false,
+    timezone: r.timezone ? String(r.timezone) : undefined,
+    lastSentKey: r.lastSentKey ? String(r.lastSentKey) : undefined,
     lastFiredAt: r.lastFiredAt ? String(r.lastFiredAt) : undefined,
     lastMissedAt: r.lastMissedAt ? String(r.lastMissedAt) : undefined,
     createdAt: r.createdAt ?? new Date().toISOString(),
+    updatedAt: r.updatedAt ? String(r.updatedAt) : undefined,
   };
 }
 
@@ -145,6 +164,17 @@ export function lastOccurrence(reminder: Reminder, now: Date = new Date()): Date
   return null;
 }
 
+/**
+ * Clé d'occurrence en heure locale : "AAAA-MM-JJTHH:MM".
+ * Format identique à celui du serveur (`send-reminders/due.ts`), c'est ce qui
+ * permet aux deux chemins de déclenchement de ne pas notifier deux fois.
+ */
+export function occurrenceKey(occurrence: Date): string {
+  const hh = String(occurrence.getHours()).padStart(2, "0");
+  const mm = String(occurrence.getMinutes()).padStart(2, "0");
+  return `${dayKey(occurrence)}T${hh}:${mm}`;
+}
+
 export interface DueReminder {
   reminder: Reminder;
   occurrence: Date;
@@ -172,6 +202,9 @@ export function collectDue(
     if (!occ) continue;
     const createdAt = new Date(reminder.createdAt).getTime();
     if (Number.isFinite(createdAt) && occ.getTime() < createdAt) continue;
+    // Déjà envoyée par le serveur (push) : rien à refaire côté navigateur.
+    if (reminder.lastSentKey === occurrenceKey(occ)) continue;
+
     const handledAt = Math.max(
       reminder.lastFiredAt ? new Date(reminder.lastFiredAt).getTime() : 0,
       reminder.lastMissedAt ? new Date(reminder.lastMissedAt).getTime() : 0
@@ -219,6 +252,8 @@ interface ReminderState {
   toggleReminder: (id: string) => void;
   /** Marque une occurrence comme notifiée (ou manquée si `missed`). */
   markHandled: (id: string, occurrence: Date, missed?: boolean) => void;
+  /** Remplace l'état par le résultat d'une fusion locale/serveur. */
+  replaceAll: (reminders: Reminder[]) => void;
 }
 
 export const useReminderStore = create<ReminderState>((set, get) => ({
@@ -236,47 +271,69 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
       date: repeat === "once" ? date || dayKey() : undefined,
       weekday: repeat === "weekly" ? weekday ?? new Date().getDay() : undefined,
       enabled: true,
+      timezone: deviceTimezone(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     const next = [...get().reminders, reminder];
     persist(next);
     set({ reminders: next });
+    // Copie serveur : sans elle, ce rappel ne sonnerait jamais app fermée.
+    void pushRemoteReminder(reminder);
     return reminder;
   },
 
   updateReminder: (id, patch) => {
-    const next = get().reminders.map((r) => (r.id === id ? { ...r, ...patch } : r));
+    const stamped = { ...patch, updatedAt: new Date().toISOString() };
+    const next = get().reminders.map((r) => (r.id === id ? { ...r, ...stamped } : r));
     persist(next);
     set({ reminders: next });
+    const updated = next.find((r) => r.id === id);
+    if (updated) void pushRemoteReminder(updated);
   },
 
   removeReminder: (id) => {
     const next = get().reminders.filter((r) => r.id !== id);
     persist(next);
     set({ reminders: next });
+    void deleteRemoteReminder(id);
   },
 
   toggleReminder: (id) => {
     const next = get().reminders.map((r) =>
-      r.id === id ? { ...r, enabled: !r.enabled } : r
+      r.id === id
+        ? { ...r, enabled: !r.enabled, updatedAt: new Date().toISOString() }
+        : r
     );
     persist(next);
     set({ reminders: next });
+    const updated = next.find((r) => r.id === id);
+    if (updated) void pushRemoteReminder(updated);
+  },
+
+  replaceAll: (reminders) => {
+    persist(reminders);
+    set({ reminders });
   },
 
   markHandled: (id, occurrence, missed = false) => {
     const stamp = occurrence.toISOString();
+    const key = occurrenceKey(occurrence);
     const next = get().reminders.map((r) => {
       if (r.id !== id) return r;
       const updated: Reminder = missed
-        ? { ...r, lastMissedAt: stamp }
-        : { ...r, lastFiredAt: stamp, lastMissedAt: undefined };
+        ? { ...r, lastMissedAt: stamp, lastSentKey: key }
+        : { ...r, lastFiredAt: stamp, lastMissedAt: undefined, lastSentKey: key };
+      updated.updatedAt = new Date().toISOString();
       // Un rappel ponctuel ne sert qu'une fois : on le désactive après coup.
       if (r.repeat === "once") updated.enabled = false;
       return updated;
     });
     persist(next);
     set({ reminders: next });
+    // Revendique l'occurrence côté serveur : le push ne la renverra pas.
+    const updated = next.find((r) => r.id === id);
+    if (updated) void pushRemoteReminder(updated);
   },
 }));
 

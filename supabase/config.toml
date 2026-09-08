@@ -25,3 +25,6 @@ verify_jwt = true
 
 [functions.claim-device-data]
 verify_jwt = true
+
+[functions.send-reminders]
+verify_jwt = false

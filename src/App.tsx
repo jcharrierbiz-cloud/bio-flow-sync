@@ -33,6 +33,7 @@ import { claimLegacyData } from "@/lib/account";
 import { useAgendaStore } from "@/lib/agendaStore";
 import { useTodoStore } from "@/lib/todoStore";
 import { useReminderScheduler } from "@/hooks/useReminderScheduler";
+import { useReminderSync } from "@/hooks/useReminderSync";
 import { initTheme } from "@/lib/theme";
 import { useGlobalTapFeedback } from "@/hooks/useGlobalTapFeedback";
 
@@ -61,8 +62,11 @@ const ProtectedApp = () => {
   const tasks = useAgendaStore((s) => s.tasks);
   const todos = useTodoStore((s) => s.todos);
 
-  // Rappels personnels (écran Journal) — tourne tant que l'app est ouverte.
+  // Rappels personnels (écran Journal).
+  //   • app ouverte  → planificateur local ;
+  //   • app fermée   → Web Push, à condition que la copie serveur soit à jour.
   useReminderScheduler();
+  useReminderSync();
 
   useEffect(() => {
     const init = async () => {

@@ -2,13 +2,25 @@
 // -----------------------------------------------------------------------------
 // Bio-Flow — Création et gestion des rappels.
 //
-// Le bandeau du haut dit la vérité sur ce que le web permet : sans app native
-// ni serveur de push, un rappel ne peut pas sonner quand Bio-Flow est fermé.
-// Mieux vaut l'écrire que laisser l'utilisateur découvrir un rappel muet.
+// Le bandeau du haut dit lequel des deux régimes s'applique, sans enjoliver :
+//   • push actif   → le serveur envoie la notification, app fermée comprise ;
+//   • push inactif → déclenchement seulement pendant que Bio-Flow est ouvert.
+// Un rappel muet qu'on croyait fiable est pire que pas de rappel du tout.
 // -----------------------------------------------------------------------------
 
-import { useEffect, useState } from "react";
-import { AlertCircle, Bell, BellOff, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  AlertCircle,
+  Bell,
+  BellOff,
+  CloudOff,
+  Plus,
+  Share,
+  Smartphone,
+  Trash2,
+  X,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   REPEAT_LABELS,
@@ -19,8 +31,100 @@ import {
 } from "@/lib/reminderStore";
 import { dayKey } from "@/lib/dateUtils";
 import { getPrefs, requestPermission, savePrefs } from "@/lib/notifications";
+import { disablePush, enablePush, getPushState, type PushState } from "@/lib/push";
 
 const REPEATS: ReminderRepeat[] = ["once", "daily", "weekdays", "weekly"];
+
+/**
+ * Carte d'état du push. Chaque cas dit ce qui se passe réellement et ce que
+ * l'utilisateur peut faire — y compris quand la réponse est « rien ici ».
+ */
+const PushStatusCard = ({
+  state,
+  busy,
+  onEnable,
+  onDisable,
+  onEnableLocalOnly,
+}: {
+  state: PushState;
+  busy: boolean;
+  onEnable: () => void;
+  onDisable: () => void;
+  onEnableLocalOnly: () => void;
+}) => {
+  if (state === "on") {
+    return (
+      <div className="glass-card p-4 flex items-start gap-3 border-energy/30">
+        <Zap className="w-4 h-4 text-energy shrink-0 mt-0.5" />
+        <div className="flex-1 space-y-1">
+          <p className="text-xs font-medium text-foreground">
+            Rappels actifs, application fermée comprise
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            Cet appareil est abonné. Le serveur envoie la notification à l'heure
+            dite, même si tu n'as pas ouvert Bio-Flow.
+          </p>
+          <button
+            onClick={onDisable}
+            disabled={busy}
+            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+          >
+            Désactiver sur cet appareil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const content: Record<
+    Exclude<PushState, "on">,
+    { icon: typeof Bell; text: string; action?: { label: string; run: () => void } }
+  > = {
+    off: {
+      icon: Bell,
+      text: "Active les notifications pour recevoir tes rappels même quand Bio-Flow est fermé.",
+      action: { label: "Activer", run: onEnable },
+    },
+    denied: {
+      icon: BellOff,
+      text: "Les notifications sont bloquées pour Bio-Flow dans ce navigateur. Rien ne peut passer tant que tu ne les réautorises pas dans ses réglages de site.",
+    },
+    "needs-install": {
+      icon: Share,
+      text: "Sur iPhone, les notifications web n'existent que depuis l'écran d'accueil : Partager → « Sur l'écran d'accueil », puis rouvre Bio-Flow depuis l'icône. (iOS 16.4 minimum.)",
+    },
+    unsupported: {
+      icon: Smartphone,
+      text: "Ce navigateur ne gère pas les notifications push. Les rappels se déclencheront seulement pendant que Bio-Flow est ouvert.",
+      action: { label: "Activer les alertes app ouverte", run: onEnableLocalOnly },
+    },
+    "not-configured": {
+      icon: CloudOff,
+      text: "L'envoi de notifications n'est pas encore configuré sur ce déploiement (clé VAPID absente). Les rappels fonctionnent app ouverte en attendant.",
+      action: { label: "Activer les alertes app ouverte", run: onEnableLocalOnly },
+    },
+  };
+
+  const { icon: Icon, text, action } = content[state];
+
+  return (
+    <div className="glass-card p-4 flex items-start gap-3 border-warning/25">
+      <Icon className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+      <div className="flex-1 space-y-2">
+        <p className="text-xs text-foreground">{text}</p>
+        {action && (
+          <button
+            onClick={action.run}
+            disabled={busy}
+            className="text-[11px] px-3 py-1.5 rounded-lg bg-energy text-primary-foreground font-semibold disabled:opacity-50"
+          >
+            {busy ? "…" : action.label}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const RemindersPanel = () => {
   const { reminders, addReminder, removeReminder, toggleReminder } = useReminderStore();
@@ -32,24 +136,50 @@ const RemindersPanel = () => {
   const [repeat, setRepeat] = useState<ReminderRepeat>("daily");
   const [date, setDate] = useState(dayKey());
   const [weekday, setWeekday] = useState(new Date().getDay());
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
-    typeof Notification === "undefined" ? "unsupported" : Notification.permission
-  );
+  const [pushState, setPushState] = useState<PushState | "loading">("loading");
+  const [busy, setBusy] = useState(false);
+
+  const refreshState = useCallback(async () => {
+    setPushState(await getPushState());
+  }, []);
 
   useEffect(() => {
-    if (typeof Notification !== "undefined") setPermission(Notification.permission);
-  }, [reminders.length]);
+    void refreshState();
+  }, [refreshState, reminders.length]);
 
-  const enableNotifications = async () => {
-    const granted = await requestPermission();
-    setPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
-    if (granted) {
-      // Aligne la préférence globale : sans ça, le planificateur reste inerte.
+  const turnPushOn = async () => {
+    setBusy(true);
+    const result = await enablePush();
+    setPushState(result.state);
+    setBusy(false);
+    if (result.ok) {
+      // Aligne aussi la préférence du planificateur local : les deux chemins
+      // partagent la même clé d'occurrence, ils ne feront pas doublon.
       savePrefs({ ...getPrefs(), enabled: true });
-      toast.success("Notifications activées.");
+      toast.success("Rappels activés, même application fermée.");
     } else {
-      toast.error("Notifications refusées par le navigateur.");
+      toast.error(result.reason ?? "Activation impossible.");
     }
+  };
+
+  const turnPushOff = async () => {
+    setBusy(true);
+    await disablePush();
+    await refreshState();
+    setBusy(false);
+    toast("Notifications désactivées sur cet appareil.");
+  };
+
+  /** Repli quand le push est hors de portée : au moins l'alerte app ouverte. */
+  const enableLocalOnly = async () => {
+    const granted = await requestPermission();
+    savePrefs({ ...getPrefs(), enabled: granted });
+    await refreshState();
+    toast[granted ? "success" : "error"](
+      granted
+        ? "Alertes activées pendant que l'app est ouverte."
+        : "Notifications refusées par le navigateur."
+    );
   };
 
   const submit = () => {
@@ -63,37 +193,24 @@ const RemindersPanel = () => {
 
   return (
     <div className="space-y-4">
-      {/* État des notifications */}
-      {permission !== "granted" && (
-        <div className="glass-card p-4 flex items-start gap-3 border-warning/25">
-          <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-          <div className="flex-1 space-y-2">
-            <p className="text-xs text-foreground">
-              {permission === "unsupported"
-                ? "Ce navigateur ne gère pas les notifications système."
-                : permission === "denied"
-                ? "Les notifications sont bloquées pour Bio-Flow. Autorise-les dans les réglages du navigateur pour les recevoir hors de l'écran."
-                : "Autorise les notifications pour recevoir tes rappels hors de cet écran."}
-            </p>
-            {permission === "default" && (
-              <button
-                onClick={enableNotifications}
-                className="text-[11px] px-3 py-1.5 rounded-lg bg-energy text-primary-foreground font-semibold"
-              >
-                Activer les notifications
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Régime de déclenchement — dit ce qui marche vraiment, pas ce qu'on
+          voudrait. */}
+      {pushState !== "loading" && <PushStatusCard
+        state={pushState}
+        busy={busy}
+        onEnable={turnPushOn}
+        onDisable={turnPushOff}
+        onEnableLocalOnly={enableLocalOnly}
+      />}
 
       <div className="glass-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-foreground">Mes rappels</h2>
             <p className="text-[10px] text-muted-foreground">
-              Se déclenchent quand Bio-Flow est ouvert — un site web ne peut pas
-              sonner application fermée.
+              {pushState === "on"
+                ? "Envoyés par le serveur : ils arrivent même application fermée."
+                : "Déclenchés pendant que Bio-Flow est ouvert."}
             </p>
           </div>
           <button

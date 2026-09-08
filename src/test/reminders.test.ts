@@ -4,6 +4,7 @@ import {
   describeNext,
   lastOccurrence,
   nextOccurrence,
+  occurrenceKey,
   occurrenceOn,
   type Reminder,
 } from "@/lib/reminderStore";
@@ -132,5 +133,21 @@ describe("describeNext", () => {
 
   it("annonce un rappel désactivé", () => {
     expect(describeNext(reminder({ id: "c", enabled: false }), NOW)).toBe("Désactivé");
+  });
+});
+
+describe("occurrenceKey (dédoublonnage avec le serveur)", () => {
+  it("produit la même forme que la clé calculée côté serveur", () => {
+    expect(occurrenceKey(new Date(2026, 8, 8, 18, 0))).toBe("2026-09-08T18:00");
+    expect(occurrenceKey(new Date(2026, 0, 3, 7, 5))).toBe("2026-01-03T07:05");
+  });
+
+  it("empêche le planificateur local de renotifier ce que le push a envoyé", () => {
+    const dejaEnvoye = reminder({
+      id: "a",
+      time: "09:30",
+      lastSentKey: "2026-09-08T09:30",
+    });
+    expect(collectDue([dejaEnvoye], NOW)).toEqual([]);
   });
 });
