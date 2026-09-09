@@ -235,6 +235,21 @@
   .toast.on{transform:translate(-50%,0)}
   .toast button{color:var(--brass);font-weight:600;font-size:13px;flex:0 0 auto}
 
+  /* Synchronisation */
+  .syncBox{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--a,var(--line));border-radius:var(--r);padding:12px}
+  .syncRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .syncRow .txt{flex:1;min-width:150px}
+  .syncRow .txt b{display:block;font-family:var(--disp);font-size:15px;letter-spacing:.03em;text-transform:uppercase}
+  .syncRow .txt span{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+  .syncRow .st{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .syncRow .st.ok{color:var(--in)} .syncRow .st.busy{color:var(--brass)}
+  .syncRow .st.err,.syncRow .st.conflict{color:var(--out)} .syncRow .st.offline{color:var(--mute)}
+  .syncSide{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line-soft);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+  .syncSide div{background:var(--deep);padding:11px 12px}
+  .syncSide .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .syncSide .v{font-size:13px;margin-top:4px;line-height:1.5}
+  .syncSide .w{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:4px}
+
   .empty{color:var(--mute);font-size:13.5px;padding:18px 2px;border-top:1px solid var(--line-soft)}
   .foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px}
   .note-sm{color:var(--faint);font-size:11.5px;margin-top:12px;line-height:1.5}
@@ -481,6 +496,8 @@
     <div class="empty" id="nEmpty">Aucune note ici. Écris la première.</div>
   </section>
 
+  <div class="syncBox" id="syncBox"></div>
+
   <div class="foot">
     <button class="ghost" id="install" hidden>Installer l'application</button>
     <button class="ghost" id="exp">Exporter / sauvegarder</button>
@@ -600,7 +617,14 @@
   try{ if(window.claude && typeof window.claude.use === "function") dlPromise = window.claude.use("downloads"); }catch(e){}
 
   function save(){
+    /* Toute écriture locale fait avancer la révision : c'est ce qui permet de
+       distinguer « rien n'a bougé ici » de « j'ai des changements à pousser ». */
+    if(!applying){
+      state.rev = (state.rev||0) + 1;
+      state.touchedAt = new Date().toISOString();
+    }
     if(!writeRaw(KEY, state)){ storageOK = false; renderAlert(); }
+    if(!applying) scheduleSync();
   }
   /* Frappe libre : on n'écrit pas à chaque touche, mais on n'oublie jamais. */
   var soonTimer = null;
@@ -2030,6 +2054,337 @@
     b.onclick = function(){ showTab(b.dataset.tab); };
   });
 
+  /* ═══ Synchronisation ══════════════════════════════════ */
+  /* Pas de SDK : deux points d'entrée REST suffisent, et la console reste un
+     fichier autonome qui s'ouvre hors connexion. La clé ci-dessous est la clé
+     publiable du projet — publique par construction, elle part déjà dans le
+     navigateur de chaque visiteur. Ce qui protège le contenu, ce sont les
+     règles RLS : chaque compte ne voit que sa propre ligne. */
+  var SUPA_URL = "https://qiugyurwxmxjhsezysnn.supabase.co";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpdWd5dXJ3eG14amhzZXp5c25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTUxODIsImV4cCI6MjA4NjgzMTE4Mn0.VH2GUFCck1yV51it84au1iuqfUosxrCGaIqbWj-GqeQ";
+  var SKEY = "calyre-sync-v1";
+  var DROPKEY = "calyre-version-ecartee";
+
+  var sync = { email:"", uid:"", access:"", refresh:"", exp:0, baseRev:null, lastAt:"" };
+  var syncState = "off", syncMsg = "", syncing = false, applying = false, syncTimer = null;
+
+  function deviceName(){
+    var u = navigator.userAgent || "";
+    if(/Android/i.test(u)) return "Android";
+    if(/iPhone|iPad|iPod/i.test(u)) return "iOS";
+    if(/Windows/i.test(u)) return "Windows";
+    if(/Macintosh/i.test(u)) return "Mac";
+    return "Ordinateur";
+  }
+  function ago(iso){
+    if(!iso) return "jamais";
+    var s = Math.round((Date.now() - new Date(iso).getTime())/1000);
+    if(isNaN(s)) return "—";
+    if(s < 60) return "à l'instant";
+    if(s < 3600) return "il y a "+Math.round(s/60)+" min";
+    if(s < 86400) return "il y a "+Math.round(s/3600)+" h";
+    return "il y a "+Math.round(s/86400)+" j";
+  }
+  function summarize(d){
+    d = d || {};
+    var j = (d.journal && typeof d.journal==="object") ? Object.keys(d.journal).length : 0;
+    return (d.tasks||[]).length+" tâches · "+(d.goals||[]).length+" objectifs · "
+      + (d.tx||[]).length+" mouvements · "+(d.notes||[]).length+" notes · "
+      + j+" journée"+(j>1?"s":"")+" · "+(d.reminders||[]).length+" rappels";
+  }
+  function syncLoad(){
+    try{
+      var s = JSON.parse(window.localStorage.getItem(SKEY) || "null");
+      if(s && typeof s==="object"){
+        sync.email = s.email||""; sync.uid = s.uid||"";
+        sync.access = s.access||""; sync.refresh = s.refresh||"";
+        sync.exp = s.exp||0;
+        sync.baseRev = (typeof s.baseRev==="number") ? s.baseRev : null;
+        sync.lastAt = s.lastAt||"";
+      }
+    }catch(e){}
+    syncState = sync.refresh ? "idle" : "off";
+  }
+  function syncStore(){ try{ window.localStorage.setItem(SKEY, JSON.stringify(sync)); }catch(e){} }
+
+  function httpMsg(code, body){
+    body = body || "";
+    if(code===404 || body.indexOf("42P01")>=0) return "table absente : la migration SQL n'est pas encore appliquée";
+    if(code===401) return "session expirée, reconnecte-toi";
+    if(code===403 || body.indexOf("42501")>=0) return "refusé par les règles de sécurité";
+    return "erreur "+code;
+  }
+  function isOffline(e){
+    if(!navigator.onLine) return true;
+    return /Failed to fetch|NetworkError|Load failed|network/i.test((e && e.message) || "");
+  }
+  function jsonOf(r){ return r.text().then(function(t){ try{ return JSON.parse(t); }catch(e){ return {raw:t}; } }); }
+
+  function refreshToken(){
+    return fetch(SUPA_URL+"/auth/v1/token?grant_type=refresh_token", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ refresh_token: sync.refresh })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok || !j.access_token) throw new Error("session expirée, reconnecte-toi");
+        sync.access = j.access_token;
+        sync.refresh = j.refresh_token || sync.refresh;
+        sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+        syncStore();
+      });
+    });
+  }
+  function sfetch(path, opts, retried){
+    opts = opts || {};
+    var h = opts.headers || {};
+    h["apikey"] = SUPA_KEY;
+    if(!h["Content-Type"]) h["Content-Type"] = "application/json";
+    if(sync.access) h["Authorization"] = "Bearer " + sync.access;
+    opts.headers = h;
+    return fetch(SUPA_URL + path, opts).then(function(r){
+      if(r.status===401 && sync.refresh && !retried){
+        return refreshToken().then(function(){ return sfetch(path, opts, true); });
+      }
+      return r;
+    });
+  }
+
+  function signIn(email, pass){
+    return fetch(SUPA_URL+"/auth/v1/token?grant_type=password", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ email:email, password:pass })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok || !j.access_token){
+          throw new Error(j.error_description || j.msg || j.message || "connexion refusée");
+        }
+        sync.email = email;
+        sync.uid = (j.user && j.user.id) || "";
+        sync.access = j.access_token;
+        sync.refresh = j.refresh_token || "";
+        sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+        sync.baseRev = null; sync.lastAt = "";
+        syncStore();
+        syncState = "idle";
+      });
+    });
+  }
+  function signUp(email, pass){
+    return fetch(SUPA_URL+"/auth/v1/signup", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ email:email, password:pass })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok) throw new Error(j.error_description || j.msg || j.message || "création refusée");
+        if(j.access_token){
+          sync.email = email; sync.uid = (j.user && j.user.id) || "";
+          sync.access = j.access_token; sync.refresh = j.refresh_token || "";
+          sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+          sync.baseRev = null; sync.lastAt = "";
+          syncStore(); syncState = "idle";
+          return "connecte";
+        }
+        return "confirme";
+      });
+    });
+  }
+  function signOut(){
+    sync = { email:"", uid:"", access:"", refresh:"", exp:0, baseRev:null, lastAt:"" };
+    try{ window.localStorage.removeItem(SKEY); }catch(e){}
+    syncState = "off"; syncMsg = "";
+    renderSync();
+  }
+
+  function pullRow(){
+    return sfetch("/rest/v1/calyre_state?select=data,rev,updated_at,device&user_id=eq."+encodeURIComponent(sync.uid), {method:"GET"})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error(httpMsg(r.status, t)); });
+        return r.json();
+      }).then(function(rows){
+        if(!rows || !rows.length) return { exists:false };
+        return { exists:true, data:rows[0].data, rev:rows[0].rev||0, at:rows[0].updated_at, device:rows[0].device };
+      });
+  }
+  function pushRow(){
+    return sfetch("/rest/v1/calyre_state?on_conflict=user_id", {
+      method:"POST",
+      headers:{ "Prefer":"resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ user_id:sync.uid, data:state, rev:state.rev||0, device:deviceName() })
+    }).then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error(httpMsg(r.status, t)); });
+      sync.baseRev = state.rev||0;
+      sync.lastAt = new Date().toISOString();
+      syncStore();
+    });
+  }
+  function applyServer(srv){
+    var tab = state.settings && state.settings.tab;
+    try{ window.localStorage.setItem(DROPKEY, JSON.stringify(state)); }catch(e){}
+    applying = true;
+    state = normalize(srv.data || {});
+    state.rev = srv.rev || 0;
+    if(tab) state.settings.tab = tab;
+    save();
+    applying = false;
+    sync.baseRev = srv.rev || 0;
+    sync.lastAt = new Date().toISOString();
+    syncStore();
+    dayView = null; chartSel = null; dueQueue = [];
+    renderAll();
+  }
+
+  function syncNow(manual){
+    if(!sync.refresh){ if(manual) openSyncSheet(); return Promise.resolve(); }
+    if(syncing) return Promise.resolve();
+    syncing = true; syncState = "busy"; syncMsg = ""; renderSync();
+    return pullRow().then(function(srv){
+      var localChanged = (sync.baseRev === null) || ((state.rev||0) !== sync.baseRev);
+      if(!srv.exists) return pushRow();
+      var serverChanged = (srv.rev||0) !== sync.baseRev;
+      if(!localChanged && !serverChanged) return;
+      if(!localChanged) return applyServer(srv);
+      if(!serverChanged) return pushRow();
+      /* Les deux côtés ont bougé depuis la dernière synchro : on ne tranche pas
+         à sa place, et rien n'est écrasé sans son accord. */
+      openConflict(srv);
+      return "conflit";
+    }).then(function(r){
+      syncing = false;
+      if(r==="conflit"){ syncState = "conflict"; syncMsg = ""; }
+      else { syncState = "ok"; syncMsg = ""; }
+      renderSync();
+    }).catch(function(e){
+      syncing = false;
+      syncState = isOffline(e) ? "offline" : "err";
+      syncMsg = isOffline(e) ? "" : (e.message || "échec");
+      renderSync();
+    });
+  }
+  function scheduleSync(){
+    if(!sync.refresh) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function(){ syncNow(false); }, 4000);
+  }
+
+  function renderSync(){
+    var el = $("syncBox");
+    if(!el) return;
+    if(syncState==="off"){
+      el.style.setProperty("--a","var(--line)");
+      el.innerHTML = '<div class="syncRow"><div class="txt"><b>Synchronisation</b>'
+        + '<span>La même console sur le téléphone et sur l\'ordinateur. Sans connexion, tout reste sur cet appareil.</span></div>'
+        + '<button class="ghost" data-sync="in">Se connecter</button></div>';
+      return;
+    }
+    var lab = { busy:"Synchronisation…", ok:"À jour", idle:"En attente", err:"Échec",
+                offline:"Hors connexion", conflict:"Conflit à trancher" }[syncState] || "";
+    var tone = { ok:"var(--in)", busy:"var(--brass)", err:"var(--out)", conflict:"var(--out)" }[syncState] || "var(--line)";
+    el.style.setProperty("--a", tone);
+    var dropped = "";
+    try{ if(window.localStorage.getItem(DROPKEY)) dropped = '<button class="ghost" data-sync="restore">Récupérer la version écartée</button>'; }catch(e){}
+    el.innerHTML = '<div class="syncRow"><div class="txt"><b>Synchronisation</b>'
+      + '<span>'+esc(sync.email)+' · dernier échange '+ago(sync.lastAt)+'</span></div>'
+      + '<span class="st '+syncState+'">'+lab+'</span></div>'
+      + (syncMsg ? '<div class="mini neg" style="margin-top:8px">'+esc(syncMsg)+'</div>' : '')
+      + '<div class="row" style="margin-top:10px"><button class="ghost" data-sync="now" style="flex:1">Synchroniser maintenant</button>'
+      + '<button class="ghost" data-sync="out">Se déconnecter</button></div>'
+      + (dropped ? '<div class="row" style="margin-top:8px">'+dropped+'</div>' : '');
+  }
+  $("syncBox").addEventListener("click", function(e){
+    var b = e.target.closest("[data-sync]"); if(!b) return;
+    var a = b.dataset.sync;
+    if(a==="in") openSyncSheet();
+    if(a==="now") syncNow(true);
+    if(a==="out"){ if(confirm("Se déconnecter ? Les données restent sur cet appareil.")) signOut(); }
+    if(a==="restore") restoreDropped();
+  });
+
+  function openSyncSheet(){
+    var html =
+      '<div class="mini">Connecte-toi avec le compte de ton application Bio-Flow — c\'est le même serveur. '
+      + 'À partir de là, cette console enverra son contenu sur ce serveur pour le retrouver sur tes autres appareils : '
+      + 'tâches, objectifs, finances, notes — <b style="color:var(--warn)">y compris les notes marquées confidentielles</b>. '
+      + 'Tant que tu ne te connectes pas, rien ne quitte cet appareil.</div>'
+      + '<div class="fld" style="margin-top:14px"><label for="syEmail">Adresse e-mail</label>'
+      + '<input id="syEmail" type="email" autocomplete="username" value="'+esc(sync.email)+'" placeholder="toi@exemple.fr"></div>'
+      + '<div class="fld"><label for="syPass">Mot de passe</label>'
+      + '<input id="syPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>'
+      + '<div id="syMsg" class="mini" style="min-height:18px"></div>'
+      + '<div class="row" style="margin-top:12px"><button class="add" data-act="in" style="flex:1">Se connecter</button></div>'
+      + '<div class="row" style="margin-top:8px"><button class="ghost" data-act="up" style="flex:1">Créer un compte avec cette adresse</button></div>';
+    openSheet("Synchronisation", html, null, null);
+    var body = $("sheetBody");
+    function go(kind){
+      var em = $("syEmail").value.trim(), pw = $("syPass").value;
+      if(!em || !pw){ $("syMsg").innerHTML = '<span class="neg">Il faut une adresse et un mot de passe.</span>'; return; }
+      $("syMsg").textContent = "Connexion…";
+      (kind==="up" ? signUp(em,pw) : signIn(em,pw)).then(function(r){
+        if(r==="confirme"){
+          $("syMsg").innerHTML = '<span class="pos">Compte créé. Confirme l\'adresse depuis l\'e-mail reçu, puis reviens te connecter.</span>';
+          return;
+        }
+        closeSheet(); renderSync(); syncNow(true);
+        toast("Connecté — synchronisation en cours");
+      }, function(e){
+        $("syMsg").innerHTML = '<span class="neg">'+esc(e.message||"échec")+'</span>';
+      });
+    }
+    body.onclick = function(e){
+      var b = e.target.closest("button"); if(!b || !b.dataset.act) return;
+      go(b.dataset.act);
+    };
+    $("syPass").addEventListener("keydown", function(e){ if(e.key==="Enter") go("in"); });
+  }
+
+  function openConflict(srv){
+    var html =
+      '<div class="mini">Les deux côtés ont changé depuis le dernier échange. Je ne choisis pas à ta place : '
+      + 'la version que tu écartes reste récupérable depuis le bloc Synchronisation.</div>'
+      + '<div class="syncSide" style="margin-top:12px">'
+      +   '<div><div class="k">Cet appareil — '+esc(deviceName())+'</div>'
+      +     '<div class="v">'+summarize(state)+'</div>'
+      +     '<div class="w">modifié '+ago(state.touchedAt)+'</div></div>'
+      +   '<div><div class="k">Le serveur'+(srv.device?' — '+esc(srv.device):'')+'</div>'
+      +     '<div class="v">'+summarize(srv.data)+'</div>'
+      +     '<div class="w">modifié '+ago(srv.at)+'</div></div>'
+      + '</div>'
+      + '<div class="row"><button class="add" data-c="local" style="flex:1">Garder cet appareil</button></div>'
+      + '<div class="row" style="margin-top:8px"><button class="ghost" data-c="server" style="flex:1">Prendre le serveur</button></div>';
+    openSheet("Deux versions", html, "#d97d61", null);
+    $("sheetBody").onclick = function(e){
+      var b = e.target.closest("[data-c]"); if(!b) return;
+      if(b.dataset.c==="local"){
+        /* La version du serveur est mise de côté avant d'être écrasée : quelle
+           que soit la branche choisie, l'autre reste récupérable. */
+        try{ window.localStorage.setItem(DROPKEY, JSON.stringify(srv.data||{})); }catch(err2){}
+        pushRow().then(function(){
+          closeSheet(); syncState = "ok"; renderSync(); toast("Cet appareil fait foi");
+        }, function(err){
+          syncState = "err"; syncMsg = err.message||"échec"; renderSync();
+        });
+      } else {
+        applyServer(srv);
+        closeSheet(); syncState = "ok"; renderSync(); toast("Version du serveur reprise");
+      }
+    };
+  }
+  function restoreDropped(){
+    var raw = null;
+    try{ raw = window.localStorage.getItem(DROPKEY); }catch(e){}
+    if(!raw){ toast("Aucune version écartée."); return; }
+    var d; try{ d = JSON.parse(raw); }catch(e){ toast("Version écartée illisible."); return; }
+    if(!confirm("Remplacer le contenu actuel par la version écartée ("+summarize(d)+") ?")) return;
+    state = normalize(d);
+    save();
+    try{ window.localStorage.removeItem(DROPKEY); }catch(e){}
+    renderAll(); renderSync();
+    toast("Version écartée restaurée");
+  }
+  window.addEventListener("online", function(){ if(sync.refresh) syncNow(false); });
+
   /* ═══ Données ══════════════════════════════════════════ */
   function renderAlert(){
     $("storageAlert").innerHTML = storageOK ? "" :
@@ -2105,7 +2460,9 @@
   }
   $("reset").onclick = function(){
     if(!confirm("Effacer tâches, objectifs, colonnes, mouvements, notes et dossiers ? C'est définitif.")) return;
-    if(!confirm("Confirmation : tout sera perdu, sauf si tu as exporté.")) return;
+    if(!confirm(sync.refresh
+      ? "Confirmation : tout sera perdu ici ET sur le serveur à la prochaine synchronisation, sauf si tu as exporté."
+      : "Confirmation : tout sera perdu, sauf si tu as exporté.")) return;
     var backup = JSON.parse(JSON.stringify(state));
     state = seed();
     save(); renderAll();
@@ -2116,7 +2473,7 @@
   function seed(){
     var c1 = uid(), c2 = uid(), c3 = uid();
     return {
-      tasks:[], tx:[], notes:[], folders:[], journal:{}, reminders:[],
+      tasks:[], tx:[], notes:[], folders:[], journal:{}, reminders:[], rev:0, touchedAt:"",
       columns:[
         {id:c1, name:"À lancer", tone:"ciel"},
         {id:c2, name:"En cours", tone:"laiton"},
@@ -2136,6 +2493,8 @@
       folders: Array.isArray(d.folders)?d.folders:[],
       journal: (d.journal && typeof d.journal==="object" && !Array.isArray(d.journal)) ? d.journal : {},
       reminders: Array.isArray(d.reminders)?d.reminders:[],
+      rev: (typeof d.rev==="number" && d.rev>=0) ? d.rev : 0,
+      touchedAt: typeof d.touchedAt==="string" ? d.touchedAt : "",
       settings: (d.settings && typeof d.settings==="object")?d.settings:{tab:"tasks"}
     };
     if(!s.columns.length){
@@ -2232,7 +2591,7 @@
   function renderAll(){
     renderTasks(); renderBoard(); renderMoney(); renderNotes();
     renderDay(); renderReminders(); renderDueBand(); refreshNotif();
-    gauges(); renderAlert();
+    gauges(); renderAlert(); renderSync();
     showTabSilent(state.settings.tab || "tasks");
   }
   function showTabSilent(name){
@@ -2262,7 +2621,9 @@
   }
   state = saved ? normalize(saved) : seed();
   if(!readRaw(KEY)) save();
+  syncLoad();
   renderAll();
+  if(sync.refresh) syncNow(false);
 
   /* Rappels : premier contrôle à l'ouverture, puis toutes les 30 secondes */
   tick();
@@ -2311,6 +2672,7 @@
       $("tDate").value = TODAY;
       renderAll();
     } else { gauges(); tick(); }
+    if(sync.refresh) syncNow(false);
   });
 })();
 </script>
