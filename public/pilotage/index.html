@@ -2033,7 +2033,7 @@
   }
   $("exp").onclick = function(){
     var json = JSON.stringify(state, null, 2);
-    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, objectifs, colonnes, finances, notes, dossiers.</div>'
+    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, objectifs, colonnes, finances, notes, dossiers, journal horaire et rappels.<br><br><b style="color:var(--ink)">Passer d\'un appareil à l\'autre :</b> copie ici, envoie-toi le texte (e-mail, message), puis colle-le dans « Importer » sur l\'autre appareil. Les deux consoles restent ensuite indépendantes : ce qui est saisi d\'un côté ne remonte pas de l\'autre.</div>'
       + '<div class="row" style="margin-top:10px"><button class="ghost" data-act="copy" style="flex:1">Copier</button>'
       + '<button class="ghost" data-act="dl" style="flex:1">Télécharger le fichier</button></div>'
       + '<textarea id="expBox" readonly style="margin-top:10px;min-height:200px;font-family:var(--mono);font-size:11.5px">'+esc(json)+'</textarea>';
