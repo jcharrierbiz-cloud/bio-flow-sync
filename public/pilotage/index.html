@@ -89,7 +89,7 @@
   /* ── Onglets ────────────────────────────────────────────── */
   nav{background:var(--panel);position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line)}
   nav .wrap{display:flex;gap:2px}
-  nav button{flex:1;padding:12px 2px;font-family:var(--disp);font-size:14.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);border-bottom:2px solid transparent;text-align:center}
+  nav button{flex:1;padding:12px 2px;font-family:var(--disp);font-size:clamp(11.5px,3.3vw,14.5px);letter-spacing:.03em;text-transform:uppercase;color:var(--mute);border-bottom:2px solid transparent;text-align:center;white-space:nowrap;overflow:hidden;position:relative}
   nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
 
   main{padding-top:18px}
@@ -235,10 +235,98 @@
   .toast.on{transform:translate(-50%,0)}
   .toast button{color:var(--brass);font-weight:600;font-size:13px;flex:0 0 auto}
 
+  /* Synchronisation */
+  .syncBox{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--a,var(--line));border-radius:var(--r);padding:12px}
+  .syncRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .syncRow .txt{flex:1;min-width:150px}
+  .syncRow .txt b{display:block;font-family:var(--disp);font-size:15px;letter-spacing:.03em;text-transform:uppercase}
+  .syncRow .txt span{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+  .syncRow .st{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .syncRow .st.ok{color:var(--in)} .syncRow .st.busy{color:var(--brass)}
+  .syncRow .st.err,.syncRow .st.conflict{color:var(--out)} .syncRow .st.offline{color:var(--mute)}
+  .syncSide{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line-soft);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+  .syncSide div{background:var(--deep);padding:11px 12px}
+  .syncSide .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .syncSide .v{font-size:13px;margin-top:4px;line-height:1.5}
+  .syncSide .w{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:4px}
+
   .empty{color:var(--mute);font-size:13.5px;padding:18px 2px;border-top:1px solid var(--line-soft)}
   .foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px}
   .note-sm{color:var(--faint);font-size:11.5px;margin-top:12px;line-height:1.5}
   .alert{border:1px solid var(--warn);border-left:3px solid var(--warn);background:rgba(226,167,90,.08);border-radius:var(--r);padding:11px 12px;font-size:12.5px;color:var(--ink);margin-bottom:14px}
+  /* Pastille d'alerte sur un onglet */
+  nav button .dot{position:absolute;top:9px;right:calc(50% - 30px);width:6px;height:6px;border-radius:50%;background:var(--out)}
+
+  /* Bande de rappel echu */
+  .due{margin-top:12px;border:1px solid var(--out);border-left:3px solid var(--out);background:rgba(217,125,97,.1);border-radius:var(--r);padding:11px 12px;display:flex;gap:12px;align-items:center}
+  .due .txt{flex:1;min-width:0}
+  .due .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--out)}
+  .due .t{font-size:14.5px;margin-top:2px;word-break:break-word}
+
+  /* Journee : navigation de date */
+  .dayNav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .dayNav .lab{flex:1;min-width:0;text-align:center}
+  .dayNav .lab b{display:block;font-family:var(--disp);font-size:17px;font-weight:600;letter-spacing:.02em;text-transform:capitalize}
+  .dayNav .lab span{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .dayCtx{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+
+  /* Journee : lignes horaires */
+  .hrow{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line-soft);padding:7px 0}
+  .hrow:last-child{border-bottom:none}
+  .hrow .hh{flex:0 0 46px;font-family:var(--mono);font-size:12px;color:var(--faint);padding-top:9px;text-align:right}
+  .hrow textarea{min-height:38px;padding:8px 10px;font-size:14px;line-height:1.45;background:var(--panel);border-color:var(--line-soft);overflow:hidden}
+  .hrow textarea:focus{border-color:var(--line);background:var(--raise)}
+  .hrow.now .hh{color:var(--brass);font-weight:600}
+  .hrow.now textarea{border-color:var(--brass-deep)}
+  .hrow.full textarea{background:var(--raise);border-color:var(--line)}
+
+  /* Journee : archive */
+  .darc{display:flex;align-items:center;gap:10px;width:100%;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--a,var(--line));border-radius:var(--r);padding:10px 12px;margin-bottom:7px}
+  .darc:hover{border-color:var(--brass-deep)}
+  .darc .d{flex:0 0 auto;font-family:var(--mono);font-size:12px;color:var(--ink);text-transform:capitalize}
+  .darc .p{flex:1;min-width:0;font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .darc .n{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--brass)}
+
+  /* Rappels */
+  .rem{display:flex;align-items:flex-start;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line-soft)}
+  .rem:last-child{border-bottom:none}
+  .rem .when{flex:0 0 74px;font-family:var(--mono);font-size:11.5px;color:var(--mute);padding-top:2px;text-align:right}
+  .rem.late .when{color:var(--out)}
+  .rem .t{flex:1;min-width:0;font-size:14.5px;word-break:break-word}
+  .rem.done .t{color:var(--faint);text-decoration:line-through}
+
+  /* Rattrapage */
+  .catch{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .catch button{border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:12px;color:var(--mute);background:var(--panel)}
+  .catch button:hover{border-color:var(--brass-deep);color:var(--brass)}
+  .lateHint{display:block;width:100%;text-align:left;border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:var(--r);background:var(--panel);padding:10px 12px;font-size:13px;color:var(--mute);margin-bottom:12px}
+  .lateHint b{color:var(--warn)}
+  .lateHint:hover{background:var(--raise)}
+
+  /* Bilan mensuel */
+  .chartWrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 12px 10px;margin-top:10px}
+  .chartHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+  .chartHead .rate{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--brass)}
+  .chartHead .cap{font-size:12.5px;color:var(--mute);flex:1;min-width:0}
+  .legend{display:flex;gap:14px;margin:10px 0 4px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .legend .f{background:var(--brass)}
+  .legend .t{background:#0c130f;border:1px solid var(--line)}
+  .bars{display:flex;gap:2px;align-items:flex-end;height:132px;margin-top:6px}
+  .bcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:2px;cursor:pointer;border-radius:4px 4px 0 0;padding:0 2px}
+  .bcol:hover,.bcol.sel{background:rgba(215,181,109,.07)}
+  .btrack{position:relative;width:100%;max-width:46px;margin:0 auto;background:#0c130f;border-radius:4px 4px 0 0;overflow:hidden}
+  .bfill{position:absolute;left:0;right:0;bottom:0;background:var(--brass);border-radius:4px 4px 0 0;transition:height .4s cubic-bezier(.2,.7,.3,1)}
+  .bx{display:flex;gap:2px;margin-top:7px}
+  .bx div{flex:1;text-align:center;font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em}
+  .bx div.sel{color:var(--brass)}
+  .chartNote{font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:10px}
+
+  /* Fenêtre d'ordinateur : la console respire au lieu de rester en colonne de téléphone. */
+  @media (min-width:1000px){
+    .wrap{max-width:920px}
+    .col{width:300px}
+  }
   @media (max-width:400px){.row{flex-wrap:wrap}.row>*{flex:1 1 100%}.add{flex:1 1 100%}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -259,12 +347,14 @@
       <div class="g" id="gD"><div class="lab">Série</div><div class="val num" id="gStreak">0<small>j</small></div><div class="hint" id="gStreakHint"></div><div class="bar"><i id="gStreakBar"></i></div></div>
     </div>
     <div class="cap" id="capBand"></div>
+    <div class="due" id="dueBand" hidden></div>
   </div>
 </header>
 
 <nav>
   <div class="wrap">
     <button data-tab="tasks" aria-selected="true">Tâches</button>
+    <button data-tab="day" aria-selected="false">Journée</button>
     <button data-tab="goals" aria-selected="false">Objectifs</button>
     <button data-tab="money" aria-selected="false">Finances</button>
     <button data-tab="notes" aria-selected="false">Notes</button>
@@ -286,13 +376,62 @@
         <button class="add" id="tAdd">Ajouter</button>
       </div>
     </div>
+    <button class="lateHint" id="lateHint" hidden></button>
     <div class="seg" style="width:100%;margin-bottom:4px">
-      <button data-filter="all" aria-pressed="true" style="flex:1">Toutes</button>
-      <button data-filter="open" aria-pressed="false" style="flex:1">À faire</button>
+      <button data-filter="today" aria-pressed="true" style="flex:1">Aujourd'hui</button>
+      <button data-filter="ahead" aria-pressed="false" style="flex:1">À venir</button>
+      <button data-filter="late" aria-pressed="false" style="flex:1">En retard</button>
       <button data-filter="done" aria-pressed="false" style="flex:1">Faites</button>
     </div>
     <div id="tList"></div>
     <div class="empty" id="tEmpty">Aucune tâche pour l'instant. Écris la première au-dessus.</div>
+
+    <h3 style="margin-top:26px">Bilan mensuel</h3>
+    <p class="sub">Ce que tu t'es fixé, ce que tu as tenu.</p>
+    <div class="chartWrap" id="chartWrap"></div>
+  </section>
+
+  <!-- ── JOURNÉE ────────────────────────────────────────── -->
+  <section id="day" hidden>
+    <h2>Journée</h2>
+    <p class="sub">Heure par heure, ce que tu as réellement fait. La page repart à zéro chaque jour ; les journées passées restent rangées plus bas.</p>
+
+    <div class="dayNav">
+      <button class="step" data-day="-1" aria-label="Jour précédent">‹</button>
+      <div class="lab"><b id="dayLabel">—</b><span id="dayFill"></span></div>
+      <button class="step" data-day="1" aria-label="Jour suivant">›</button>
+      <button class="ghost" id="dayToday">Aujourd'hui</button>
+    </div>
+    <div class="dayCtx" id="dayCtx"></div>
+    <div id="hours"></div>
+    <div class="row" style="margin-top:10px"><button class="ghost" id="hoursRange" style="flex:1">Afficher toutes les heures</button></div>
+
+    <h3 style="margin-top:26px">Rappels</h3>
+    <p class="sub">Une chose à ne pas oublier, à une heure précise.</p>
+    <div class="box">
+      <div class="row"><input id="rTitle" placeholder="De quoi dois-tu te souvenir ?" maxlength="140"></div>
+      <div class="row">
+        <input id="rDate" type="date" aria-label="Date du rappel">
+        <input id="rTime" type="time" aria-label="Heure du rappel">
+      </div>
+      <div class="row">
+        <select id="rRepeat" aria-label="Répétition">
+          <option value="none">Une seule fois</option>
+          <option value="daily">Chaque jour</option>
+          <option value="weekly">Chaque semaine</option>
+        </select>
+        <button class="add" id="rAdd">Ajouter</button>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:12px"><button class="ghost" id="notifBtn" style="flex:1" hidden>Autoriser les notifications</button></div>
+    <div id="rList"></div>
+    <div class="empty" id="rEmpty">Aucun rappel programmé.</div>
+    <p class="note-sm" id="notifNote"></p>
+
+    <h3 style="margin-top:26px">Journées précédentes</h3>
+    <p class="sub">Tout ce que tu as noté, jour par jour.</p>
+    <div id="dayArchive"></div>
+    <div class="empty" id="dayArchiveEmpty">Rien d'archivé pour l'instant : la première journée que tu remplis apparaîtra ici.</div>
   </section>
 
   <!-- ── OBJECTIFS ──────────────────────────────────────── -->
@@ -357,6 +496,8 @@
     <div class="empty" id="nEmpty">Aucune note ici. Écris la première.</div>
   </section>
 
+  <div class="syncBox" id="syncBox"></div>
+
   <div class="foot">
     <button class="ghost" id="install" hidden>Installer l'application</button>
     <button class="ghost" id="exp">Exporter / sauvegarder</button>
@@ -418,8 +559,9 @@
     {id:"conf",  name:"Confidentiel", tone:"#d4795f"}
   ];
 
-  var state = { tasks:[], goals:[], columns:[], tx:[], notes:[], folders:[], settings:{tab:"tasks"} };
-  var filter = "all", tPrio = false, mSign = 1, mPeriod = "month", mView = "groups";
+  var state = { tasks:[], goals:[], columns:[], tx:[], notes:[], folders:[], journal:{}, reminders:[], settings:{tab:"tasks"} };
+  var filter = "today", tPrio = false, mSign = 1, mPeriod = "month", mView = "groups";
+  var dayView = null, chartSel = null, dueQueue = [];
   var nFolder = "all", nQuery = "", revealed = {};
   var dragId = null, undo = null, undoTimer = null, mGroupCache = [];
 
@@ -475,8 +617,21 @@
   try{ if(window.claude && typeof window.claude.use === "function") dlPromise = window.claude.use("downloads"); }catch(e){}
 
   function save(){
+    /* Toute écriture locale fait avancer la révision : c'est ce qui permet de
+       distinguer « rien n'a bougé ici » de « j'ai des changements à pousser ». */
+    if(!applying){
+      state.rev = (state.rev||0) + 1;
+      state.touchedAt = new Date().toISOString();
+    }
     if(!writeRaw(KEY, state)){ storageOK = false; renderAlert(); }
+    if(!applying) scheduleSync();
   }
+  /* Frappe libre : on n'écrit pas à chaque touche, mais on n'oublie jamais. */
+  var soonTimer = null;
+  function saveSoon(){ clearTimeout(soonTimer); soonTimer = setTimeout(function(){ soonTimer = null; save(); }, 250); }
+  function flush(){ if(soonTimer){ clearTimeout(soonTimer); soonTimer = null; save(); } }
+  window.addEventListener("pagehide", flush);
+  window.addEventListener("blur", flush);
 
   /* ═══ Retour visuel ════════════════════════════════════ */
   function toast(msg, undoFn){
@@ -553,11 +708,11 @@
 
   /* ═══ Instruments ══════════════════════════════════════ */
   function gauges(){
-    var todays = state.tasks.filter(function(t){ return !t.date || t.date<=TODAY; });
+    var todays = state.tasks.filter(function(t){ return !t.date || t.date===TODAY; });
     var left = todays.filter(function(t){ return !t.done; }).length;
-    var late = state.tasks.filter(function(t){ return !t.done && t.date && t.date<TODAY; }).length;
+    var late = state.tasks.filter(function(t){ return taskState(t)==="late"; }).length;
     $("gTasks").textContent = left;
-    $("gTasksHint").textContent = late ? late+" en retard" : (left ? "à clore aujourd'hui" : "journée tenue");
+    $("gTasksHint").textContent = late ? late+" en retard, à part" : (left ? "à clore aujourd'hui" : "journée tenue");
     $("gTasksHint").className = "hint" + (late ? " neg" : "");
     $("gTasksBar").style.width = todays.length ? Math.round((todays.length-left)/todays.length*100)+"%" : "0%";
 
@@ -639,80 +794,467 @@
   });
 
   /* ═══ Tâches ═══════════════════════════════════════════ */
-  function taskBucket(t){
-    if(t.done) return {k:"done", n:"Faites", o:5};
-    if(!t.date) return {k:"none", n:"Sans date", o:4};
-    var n = daysTo(t.date);
-    if(n<0) return {k:"late", n:"En retard", o:0};
-    if(n===0) return {k:"today", n:"Aujourd'hui", o:1};
-    if(n<=7) return {k:"week", n:"Cette semaine", o:2};
-    return {k:"later", n:"Plus tard", o:3};
+  function taskState(t){
+    if(t.done) return "done";
+    if(t.date && t.date < TODAY) return "late";
+    if(t.date && t.date > TODAY) return "ahead";
+    return "today";
   }
+  function lateCount(){
+    return state.tasks.filter(function(t){ return taskState(t)==="late"; }).length;
+  }
+  function groupOf(t){
+    var st = taskState(t);
+    if(st==="done") return { k:"d"+(t.doneAt||"?"), n:t.doneAt ? "Fait "+dayLabel(t.doneAt) : "Fait" };
+    if(st==="late") return { k:"l"+t.date, n:dayLabel(t.date), o:0 };
+    if(st==="ahead"){
+      var n = daysTo(t.date);
+      if(n===1) return { k:"tom", n:"Demain", o:1 };
+      if(n<=7) return { k:"week", n:"Cette semaine", o:2 };
+      return { k:"later", n:"Plus tard", o:3 };
+    }
+    return t.date ? { k:"today", n:"Aujourd'hui", o:0 } : { k:"none", n:"Sans date", o:1 };
+  }
+  function taskMeta(t){
+    if(t.done) return t.doneAt ? "Fait "+dayLabel(t.doneAt) : "Fait";
+    if(taskState(t)==="late"){
+      var n = Math.abs(daysTo(t.date));
+      return "Prévue "+dayLabel(t.date)+" · "+n+" jour"+(n>1?"s":"")+" de retard";
+    }
+    return dayLabel(t.date);
+  }
+
   function renderTasks(){
-    var list = state.tasks.slice();
-    if(filter==="open") list = list.filter(function(t){return !t.done;});
-    if(filter==="done") list = list.filter(function(t){return t.done;});
-    list.sort(function(a,b){
-      var ba = taskBucket(a), bb = taskBucket(b);
-      if(ba.o!==bb.o) return ba.o-bb.o;
-      if(a.prio!==b.prio) return a.prio?-1:1;
-      return (a.date||"9999").localeCompare(b.date||"9999");
-    });
+    var list = state.tasks.filter(function(t){ return taskState(t)===filter; });
+    if(filter==="done"){
+      list.sort(function(a,b){ return (b.doneAt||"").localeCompare(a.doneAt||"") || (b.date||"").localeCompare(a.date||""); });
+    } else if(filter==="late"){
+      list.sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); });
+    } else {
+      list.sort(function(a,b){
+        var ga = groupOf(a), gb = groupOf(b);
+        if(ga.o!==gb.o) return ga.o-gb.o;
+        if(a.prio!==b.prio) return a.prio?-1:1;
+        return (a.date||"9999").localeCompare(b.date||"9999");
+      });
+    }
 
     var html = "", cur = null, open = false;
     list.forEach(function(t){
-      var b = taskBucket(t);
-      if(b.k!==cur){
-        cur = b.k;
+      var g = groupOf(t);
+      if(g.k!==cur){
+        cur = g.k;
         if(open){ html += '</ul>'; open = false; }
-        html += '<div class="dayHead'+(b.k==="late"?" late":"")+'"><span class="eyebrow">'+b.n+'</span><i></i></div>';
-        html += '<ul>'; open = true;
+        html += '<div class="dayHead'+(filter==="late"?" late":"")+'"><span class="eyebrow">'+esc(g.n)+'</span><i></i></div><ul>';
+        open = true;
       }
       html += '<li class="item '+(t.done?"done":"")+'" data-id="'+t.id+'">'
         + '<button class="check" role="checkbox" aria-checked="'+(t.done?"true":"false")+'" aria-label="Marquer comme faite"></button>'
         + '<div class="body"><div class="title">'+esc(t.title)+'</div>'
-        + '<div class="meta">'+(t.prio?'<span class="flag">Prioritaire</span>':'')+'<span>'+dayLabel(t.date)+'</span></div></div>'
+        + '<div class="meta">'+(t.prio?'<span class="flag">Prioritaire</span>':'')+'<span>'+taskMeta(t)+'</span></div>'
+        + (filter==="late"
+            ? '<div class="catch">'
+              + '<button data-act="rt" data-when="today">→ Aujourd\'hui</button>'
+              + '<button data-act="rt" data-when="tomorrow">→ Demain</button>'
+              + '<input type="date" data-act="pick" value="'+esc(t.date||"")+'" aria-label="Reprogrammer à une date" style="flex:0 1 148px;padding:5px 8px;font-size:12px">'
+              + '</div>'
+            : '')
+        + '</div>'
         + '<button class="kill" aria-label="Supprimer">✕</button></li>';
     });
     if(open) html += '</ul>';
     $("tList").innerHTML = html;
-    $("tEmpty").style.display = list.length ? "none" : "block";
-    $("tEmpty").textContent = state.tasks.length ? "Rien dans ce filtre." : "Aucune tâche pour l'instant. Écris la première au-dessus.";
+
+    var empty = $("tEmpty");
+    empty.style.display = list.length ? "none" : "block";
+    empty.textContent = filter==="late" ? "Rien en retard. Tout ce que tu as posé, tu l'as tenu ou reprogrammé."
+      : filter==="done" ? "Aucune tâche cochée pour l'instant."
+      : filter==="ahead" ? "Rien de programmé après aujourd'hui."
+      : state.tasks.length ? "Rien pour aujourd'hui. Ajoute ce que tu exécutes." : "Aucune tâche pour l'instant. Écris la première au-dessus.";
+
+    var lc = lateCount(), lh = $("lateHint");
+    if(lc && filter!=="late"){
+      lh.hidden = false;
+      lh.innerHTML = '<b>'+lc+' tâche'+(lc>1?'s':'')+' en retard</b> — hors de ta journée, rangée'+(lc>1?'s':'')+' à part. Les reprogrammer ou les laisser →';
+    } else lh.hidden = true;
+
+    renderChart();
+  }
+
+  $("lateHint").onclick = function(){ setFilter("late"); };
+
+  function setFilter(f){
+    filter = f;
+    document.querySelectorAll("[data-filter]").forEach(function(x){ x.setAttribute("aria-pressed", x.dataset.filter===f?"true":"false"); });
+    renderTasks();
   }
 
   $("tAdd").onclick = function(){
     var v = $("tTitle").value.trim();
     if(!v){ $("tTitle").focus(); return; }
-    state.tasks.push({ id:uid(), title:v, date:$("tDate").value||TODAY, prio:tPrio, done:false, doneAt:null });
+    var d = $("tDate").value||TODAY;
+    state.tasks.push({ id:uid(), title:v, date:d, prio:tPrio, done:false, doneAt:null, createdAt:TODAY });
     $("tTitle").value = ""; tPrio = false; $("tPrio").setAttribute("aria-pressed","false");
-    save(); renderTasks(); gauges(); bump("gA"); $("tTitle").focus();
+    save();
+    if(d>TODAY && filter==="today") setFilter("ahead"); else renderTasks();
+    gauges(); bump("gA"); $("tTitle").focus();
   };
   $("tTitle").addEventListener("keydown", function(e){ if(e.key==="Enter") $("tAdd").click(); });
   $("tPrio").onclick = function(){ tPrio = !tPrio; this.setAttribute("aria-pressed", tPrio?"true":"false"); };
 
-  $("tList").onclick = function(e){
-    var li = e.target.closest("li"); if(!li) return;
+  function findTask(li){
     var t = null, i = -1;
     state.tasks.forEach(function(x,k){ if(x.id===li.dataset.id){ t=x; i=k; } });
-    if(!t) return;
+    return {t:t, i:i};
+  }
+  $("tList").onclick = function(e){
+    var li = e.target.closest("li"); if(!li) return;
+    var f = findTask(li), t = f.t; if(!t) return;
+    var b = e.target.closest("button");
+    if(b && b.dataset.act==="rt"){
+      var d = new Date();
+      if(b.dataset.when==="tomorrow") d.setDate(d.getDate()+1);
+      t.date = iso(d);
+      save(); renderTasks(); gauges();
+      toast(b.dataset.when==="tomorrow" ? "Reprogrammée à demain" : "Reprogrammée à aujourd'hui");
+      return;
+    }
     if(e.target.classList.contains("check")){
       t.done = !t.done;
       t.doneAt = t.done ? TODAY : null;
       if(t.done) bump("gD");
     } else if(e.target.classList.contains("kill")){
-      var copy = t;
+      var copy = t, i = f.i;
       state.tasks.splice(i,1);
       toast("Tâche supprimée", function(){ state.tasks.splice(i,0,copy); save(); renderTasks(); gauges(); });
     } else return;
     save(); renderTasks(); gauges();
   };
+  $("tList").addEventListener("change", function(e){
+    if(e.target.dataset.act!=="pick") return;
+    var li = e.target.closest("li"); if(!li) return;
+    var t = findTask(li).t; if(!t || !e.target.value) return;
+    t.date = e.target.value;
+    save(); renderTasks(); gauges();
+    toast("Reprogrammée "+dayLabel(t.date));
+  });
   document.querySelectorAll("[data-filter]").forEach(function(b){
+    b.onclick = function(){ setFilter(b.dataset.filter); };
+  });
+
+  /* ═══ Bilan mensuel ════════════════════════════════════ */
+  function monthStats(n){
+    var out = [], now = new Date();
+    for(var i=n-1;i>=0;i--){
+      var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      var key = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+      var posees = state.tasks.filter(function(t){ return (t.date||"").slice(0,7)===key; });
+      out.push({
+        key: key,
+        label: d.toLocaleDateString("fr-FR",{month:"short"}).replace(".",""),
+        long: d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),
+        posees: posees.length,
+        faites: posees.filter(function(t){ return t.done; }).length
+      });
+    }
+    return out;
+  }
+  function renderChart(){
+    var ms = monthStats(6), max = 1;
+    ms.forEach(function(m){ if(m.posees>max) max = m.posees; });
+    if(!chartSel || !ms.filter(function(m){return m.key===chartSel;}).length) chartSel = ms[ms.length-1].key;
+    var sel = ms.filter(function(m){ return m.key===chartSel; })[0];
+    var rate = sel.posees ? Math.round(sel.faites/sel.posees*100) : null;
+
+    var bars = ms.map(function(m){
+      var h = m.posees ? Math.max(6, Math.round(m.posees/max*100)) : 2;
+      var f = m.posees ? Math.round(m.faites/m.posees*100) : 0;
+      return '<button class="bcol'+(m.key===chartSel?" sel":"")+'" data-m="'+m.key+'" '
+        + 'aria-label="'+esc(m.long)+' : '+m.posees+' posées, '+m.faites+' faites">'
+        + '<div class="btrack" style="height:'+h+'%"><div class="bfill" style="height:'+f+'%"></div></div></button>';
+    }).join("");
+    var axis = ms.map(function(m){ return '<div class="'+(m.key===chartSel?"sel":"")+'">'+esc(m.label)+'</div>'; }).join("");
+
+    $("chartWrap").innerHTML =
+      '<div class="chartHead"><span class="rate num">'+(rate===null?"—":rate+" %")+'</span>'
+      + '<span class="cap"><b style="color:var(--ink);text-transform:capitalize">'+esc(sel.long)+'</b> — '
+      + sel.posees+' posée'+(sel.posees>1?"s":"")+', '+sel.faites+' faite'+(sel.faites>1?"s":"")
+      + (sel.posees ? ', '+(sel.posees-sel.faites)+' encore ouverte'+((sel.posees-sel.faites)>1?"s":"") : "")+'.</span></div>'
+      + '<div class="legend"><span><i class="f"></i>Faites</span><span><i class="t"></i>Posées</span></div>'
+      + '<div class="bars">'+bars+'</div><div class="bx">'+axis+'</div>'
+      + '<p class="chartNote">Une tâche compte dans le mois de son échéance ; « faite » veut dire cochée, même plus tard. Touche un mois pour lire son détail.</p>';
+  }
+  $("chartWrap").addEventListener("click", function(e){
+    var b = e.target.closest("[data-m]"); if(!b) return;
+    chartSel = b.dataset.m; renderChart();
+  });
+
+  /* ═══ Journée : heure par heure ════════════════════════ */
+  function fullDay(d){
+    var x = dNum(d); if(!x) return d;
+    return x.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  }
+  function shortDay(d){
+    var x = dNum(d); if(!x) return d;
+    return x.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"});
+  }
+  function jFilled(d){
+    var j = state.journal[d]; if(!j) return 0;
+    var n = 0;
+    for(var k in j){ if(j[k] && String(j[k]).trim()) n++; }
+    return n;
+  }
+  function dayFillText(){
+    var f = jFilled(dayView);
+    return (dayView===TODAY ? fullDay(dayView)+" · " : "")
+      + (f ? f+" heure"+(f>1?"s":"")+" notée"+(f>1?"s":"") : "rien de noté");
+  }
+  function grow(ta){ ta.style.height = "auto"; ta.style.height = (ta.scrollHeight+2)+"px"; }
+
+  function renderDay(){
+    if(!dayView) dayView = TODAY;
+    var isToday = dayView===TODAY;
+    $("dayLabel").textContent = isToday ? "Aujourd'hui" : fullDay(dayView);
+    $("dayFill").textContent = dayFillText();
+
+    var doneThat = state.tasks.filter(function(t){ return t.done && t.doneAt===dayView; });
+    var txThat = state.tx.filter(function(t){ return t.date===dayView; });
+    var ctx = "";
+    if(doneThat.length) ctx += '<span class="chip ok" style="--a:var(--in)">'+doneThat.length+' tâche'+(doneThat.length>1?"s":"")+' cochée'+(doneThat.length>1?"s":"")+'</span>';
+    if(txThat.length){
+      var net = txThat.reduce(function(a,t){ return a+t.amount; },0);
+      ctx += '<span class="chip">'+txThat.length+' mouvement'+(txThat.length>1?"s":"")+' · '+(net>0?"+":"")+euro(net)+'</span>';
+    }
+    doneThat.slice(0,4).forEach(function(t){
+      ctx += '<span class="chip">'+esc(t.title.length>38 ? t.title.slice(0,38)+"…" : t.title)+'</span>';
+    });
+    $("dayCtx").innerHTML = ctx;
+
+    var from = state.settings.allHours ? 0 : 6, to = 23;
+    var j = state.journal[dayView] || {}, nowH = new Date().getHours(), html = "";
+    for(var h=from; h<=to; h++){
+      var v = j[h] == null ? "" : String(j[h]);
+      html += '<div class="hrow'+(isToday && h===nowH ? " now" : "")+(v.trim() ? " full" : "")+'">'
+        + '<div class="hh">'+String(h).padStart(2,"0")+':00</div>'
+        + '<textarea data-h="'+h+'" rows="1" aria-label="'+h+' heures"'
+        + (isToday && h===nowH ? ' placeholder="En ce moment…"' : '')
+        + '>'+esc(v)+'</textarea></div>';
+    }
+    $("hours").innerHTML = html;
+    Array.prototype.forEach.call($("hours").querySelectorAll("textarea"), grow);
+    $("hoursRange").textContent = state.settings.allHours ? "N'afficher que 6 h – 23 h" : "Afficher toutes les heures";
+    renderArchive();
+  }
+
+  function renderArchive(){
+    var days = Object.keys(state.journal).filter(function(d){ return d!==dayView && jFilled(d); }).sort().reverse();
+    $("dayArchive").innerHTML = days.map(function(d){
+      var j = state.journal[d], first = "";
+      var keys = Object.keys(j).map(Number).sort(function(a,b){ return a-b; });
+      for(var i=0;i<keys.length;i++){
+        var v = j[keys[i]] == null ? "" : String(j[keys[i]]);
+        if(v.trim()){ first = v; break; }
+      }
+      first = first.replace(/\s+/g," ");
+      return '<button class="darc" data-d="'+d+'" style="--a:'+(d===TODAY?"var(--brass)":"var(--line)")+'">'
+        + '<span class="d">'+(d===TODAY ? "Aujourd\'hui" : shortDay(d))+'</span>'
+        + '<span class="p">'+esc(first.length>90 ? first.slice(0,90)+"…" : first)+'</span>'
+        + '<span class="n">'+jFilled(d)+' h</span></button>';
+    }).join("");
+    $("dayArchiveEmpty").style.display = days.length ? "none" : "block";
+  }
+
+  $("hours").addEventListener("input", function(e){
+    var ta = e.target; if(ta.tagName!=="TEXTAREA") return;
+    var h = ta.dataset.h, v = ta.value;
+    if(!state.journal[dayView]) state.journal[dayView] = {};
+    if(v.trim()) state.journal[dayView][h] = v; else delete state.journal[dayView][h];
+    if(!Object.keys(state.journal[dayView]).length) delete state.journal[dayView];
+    grow(ta);
+    ta.closest(".hrow").classList.toggle("full", !!v.trim());
+    $("dayFill").textContent = dayFillText();
+    saveSoon();
+  });
+  document.querySelectorAll("[data-day]").forEach(function(b){
     b.onclick = function(){
-      filter = b.dataset.filter;
-      document.querySelectorAll("[data-filter]").forEach(function(x){ x.setAttribute("aria-pressed", x===b?"true":"false"); });
-      renderTasks();
+      flush();
+      var d = dNum(dayView || TODAY); if(!d) return;
+      d.setDate(d.getDate() + parseInt(b.dataset.day,10));
+      dayView = iso(d); renderDay();
     };
   });
+  $("dayToday").onclick = function(){ flush(); dayView = TODAY; renderDay(); };
+  $("hoursRange").onclick = function(){
+    state.settings.allHours = !state.settings.allHours;
+    save(); renderDay();
+  };
+  $("dayArchive").onclick = function(e){
+    var b = e.target.closest("[data-d]"); if(!b) return;
+    flush();
+    dayView = b.dataset.d;
+    renderDay();
+    window.scrollTo({top:0});
+  };
+
+  /* ═══ Rappels ══════════════════════════════════════════ */
+  function occOf(r){
+    if(!r.date || !r.time) return null;
+    var base = new Date(r.date+"T"+r.time);
+    if(isNaN(base)) return null;
+    var now = new Date();
+    if(r.repeat==="none" || now < base) return base;
+    if(r.repeat==="daily"){
+      var d = new Date(now);
+      d.setHours(base.getHours(), base.getMinutes(), 0, 0);
+      return d;
+    }
+    if(r.repeat==="weekly"){
+      var w = new Date(now), delta = (base.getDay() - w.getDay() + 7) % 7;
+      w.setDate(w.getDate() + delta);
+      w.setHours(base.getHours(), base.getMinutes(), 0, 0);
+      return w;
+    }
+    return base;
+  }
+  function occKey(o){
+    return iso(o)+"T"+String(o.getHours()).padStart(2,"0")+":"+String(o.getMinutes()).padStart(2,"0");
+  }
+  function isDue(r){
+    if(r.done) return false;
+    var o = occOf(r); if(!o) return false;
+    return o.getTime() <= Date.now() && r.lastFired !== occKey(o);
+  }
+  function whenLabel(r){
+    var o = occOf(r);
+    if(!o) return "—";
+    var d = iso(o), hm = String(o.getHours()).padStart(2,"0")+":"+String(o.getMinutes()).padStart(2,"0");
+    var day = d===TODAY ? "auj." : (daysTo(d)===1 ? "dem." : shortDay(d));
+    return day+" "+hm;
+  }
+  function renderReminders(){
+    var list = state.reminders.slice().sort(function(a,b){
+      if(!!a.done !== !!b.done) return a.done ? 1 : -1;
+      var oa = occOf(a), ob = occOf(b);
+      return (oa?oa.getTime():8e15) - (ob?ob.getTime():8e15);
+    });
+    $("rList").innerHTML = list.map(function(r){
+      var o = occOf(r), late = !r.done && o && o.getTime() <= Date.now();
+      return '<div class="rem'+(r.done?" done":"")+(late?" late":"")+'" data-id="'+r.id+'">'
+        + '<button class="check" role="checkbox" aria-checked="'+(r.done?"true":"false")+'" aria-label="Marquer comme traité"></button>'
+        + '<div class="t">'+esc(r.text)
+        + (r.repeat && r.repeat!=="none" ? ' <span class="chip">'+(r.repeat==="daily"?"chaque jour":"chaque semaine")+'</span>' : '')
+        + '</div>'
+        + '<div class="when">'+whenLabel(r)+'</div>'
+        + '<button class="kill" aria-label="Supprimer">✕</button></div>';
+    }).join("");
+    $("rEmpty").style.display = list.length ? "none" : "block";
+    var pend = state.reminders.filter(function(r){ return !r.done; }).length;
+    var tab = document.querySelector('[data-tab="day"]');
+    var dot = tab.querySelector(".dot");
+    if(dueQueue.length){ if(!dot){ dot = document.createElement("span"); dot.className = "dot"; tab.appendChild(dot); } }
+    else if(dot) dot.remove();
+    return pend;
+  }
+  $("rAdd").onclick = function(){
+    var v = $("rTitle").value.trim();
+    var d = $("rDate").value || TODAY;
+    var t = $("rTime").value;
+    if(!v || !t){ toast("Il faut un intitulé et une heure."); return; }
+    state.reminders.push({ id:uid(), text:v, date:d, time:t, repeat:$("rRepeat").value||"none", done:false, lastFired:"" });
+    $("rTitle").value = ""; $("rTime").value = "";
+    save(); renderReminders(); refreshNotif();
+    toast("Rappel programmé");
+  };
+  $("rTitle").addEventListener("keydown", function(e){ if(e.key==="Enter") $("rTime").focus(); });
+  $("rList").onclick = function(e){
+    var row = e.target.closest(".rem"); if(!row) return;
+    var r = null, i = -1;
+    state.reminders.forEach(function(x,k){ if(x.id===row.dataset.id){ r=x; i=k; } });
+    if(!r) return;
+    if(e.target.classList.contains("check")){
+      r.done = !r.done;
+      if(r.done) dueQueue = dueQueue.filter(function(x){ return x.id!==r.id; });
+    } else if(e.target.classList.contains("kill")){
+      var copy = r;
+      state.reminders.splice(i,1);
+      dueQueue = dueQueue.filter(function(x){ return x.id!==copy.id; });
+      toast("Rappel supprimé", function(){ state.reminders.splice(i,0,copy); save(); renderReminders(); });
+    } else return;
+    save(); renderReminders(); renderDueBand();
+  };
+
+  function notify(text){
+    try{
+      if(!("Notification" in window) || Notification.permission!=="granted") return;
+      if(navigator.serviceWorker && navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(function(reg){
+          if(reg && reg.showNotification){
+            reg.showNotification("CALYRE — rappel", { body:text, icon:"icon-192.png", badge:"icon-192.png", tag:"calyre-rappel", renotify:true });
+          } else { new Notification("CALYRE — rappel", {body:text}); }
+        }, function(){});
+      } else { new Notification("CALYRE — rappel", {body:text}); }
+    }catch(e){}
+  }
+  function refreshNotif(){
+    var btn = $("notifBtn"), note = $("notifNote");
+    if(!("Notification" in window)){
+      btn.hidden = true;
+      note.textContent = "Ce navigateur ne gère pas les notifications : un rappel échu s'affiche en haut de la console à ta prochaine ouverture.";
+      return;
+    }
+    if(Notification.permission==="granted"){
+      btn.hidden = true;
+      note.textContent = "Notifications autorisées. Un rappel ne peut sonner que si l'application tourne, au moins en arrière-plan. Fermée, elle ne se réveille pas toute seule : le rappel t'attend, marqué en retard, dès que tu la rouvres.";
+      return;
+    }
+    if(Notification.permission==="denied"){
+      btn.hidden = true;
+      note.textContent = "Notifications refusées pour ce site. Les rappels restent visibles dans la console, en haut, à chaque ouverture.";
+      return;
+    }
+    btn.hidden = false;
+    note.textContent = "Sans autorisation, un rappel échu s'affiche seulement dans la console, à l'ouverture.";
+  }
+  $("notifBtn").onclick = function(){
+    try{
+      var p = Notification.requestPermission();
+      if(p && p.then) p.then(refreshNotif, refreshNotif); else setTimeout(refreshNotif, 300);
+    }catch(e){ refreshNotif(); }
+  };
+
+  function renderDueBand(){
+    var el = $("dueBand");
+    dueQueue = dueQueue.filter(function(r){
+      return state.reminders.filter(function(x){ return x.id===r.id && !x.done; }).length;
+    });
+    if(!dueQueue.length){ el.hidden = true; el.innerHTML = ""; renderReminders(); return; }
+    var r = dueQueue[dueQueue.length-1];
+    el.hidden = false;
+    el.innerHTML = '<div class="txt"><div class="k">Rappel'+(dueQueue.length>1?" · "+dueQueue.length+" en attente":"")+'</div>'
+      + '<div class="t">'+esc(r.text)+'</div></div>'
+      + '<button class="ghost" data-ack="'+r.id+'">Vu</button>';
+  }
+  $("dueBand").addEventListener("click", function(e){
+    var b = e.target.closest("[data-ack]"); if(!b) return;
+    var id = b.dataset.ack;
+    state.reminders.forEach(function(r){ if(r.id===id && r.repeat==="none") r.done = true; });
+    dueQueue = dueQueue.filter(function(r){ return r.id!==id; });
+    save(); renderDueBand(); renderReminders();
+  });
+
+  function tick(){
+    var fired = 0;
+    state.reminders.forEach(function(r){
+      if(!isDue(r)) return;
+      var o = occOf(r);
+      r.lastFired = occKey(o);
+      if(!dueQueue.filter(function(x){ return x.id===r.id; }).length) dueQueue.push(r);
+      notify(r.text);
+      fired++;
+    });
+    if(fired){ save(); renderDueBand(); renderReminders(); }
+    if(!$("day").hidden && dayView===TODAY) renderDay();
+  }
 
   /* ═══ Objectifs : tableau ══════════════════════════════ */
   function colGoals(cid){
@@ -1512,6 +2054,337 @@
     b.onclick = function(){ showTab(b.dataset.tab); };
   });
 
+  /* ═══ Synchronisation ══════════════════════════════════ */
+  /* Pas de SDK : deux points d'entrée REST suffisent, et la console reste un
+     fichier autonome qui s'ouvre hors connexion. La clé ci-dessous est la clé
+     publiable du projet — publique par construction, elle part déjà dans le
+     navigateur de chaque visiteur. Ce qui protège le contenu, ce sont les
+     règles RLS : chaque compte ne voit que sa propre ligne. */
+  var SUPA_URL = "https://qiugyurwxmxjhsezysnn.supabase.co";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpdWd5dXJ3eG14amhzZXp5c25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTUxODIsImV4cCI6MjA4NjgzMTE4Mn0.VH2GUFCck1yV51it84au1iuqfUosxrCGaIqbWj-GqeQ";
+  var SKEY = "calyre-sync-v1";
+  var DROPKEY = "calyre-version-ecartee";
+
+  var sync = { email:"", uid:"", access:"", refresh:"", exp:0, baseRev:null, lastAt:"" };
+  var syncState = "off", syncMsg = "", syncing = false, applying = false, syncTimer = null;
+
+  function deviceName(){
+    var u = navigator.userAgent || "";
+    if(/Android/i.test(u)) return "Android";
+    if(/iPhone|iPad|iPod/i.test(u)) return "iOS";
+    if(/Windows/i.test(u)) return "Windows";
+    if(/Macintosh/i.test(u)) return "Mac";
+    return "Ordinateur";
+  }
+  function ago(iso){
+    if(!iso) return "jamais";
+    var s = Math.round((Date.now() - new Date(iso).getTime())/1000);
+    if(isNaN(s)) return "—";
+    if(s < 60) return "à l'instant";
+    if(s < 3600) return "il y a "+Math.round(s/60)+" min";
+    if(s < 86400) return "il y a "+Math.round(s/3600)+" h";
+    return "il y a "+Math.round(s/86400)+" j";
+  }
+  function summarize(d){
+    d = d || {};
+    var j = (d.journal && typeof d.journal==="object") ? Object.keys(d.journal).length : 0;
+    return (d.tasks||[]).length+" tâches · "+(d.goals||[]).length+" objectifs · "
+      + (d.tx||[]).length+" mouvements · "+(d.notes||[]).length+" notes · "
+      + j+" journée"+(j>1?"s":"")+" · "+(d.reminders||[]).length+" rappels";
+  }
+  function syncLoad(){
+    try{
+      var s = JSON.parse(window.localStorage.getItem(SKEY) || "null");
+      if(s && typeof s==="object"){
+        sync.email = s.email||""; sync.uid = s.uid||"";
+        sync.access = s.access||""; sync.refresh = s.refresh||"";
+        sync.exp = s.exp||0;
+        sync.baseRev = (typeof s.baseRev==="number") ? s.baseRev : null;
+        sync.lastAt = s.lastAt||"";
+      }
+    }catch(e){}
+    syncState = sync.refresh ? "idle" : "off";
+  }
+  function syncStore(){ try{ window.localStorage.setItem(SKEY, JSON.stringify(sync)); }catch(e){} }
+
+  function httpMsg(code, body){
+    body = body || "";
+    if(code===404 || body.indexOf("42P01")>=0) return "table absente : la migration SQL n'est pas encore appliquée";
+    if(code===401) return "session expirée, reconnecte-toi";
+    if(code===403 || body.indexOf("42501")>=0) return "refusé par les règles de sécurité";
+    return "erreur "+code;
+  }
+  function isOffline(e){
+    if(!navigator.onLine) return true;
+    return /Failed to fetch|NetworkError|Load failed|network/i.test((e && e.message) || "");
+  }
+  function jsonOf(r){ return r.text().then(function(t){ try{ return JSON.parse(t); }catch(e){ return {raw:t}; } }); }
+
+  function refreshToken(){
+    return fetch(SUPA_URL+"/auth/v1/token?grant_type=refresh_token", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ refresh_token: sync.refresh })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok || !j.access_token) throw new Error("session expirée, reconnecte-toi");
+        sync.access = j.access_token;
+        sync.refresh = j.refresh_token || sync.refresh;
+        sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+        syncStore();
+      });
+    });
+  }
+  function sfetch(path, opts, retried){
+    opts = opts || {};
+    var h = opts.headers || {};
+    h["apikey"] = SUPA_KEY;
+    if(!h["Content-Type"]) h["Content-Type"] = "application/json";
+    if(sync.access) h["Authorization"] = "Bearer " + sync.access;
+    opts.headers = h;
+    return fetch(SUPA_URL + path, opts).then(function(r){
+      if(r.status===401 && sync.refresh && !retried){
+        return refreshToken().then(function(){ return sfetch(path, opts, true); });
+      }
+      return r;
+    });
+  }
+
+  function signIn(email, pass){
+    return fetch(SUPA_URL+"/auth/v1/token?grant_type=password", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ email:email, password:pass })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok || !j.access_token){
+          throw new Error(j.error_description || j.msg || j.message || "connexion refusée");
+        }
+        sync.email = email;
+        sync.uid = (j.user && j.user.id) || "";
+        sync.access = j.access_token;
+        sync.refresh = j.refresh_token || "";
+        sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+        sync.baseRev = null; sync.lastAt = "";
+        syncStore();
+        syncState = "idle";
+      });
+    });
+  }
+  function signUp(email, pass){
+    return fetch(SUPA_URL+"/auth/v1/signup", {
+      method:"POST",
+      headers:{ "apikey":SUPA_KEY, "Content-Type":"application/json" },
+      body: JSON.stringify({ email:email, password:pass })
+    }).then(function(r){
+      return jsonOf(r).then(function(j){
+        if(!r.ok) throw new Error(j.error_description || j.msg || j.message || "création refusée");
+        if(j.access_token){
+          sync.email = email; sync.uid = (j.user && j.user.id) || "";
+          sync.access = j.access_token; sync.refresh = j.refresh_token || "";
+          sync.exp = Date.now() + ((j.expires_in||3600)*1000);
+          sync.baseRev = null; sync.lastAt = "";
+          syncStore(); syncState = "idle";
+          return "connecte";
+        }
+        return "confirme";
+      });
+    });
+  }
+  function signOut(){
+    sync = { email:"", uid:"", access:"", refresh:"", exp:0, baseRev:null, lastAt:"" };
+    try{ window.localStorage.removeItem(SKEY); }catch(e){}
+    syncState = "off"; syncMsg = "";
+    renderSync();
+  }
+
+  function pullRow(){
+    return sfetch("/rest/v1/calyre_state?select=data,rev,updated_at,device&user_id=eq."+encodeURIComponent(sync.uid), {method:"GET"})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error(httpMsg(r.status, t)); });
+        return r.json();
+      }).then(function(rows){
+        if(!rows || !rows.length) return { exists:false };
+        return { exists:true, data:rows[0].data, rev:rows[0].rev||0, at:rows[0].updated_at, device:rows[0].device };
+      });
+  }
+  function pushRow(){
+    return sfetch("/rest/v1/calyre_state?on_conflict=user_id", {
+      method:"POST",
+      headers:{ "Prefer":"resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ user_id:sync.uid, data:state, rev:state.rev||0, device:deviceName() })
+    }).then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error(httpMsg(r.status, t)); });
+      sync.baseRev = state.rev||0;
+      sync.lastAt = new Date().toISOString();
+      syncStore();
+    });
+  }
+  function applyServer(srv){
+    var tab = state.settings && state.settings.tab;
+    try{ window.localStorage.setItem(DROPKEY, JSON.stringify(state)); }catch(e){}
+    applying = true;
+    state = normalize(srv.data || {});
+    state.rev = srv.rev || 0;
+    if(tab) state.settings.tab = tab;
+    save();
+    applying = false;
+    sync.baseRev = srv.rev || 0;
+    sync.lastAt = new Date().toISOString();
+    syncStore();
+    dayView = null; chartSel = null; dueQueue = [];
+    renderAll();
+  }
+
+  function syncNow(manual){
+    if(!sync.refresh){ if(manual) openSyncSheet(); return Promise.resolve(); }
+    if(syncing) return Promise.resolve();
+    syncing = true; syncState = "busy"; syncMsg = ""; renderSync();
+    return pullRow().then(function(srv){
+      var localChanged = (sync.baseRev === null) || ((state.rev||0) !== sync.baseRev);
+      if(!srv.exists) return pushRow();
+      var serverChanged = (srv.rev||0) !== sync.baseRev;
+      if(!localChanged && !serverChanged) return;
+      if(!localChanged) return applyServer(srv);
+      if(!serverChanged) return pushRow();
+      /* Les deux côtés ont bougé depuis la dernière synchro : on ne tranche pas
+         à sa place, et rien n'est écrasé sans son accord. */
+      openConflict(srv);
+      return "conflit";
+    }).then(function(r){
+      syncing = false;
+      if(r==="conflit"){ syncState = "conflict"; syncMsg = ""; }
+      else { syncState = "ok"; syncMsg = ""; }
+      renderSync();
+    }).catch(function(e){
+      syncing = false;
+      syncState = isOffline(e) ? "offline" : "err";
+      syncMsg = isOffline(e) ? "" : (e.message || "échec");
+      renderSync();
+    });
+  }
+  function scheduleSync(){
+    if(!sync.refresh) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function(){ syncNow(false); }, 4000);
+  }
+
+  function renderSync(){
+    var el = $("syncBox");
+    if(!el) return;
+    if(syncState==="off"){
+      el.style.setProperty("--a","var(--line)");
+      el.innerHTML = '<div class="syncRow"><div class="txt"><b>Synchronisation</b>'
+        + '<span>La même console sur le téléphone et sur l\'ordinateur. Sans connexion, tout reste sur cet appareil.</span></div>'
+        + '<button class="ghost" data-sync="in">Se connecter</button></div>';
+      return;
+    }
+    var lab = { busy:"Synchronisation…", ok:"À jour", idle:"En attente", err:"Échec",
+                offline:"Hors connexion", conflict:"Conflit à trancher" }[syncState] || "";
+    var tone = { ok:"var(--in)", busy:"var(--brass)", err:"var(--out)", conflict:"var(--out)" }[syncState] || "var(--line)";
+    el.style.setProperty("--a", tone);
+    var dropped = "";
+    try{ if(window.localStorage.getItem(DROPKEY)) dropped = '<button class="ghost" data-sync="restore">Récupérer la version écartée</button>'; }catch(e){}
+    el.innerHTML = '<div class="syncRow"><div class="txt"><b>Synchronisation</b>'
+      + '<span>'+esc(sync.email)+' · dernier échange '+ago(sync.lastAt)+'</span></div>'
+      + '<span class="st '+syncState+'">'+lab+'</span></div>'
+      + (syncMsg ? '<div class="mini neg" style="margin-top:8px">'+esc(syncMsg)+'</div>' : '')
+      + '<div class="row" style="margin-top:10px"><button class="ghost" data-sync="now" style="flex:1">Synchroniser maintenant</button>'
+      + '<button class="ghost" data-sync="out">Se déconnecter</button></div>'
+      + (dropped ? '<div class="row" style="margin-top:8px">'+dropped+'</div>' : '');
+  }
+  $("syncBox").addEventListener("click", function(e){
+    var b = e.target.closest("[data-sync]"); if(!b) return;
+    var a = b.dataset.sync;
+    if(a==="in") openSyncSheet();
+    if(a==="now") syncNow(true);
+    if(a==="out"){ if(confirm("Se déconnecter ? Les données restent sur cet appareil.")) signOut(); }
+    if(a==="restore") restoreDropped();
+  });
+
+  function openSyncSheet(){
+    var html =
+      '<div class="mini">Connecte-toi avec le compte de ton application Bio-Flow — c\'est le même serveur. '
+      + 'À partir de là, cette console enverra son contenu sur ce serveur pour le retrouver sur tes autres appareils : '
+      + 'tâches, objectifs, finances, notes — <b style="color:var(--warn)">y compris les notes marquées confidentielles</b>. '
+      + 'Tant que tu ne te connectes pas, rien ne quitte cet appareil.</div>'
+      + '<div class="fld" style="margin-top:14px"><label for="syEmail">Adresse e-mail</label>'
+      + '<input id="syEmail" type="email" autocomplete="username" value="'+esc(sync.email)+'" placeholder="toi@exemple.fr"></div>'
+      + '<div class="fld"><label for="syPass">Mot de passe</label>'
+      + '<input id="syPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>'
+      + '<div id="syMsg" class="mini" style="min-height:18px"></div>'
+      + '<div class="row" style="margin-top:12px"><button class="add" data-act="in" style="flex:1">Se connecter</button></div>'
+      + '<div class="row" style="margin-top:8px"><button class="ghost" data-act="up" style="flex:1">Créer un compte avec cette adresse</button></div>';
+    openSheet("Synchronisation", html, null, null);
+    var body = $("sheetBody");
+    function go(kind){
+      var em = $("syEmail").value.trim(), pw = $("syPass").value;
+      if(!em || !pw){ $("syMsg").innerHTML = '<span class="neg">Il faut une adresse et un mot de passe.</span>'; return; }
+      $("syMsg").textContent = "Connexion…";
+      (kind==="up" ? signUp(em,pw) : signIn(em,pw)).then(function(r){
+        if(r==="confirme"){
+          $("syMsg").innerHTML = '<span class="pos">Compte créé. Confirme l\'adresse depuis l\'e-mail reçu, puis reviens te connecter.</span>';
+          return;
+        }
+        closeSheet(); renderSync(); syncNow(true);
+        toast("Connecté — synchronisation en cours");
+      }, function(e){
+        $("syMsg").innerHTML = '<span class="neg">'+esc(e.message||"échec")+'</span>';
+      });
+    }
+    body.onclick = function(e){
+      var b = e.target.closest("button"); if(!b || !b.dataset.act) return;
+      go(b.dataset.act);
+    };
+    $("syPass").addEventListener("keydown", function(e){ if(e.key==="Enter") go("in"); });
+  }
+
+  function openConflict(srv){
+    var html =
+      '<div class="mini">Les deux côtés ont changé depuis le dernier échange. Je ne choisis pas à ta place : '
+      + 'la version que tu écartes reste récupérable depuis le bloc Synchronisation.</div>'
+      + '<div class="syncSide" style="margin-top:12px">'
+      +   '<div><div class="k">Cet appareil — '+esc(deviceName())+'</div>'
+      +     '<div class="v">'+summarize(state)+'</div>'
+      +     '<div class="w">modifié '+ago(state.touchedAt)+'</div></div>'
+      +   '<div><div class="k">Le serveur'+(srv.device?' — '+esc(srv.device):'')+'</div>'
+      +     '<div class="v">'+summarize(srv.data)+'</div>'
+      +     '<div class="w">modifié '+ago(srv.at)+'</div></div>'
+      + '</div>'
+      + '<div class="row"><button class="add" data-c="local" style="flex:1">Garder cet appareil</button></div>'
+      + '<div class="row" style="margin-top:8px"><button class="ghost" data-c="server" style="flex:1">Prendre le serveur</button></div>';
+    openSheet("Deux versions", html, "#d97d61", null);
+    $("sheetBody").onclick = function(e){
+      var b = e.target.closest("[data-c]"); if(!b) return;
+      if(b.dataset.c==="local"){
+        /* La version du serveur est mise de côté avant d'être écrasée : quelle
+           que soit la branche choisie, l'autre reste récupérable. */
+        try{ window.localStorage.setItem(DROPKEY, JSON.stringify(srv.data||{})); }catch(err2){}
+        pushRow().then(function(){
+          closeSheet(); syncState = "ok"; renderSync(); toast("Cet appareil fait foi");
+        }, function(err){
+          syncState = "err"; syncMsg = err.message||"échec"; renderSync();
+        });
+      } else {
+        applyServer(srv);
+        closeSheet(); syncState = "ok"; renderSync(); toast("Version du serveur reprise");
+      }
+    };
+  }
+  function restoreDropped(){
+    var raw = null;
+    try{ raw = window.localStorage.getItem(DROPKEY); }catch(e){}
+    if(!raw){ toast("Aucune version écartée."); return; }
+    var d; try{ d = JSON.parse(raw); }catch(e){ toast("Version écartée illisible."); return; }
+    if(!confirm("Remplacer le contenu actuel par la version écartée ("+summarize(d)+") ?")) return;
+    state = normalize(d);
+    save();
+    try{ window.localStorage.removeItem(DROPKEY); }catch(e){}
+    renderAll(); renderSync();
+    toast("Version écartée restaurée");
+  }
+  window.addEventListener("online", function(){ if(sync.refresh) syncNow(false); });
+
   /* ═══ Données ══════════════════════════════════════════ */
   function renderAlert(){
     $("storageAlert").innerHTML = storageOK ? "" :
@@ -1520,7 +2393,7 @@
   }
   $("exp").onclick = function(){
     var json = JSON.stringify(state, null, 2);
-    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, objectifs, colonnes, finances, notes, dossiers.</div>'
+    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, objectifs, colonnes, finances, notes, dossiers, journal horaire et rappels.<br><br><b style="color:var(--ink)">Passer d\'un appareil à l\'autre :</b> copie ici, envoie-toi le texte (e-mail, message), puis colle-le dans « Importer » sur l\'autre appareil. Les deux consoles restent ensuite indépendantes : ce qui est saisi d\'un côté ne remonte pas de l\'autre.</div>'
       + '<div class="row" style="margin-top:10px"><button class="ghost" data-act="copy" style="flex:1">Copier</button>'
       + '<button class="ghost" data-act="dl" style="flex:1">Télécharger le fichier</button></div>'
       + '<textarea id="expBox" readonly style="margin-top:10px;min-height:200px;font-family:var(--mono);font-size:11.5px">'+esc(json)+'</textarea>';
@@ -1587,7 +2460,9 @@
   }
   $("reset").onclick = function(){
     if(!confirm("Effacer tâches, objectifs, colonnes, mouvements, notes et dossiers ? C'est définitif.")) return;
-    if(!confirm("Confirmation : tout sera perdu, sauf si tu as exporté.")) return;
+    if(!confirm(sync.refresh
+      ? "Confirmation : tout sera perdu ici ET sur le serveur à la prochaine synchronisation, sauf si tu as exporté."
+      : "Confirmation : tout sera perdu, sauf si tu as exporté.")) return;
     var backup = JSON.parse(JSON.stringify(state));
     state = seed();
     save(); renderAll();
@@ -1598,7 +2473,7 @@
   function seed(){
     var c1 = uid(), c2 = uid(), c3 = uid();
     return {
-      tasks:[], tx:[], notes:[], folders:[],
+      tasks:[], tx:[], notes:[], folders:[], journal:{}, reminders:[], rev:0, touchedAt:"",
       columns:[
         {id:c1, name:"À lancer", tone:"ciel"},
         {id:c2, name:"En cours", tone:"laiton"},
@@ -1616,6 +2491,10 @@
       tx: Array.isArray(d.tx)?d.tx:[],
       notes: Array.isArray(d.notes)?d.notes:[],
       folders: Array.isArray(d.folders)?d.folders:[],
+      journal: (d.journal && typeof d.journal==="object" && !Array.isArray(d.journal)) ? d.journal : {},
+      reminders: Array.isArray(d.reminders)?d.reminders:[],
+      rev: (typeof d.rev==="number" && d.rev>=0) ? d.rev : 0,
+      touchedAt: typeof d.touchedAt==="string" ? d.touchedAt : "",
       settings: (d.settings && typeof d.settings==="object")?d.settings:{tab:"tasks"}
     };
     if(!s.columns.length){
@@ -1669,6 +2548,34 @@
     });
     var fids = {};
     s.folders.forEach(function(f){ fids[f.id] = 1; });
+    /* Journal : { "2026-09-09": { "7": "texte" } } — on garde tout, on répare la forme. */
+    var jc = {};
+    Object.keys(s.journal).forEach(function(d){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      var src = s.journal[d];
+      if(!src || typeof src!=="object") return;
+      var day = {};
+      Object.keys(src).forEach(function(h){
+        var n = parseInt(h,10);
+        if(isNaN(n) || n<0 || n>23) return;
+        var v = src[h]==null ? "" : String(src[h]);
+        if(v.trim()) day[n] = v;
+      });
+      if(Object.keys(day).length) jc[d] = day;
+    });
+    s.journal = jc;
+
+    s.reminders = s.reminders.filter(function(r){ return r && (r.text || r.title); });
+    s.reminders.forEach(function(r){
+      if(!r.id) r.id = uid();
+      if(!r.text) r.text = r.title || "Rappel";
+      if(!r.date) r.date = TODAY;
+      if(!r.time) r.time = "09:00";
+      if(["none","daily","weekly"].indexOf(r.repeat)<0) r.repeat = "none";
+      r.done = !!r.done;
+      if(typeof r.lastFired!=="string") r.lastFired = "";
+    });
+
     s.notes.forEach(function(n){
       if(!n.id) n.id = uid();
       if(!n.kind) n.kind = "note";
@@ -1682,7 +2589,9 @@
   }
 
   function renderAll(){
-    renderTasks(); renderBoard(); renderMoney(); renderNotes(); gauges(); renderAlert();
+    renderTasks(); renderBoard(); renderMoney(); renderNotes();
+    renderDay(); renderReminders(); renderDueBand(); refreshNotif();
+    gauges(); renderAlert(); renderSync();
     showTabSilent(state.settings.tab || "tasks");
   }
   function showTabSilent(name){
@@ -1712,7 +2621,13 @@
   }
   state = saved ? normalize(saved) : seed();
   if(!readRaw(KEY)) save();
+  syncLoad();
   renderAll();
+  if(sync.refresh) syncNow(false);
+
+  /* Rappels : premier contrôle à l'ouverture, puis toutes les 30 secondes */
+  tick();
+  setInterval(tick, 30000);
 
   /* Installation sur l'ecran d'accueil */
   var installEvent = null;
@@ -1751,11 +2666,13 @@
     if(document.hidden) return;
     var now = iso(new Date());
     if(now!==TODAY){
+      if(dayView===TODAY) dayView = now;
       TODAY = now;
       $("today").textContent = new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
       $("tDate").value = TODAY;
       renderAll();
-    } else { gauges(); }
+    } else { gauges(); tick(); }
+    if(sync.refresh) syncNow(false);
   });
 })();
 </script>

@@ -1,7 +1,7 @@
 /* CALYRE — service worker : l'application reste ouvrable hors connexion. */
 "use strict";
 
-var VERSION = "calyre-2026-09-02-1";
+var VERSION = "calyre-2026-09-09-1";
 var CORE = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./icon-180.png", "./icon.svg"
@@ -62,4 +62,17 @@ self.addEventListener("fetch", function(e){
   if(url.origin === self.location.origin){
     e.respondWith(caches.match(req).then(function(m){ return m || fetch(req); }));
   }
+});
+
+/* Une notification touchée ramène sur la console plutôt que d'ouvrir un doublon. */
+self.addEventListener("notificationclick", function(e){
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type:"window", includeUncontrolled:true }).then(function(list){
+      for(var i=0;i<list.length;i++){
+        if(list[i].url.indexOf("/pilotage/")>=0 && "focus" in list[i]) return list[i].focus();
+      }
+      if(self.clients.openWindow) return self.clients.openWindow("./index.html");
+    })
+  );
 });
