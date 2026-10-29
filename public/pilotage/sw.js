@@ -1,7 +1,7 @@
 /* CALYRE — service worker : l'application reste ouvrable hors connexion. */
 "use strict";
 
-var VERSION = "calyre-2026-09-09-1";
+var VERSION = "calyre-2026-10-29-1";
 var CORE = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./icon-180.png", "./icon.svg"

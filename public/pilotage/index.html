@@ -88,8 +88,11 @@
 
   /* ── Onglets ────────────────────────────────────────────── */
   nav{background:var(--panel);position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line)}
-  nav .wrap{display:flex;gap:2px}
-  nav button{flex:1;padding:12px 2px;font-family:var(--disp);font-size:clamp(11.5px,3.3vw,14.5px);letter-spacing:.03em;text-transform:uppercase;color:var(--mute);border-bottom:2px solid transparent;text-align:center;white-space:nowrap;overflow:hidden;position:relative}
+  /* Six onglets : chacun prend au moins la largeur de son libellé, le reste se partage ;
+     si une police de secours plus large s'affiche, la barre défile au lieu de tronquer. */
+  nav .wrap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+  nav .wrap::-webkit-scrollbar{display:none}
+  nav button{flex:1 0 auto;padding:12px 2px;font-family:var(--disp);font-size:clamp(11.5px,3.3vw,14.5px);letter-spacing:.03em;text-transform:uppercase;color:var(--mute);border-bottom:2px solid transparent;text-align:center;white-space:nowrap;position:relative}
   nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
 
   main{padding-top:18px}
@@ -322,6 +325,82 @@
   .bx div.sel{color:var(--brass)}
   .chartNote{font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:10px}
 
+  /* ── Horizons ──────────────────────────────────────────── */
+  /* La bande de colonnes déborde de la colonne centrale jusqu'aux bords de la fenêtre ;
+     le débordement horizontal de la page est coupé, pas défilé. */
+  body{overflow-x:clip}
+  .hzTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .hzSeg{flex:1 1 100%}
+  .hzSeg button{flex:1;padding:9px 6px;font-size:12.5px}
+  .hzNav{display:flex;gap:6px;align-items:center;margin-left:auto}
+  .hzNav .ghost{padding:6px 11px;height:30px;line-height:16px}
+  @media(min-width:760px){.hzSeg{flex:0 1 auto}.hzSeg button{padding:9px 12px;font-size:13px}}
+  .hzStage{margin:0 calc(50% - min(50vw,840px));padding:0 16px 6px;display:flex;flex-direction:column;gap:12px}
+  @media(min-width:760px){.hzStage{flex-direction:row;align-items:flex-start;padding:0 20px 6px}}
+  .hzStrip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding-bottom:10px;flex:1;min-width:0;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .hzCol{flex:0 0 auto;width:min(82vw,300px);scroll-snap-align:start;background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column}
+  @media(min-width:760px){.hzCol{width:252px}}
+  .hzStrip.single .hzCol{width:min(100%,560px)}
+  .hzCol.now{border-top-color:var(--brass)}
+  .hzCol.past{background:#15221b}
+  .hzHead{display:flex;align-items:flex-start;gap:8px;padding:10px 11px 6px}
+  .hzHT{flex:1;min-width:0}
+  .hzHead .k,.hzRailHead .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);min-height:15px}
+  .hzCol.now .hzHead .k{color:var(--brass)}
+  .hzHead .t,.hzRailHead .t{font-family:var(--disp);font-size:16px;font-weight:600;letter-spacing:.02em;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hzHead .s,.hzRailHead .s{font-family:var(--mono);font-size:11px;color:var(--mute)}
+  .hzHead .n,.hzRailHead .n{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--faint);padding-top:16px}
+  .hzBody{flex:1;display:flex;flex-direction:column;padding:2px 7px 9px;min-height:110px}
+  .hzList{display:flex;flex-direction:column;gap:1px}
+  .hzItem{display:flex;align-items:flex-start;gap:9px;padding:7px 6px 7px 9px;border-radius:var(--r);position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .hzItem::before{content:"";position:absolute;left:1px;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--a,transparent)}
+  .hzItem:hover{background:var(--raise)}
+  .hzItem .check{flex:0 0 21px}
+  .hzItem.late .check{border-color:var(--out)}
+  .hzText{flex:1;min-width:0;font-size:14px;line-height:1.4;word-break:break-word;padding-top:1px;cursor:pointer}
+  .hzText .tt{display:block}
+  .hzItem.done .hzText .tt{color:var(--faint);text-decoration:line-through}
+  .hzChips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+  .hzChips .chip{font-size:9.5px;padding:1px 5px}
+  .hzChips .up{color:var(--a,var(--mute));border-color:var(--line)}
+  .hzAddBtn{margin-top:4px;padding:8px 9px;border-radius:var(--r);font-size:13px;color:var(--faint)}
+  .hzAddBtn:hover{color:var(--brass);background:var(--raise)}
+  .hzNew{margin-top:4px;padding:8px 9px;font-size:14px}
+  .hzLate{margin:2px 0 6px;padding:7px 9px;border:1px dashed var(--out);border-radius:var(--r);font-size:12.5px;color:var(--out);text-align:left}
+  .hzLate:hover{background:rgba(217,125,97,.1)}
+  .hzEdge{flex:0 0 auto;width:46px;scroll-snap-align:start;border:1px dashed var(--line);border-radius:var(--r);color:var(--faint);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;writing-mode:vertical-rl;text-align:center;padding:12px 0}
+  .hzEdge:hover{color:var(--brass);border-color:var(--brass-deep)}
+  .hzMark{height:2px;background:var(--brass);border-radius:1px;margin:3px 4px}
+  .hzItem.lifted{opacity:.3}
+  .hzGhost{position:fixed;left:0;top:0;z-index:90;pointer-events:none;background:var(--raise);border:1px solid var(--brass);box-shadow:0 12px 30px rgba(0,0,0,.5);opacity:.96}
+  body.hzDragging{cursor:grabbing;-webkit-user-select:none;user-select:none}
+  body.hzDragging .hzStrip{scroll-snap-type:none}
+  .hzCol.over,.hzRail.over{outline:1px dashed var(--brass);outline-offset:-4px}
+  /* Rappel de l'horizon au-dessus : bandeau repliable sur téléphone, colonne fixe sur ordinateur. */
+  .hzRail{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--brass-deep);border-radius:var(--r)}
+  .hzRailHead{display:flex;align-items:flex-start;gap:8px;width:100%;padding:10px 11px 9px}
+  .hzRailHead .txt{flex:1;min-width:0}
+  .hzRailHead .k{color:var(--brass-deep)}
+  .hzRailHead .chev{flex:0 0 auto;color:var(--faint);padding-top:16px;transition:transform .2s}
+  .hzRail.open .chev{transform:rotate(180deg)}
+  .hzRail .hzBody{display:none;min-height:0;border-top:1px solid var(--line-soft);padding-top:6px}
+  .hzRail.open .hzBody{display:flex}
+  .hzRail .bar{margin:0 11px 9px}
+  @media(min-width:760px){
+    #hzRailBox{flex:0 0 256px;position:sticky;top:58px}
+    .hzRail .hzBody{display:flex;min-height:90px}
+    .hzRail .chev{display:none}
+    .hzRailHead{cursor:default}
+  }
+  .kid{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+  .kid .t{flex:1;min-width:0;font-size:14px;word-break:break-word}
+  .kid .w{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:2px}
+  .kid.d .t{color:var(--faint);text-decoration:line-through}
+  .mvStep{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .mvStep b{flex:1;text-align:center;font-family:var(--disp);font-size:15px;font-weight:600;letter-spacing:.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tone.none{background:var(--deep);border:2px dashed var(--line)}
+  .tone.none[aria-pressed="true"]{border:2px solid var(--ink)}
+
   /* Fenêtre d'ordinateur : la console respire au lieu de rester en colonne de téléphone. */
   @media (min-width:1000px){
     .wrap{max-width:920px}
@@ -354,6 +433,7 @@
 <nav>
   <div class="wrap">
     <button data-tab="tasks" aria-selected="true">Tâches</button>
+    <button data-tab="horizons" aria-selected="false">Horizons</button>
     <button data-tab="day" aria-selected="false">Journée</button>
     <button data-tab="goals" aria-selected="false">Objectifs</button>
     <button data-tab="money" aria-selected="false">Finances</button>
@@ -389,6 +469,32 @@
     <h3 style="margin-top:26px">Bilan mensuel</h3>
     <p class="sub">Ce que tu t'es fixé, ce que tu as tenu.</p>
     <div class="chartWrap" id="chartWrap"></div>
+  </section>
+
+  <!-- ── HORIZONS ───────────────────────────────────────── -->
+  <section id="horizons" hidden>
+    <h2>Horizons</h2>
+    <p class="sub">Du jour à la vie. Chaque horizon découpe le temps en colonnes : pose un élément dans sa période, rattache-le à plus grand que lui, glisse-le ailleurs quand les plans bougent.</p>
+    <div class="hzTop">
+      <div class="seg hzSeg" role="group" aria-label="Horizon">
+        <button data-hz="day" aria-pressed="true">Jours</button>
+        <button data-hz="week" aria-pressed="false">Semaines</button>
+        <button data-hz="month" aria-pressed="false">Mois</button>
+        <button data-hz="year" aria-pressed="false">Années</button>
+        <button data-hz="decade" aria-pressed="false">Décennies</button>
+        <button data-hz="life" aria-pressed="false">Vie</button>
+      </div>
+      <div class="hzNav">
+        <button class="step" data-act="prev" aria-label="Colonne précédente">‹</button>
+        <button class="ghost" data-act="now" id="hzNow">Aujourd'hui</button>
+        <button class="step" data-act="next" aria-label="Colonne suivante">›</button>
+        <button class="ghost" data-act="help">Mode d'emploi</button>
+      </div>
+    </div>
+    <div class="hzStage">
+      <div id="hzRailBox" hidden></div>
+      <div class="hzStrip" id="hzStrip"></div>
+    </div>
   </section>
 
   <!-- ── JOURNÉE ────────────────────────────────────────── -->
@@ -2040,6 +2146,817 @@
     if(id && id!=="all" && id!=="pin" && id!=="conf" && id!=="none") openFolder(id);
   });
 
+  /* ═══ Horizons : du jour à la vie ══════════════════════ */
+  /* Le temps découpé en colonnes, horizon par horizon : jours, semaines (ISO,
+     du lundi au dimanche), mois, années, décennies, et une seule colonne pour
+     la vie. Un élément appartient à une période ; il peut être rattaché à un
+     élément d'un horizon plus large, jamais d'un horizon égal ou plus petit —
+     c'est ce qui interdit les boucles.
+     Les éléments du jour SONT les tâches de la console : cochés ici, ils
+     comptent dans la série et le bilan mensuel. Les autres vivent dans
+     state.horizons. Changer d'horizon convertit l'un en l'autre en gardant
+     l'identifiant, donc les rattachements suivent. */
+  var HZ = [
+    {id:"day",    one:"Jour",     now:"Aujourd'hui",    win:[-3,27], step:14},
+    {id:"week",   one:"Semaine",  now:"Cette semaine",  win:[-2,15], step:8},
+    {id:"month",  one:"Mois",     now:"Ce mois-ci",     win:[-2,17], step:6},
+    {id:"year",   one:"Année",    now:"Cette année",    win:[-1,9],  step:5},
+    {id:"decade", one:"Décennie", now:"Cette décennie", win:[-1,5],  step:3},
+    {id:"life",   one:"Vie",      now:"",               win:[0,0],   step:0}
+  ];
+  var hzWin = {}, hzAdding = null, hzRailKey = null, hzRailOpen = false;
+  var hzScrolled = false, hzJustDragged = 0, hzDrag = null, hzRaf = 0;
+
+  function hzIdx(h){ for(var i=0;i<HZ.length;i++) if(HZ[i].id===h) return i; return -1; }
+  function hzDef(h){ return HZ[hzIdx(h)] || HZ[0]; }
+  function hzCur(){ var h = state.settings.hz; return hzIdx(h)>=0 ? h : "day"; }
+  function trunc(s,n){ s = String(s||""); return s.length>n ? s.slice(0,n-1)+"…" : s; }
+  function cap1(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+  /* ── Calendrier ── */
+  function addDays(s,n){ var d = dNum(s); d.setDate(d.getDate()+n); return iso(d); }
+  function isoWeekKey(s){
+    var t = dNum(s);
+    t.setDate(t.getDate() - ((t.getDay()+6)%7) + 3);          /* jeudi de la semaine */
+    var y = t.getFullYear(), w1 = new Date(y,0,4,12);
+    w1.setDate(w1.getDate() - ((w1.getDay()+6)%7) + 3);       /* jeudi de la semaine 1 */
+    return y+"-W"+String(1+Math.round((t-w1)/604800000)).padStart(2,"0");
+  }
+  function weekMonday(k){
+    var m = new Date(parseInt(k.slice(0,4),10),0,4,12);
+    m.setDate(m.getDate() - ((m.getDay()+6)%7) + (parseInt(k.slice(6),10)-1)*7);
+    return iso(m);
+  }
+  function periodOf(h, s){
+    if(h==="day") return s;
+    if(h==="week") return isoWeekKey(s);
+    if(h==="month") return s.slice(0,7);
+    if(h==="year") return s.slice(0,4);
+    if(h==="decade") return String(Math.floor(parseInt(s.slice(0,4),10)/10)*10);
+    return "vie";
+  }
+  /* Premier et dernier jour de la période. */
+  function periodSpan(h, k){
+    if(h==="day") return [k,k];
+    if(h==="week"){ var m = weekMonday(k); return [m, addDays(m,6)]; }
+    if(h==="month") return [k+"-01", iso(new Date(+k.slice(0,4), +k.slice(5,7), 0, 12))];
+    if(h==="year") return [k+"-01-01", k+"-12-31"];
+    if(h==="decade") return [k+"-01-01", (+k+9)+"-12-31"];
+    return ["0000-01-01","9999-12-31"];
+  }
+  function shiftPeriod(h, k, n){
+    if(!n || h==="life") return k;
+    if(h==="day") return addDays(k,n);
+    if(h==="week") return isoWeekKey(addDays(weekMonday(k), 7*n));
+    if(h==="month") return iso(new Date(+k.slice(0,4), +k.slice(5,7)-1+n, 1, 12)).slice(0,7);
+    if(h==="year") return String(+k+n);
+    return String(+k+10*n);
+  }
+  /* Nombre de périodes entre la période en cours et k. */
+  function periodDelta(h, k){
+    var now = periodOf(h, TODAY);
+    if(h==="day") return daysTo(k);
+    if(h==="week") return Math.round((dNum(weekMonday(k)) - dNum(weekMonday(now)))/604800000);
+    if(h==="month") return (+k.slice(0,4) - +now.slice(0,4))*12 + (+k.slice(5,7) - +now.slice(5,7));
+    if(h==="year") return +k - +now;
+    if(h==="decade") return (+k - +now)/10;
+    return 0;
+  }
+  function validKey(h, k){
+    var re = {day:/^\d{4}-\d{2}-\d{2}$/, week:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/, month:/^\d{4}-(0[1-9]|1[0-2])$/,
+              year:/^\d{4}$/, decade:/^\d{3}0$/, life:/^vie$/}[h];
+    return !!re && re.test(String(k||""));
+  }
+  /* La période de l'horizon h qui sert de point d'appui : aujourd'hui si la
+     période de référence le contient, sinon son premier jour. */
+  function anchorDay(h, k){
+    var s = periodSpan(h, k);
+    return (TODAY>=s[0] && TODAY<=s[1]) ? TODAY : s[0];
+  }
+  function fmtD(s, o){ return dNum(s).toLocaleDateString("fr-FR", o); }
+  function periodLabel(h, k){
+    var n = periodDelta(h, k), yNow = TODAY.slice(0,4), L = {tag:"", title:"", sub:""};
+    if(h==="day"){
+      L.tag = n===0 ? "Aujourd'hui" : n===1 ? "Demain" : n===-1 ? "Hier" : "";
+      L.title = cap1(fmtD(k,{weekday:"long", day:"numeric", month:"short"}));
+      if(k.slice(0,4)!==yNow) L.sub = k.slice(0,4);
+    } else if(h==="week"){
+      L.tag = n===0 ? "Cette semaine" : n===1 ? "Semaine prochaine" : n===-1 ? "Semaine dernière" : "";
+      L.title = "Semaine "+parseInt(k.slice(6),10);
+      var s = periodSpan(h,k), a = dNum(s[0]), b = dNum(s[1]);
+      L.sub = (a.getMonth()===b.getMonth() ? a.getDate() : fmtD(s[0],{day:"numeric", month:"short"}))
+        + " – " + fmtD(s[1],{day:"numeric", month:"short"}) + (k.slice(0,4)!==yNow ? " "+k.slice(0,4) : "");
+    } else if(h==="month"){
+      L.tag = n===0 ? "Ce mois-ci" : n===1 ? "Le mois prochain" : n===-1 ? "Le mois dernier" : "";
+      L.title = cap1(fmtD(k+"-01",{month:"long", year:"numeric"}));
+    } else if(h==="year"){
+      L.tag = n===0 ? "Cette année" : n===1 ? "L'an prochain" : n===-1 ? "L'an dernier" : "";
+      L.title = k;
+    } else if(h==="decade"){
+      L.tag = n===0 ? "Cette décennie" : n===1 ? "La suivante" : n===-1 ? "La précédente" : "";
+      L.title = "Années "+k;
+      L.sub = k+" – "+(+k+9);
+    } else {
+      L.tag = "Sans échéance"; L.title = "Vie"; L.sub = "Ce qui compte, au-delà des dates";
+    }
+    return L;
+  }
+  function hzWhere(h, k){ var L = periodLabel(h,k); return h==="day" ? (L.tag || L.title) : L.title; }
+
+  /* ── Éléments ── */
+  function hzOrd(it, i){ return typeof it.order==="number" ? it.order : i; }
+  /* Index de travail : éléments par colonne (triés), enfants par parent, tout par identifiant. */
+  function hzBuild(){
+    var cols = {}, kids = {}, byId = {};
+    function put(ck, it, i){ (cols[ck] = cols[ck] || []).push({it:it, o:hzOrd(it,i)}); }
+    state.tasks.forEach(function(t,i){
+      var k = t.date || TODAY;
+      byId[t.id] = {it:t, h:"day", k:k, task:true}; put("day|"+k, t, i);
+    });
+    state.horizons.forEach(function(x,i){
+      byId[x.id] = {it:x, h:x.h, k:x.key, task:false}; put(x.h+"|"+x.key, x, i);
+    });
+    Object.keys(cols).forEach(function(ck){
+      cols[ck] = cols[ck].sort(function(a,b){ return a.o-b.o; }).map(function(e){ return e.it; });
+    });
+    Object.keys(byId).forEach(function(id){
+      var p = byId[id].it.parent;
+      if(p && byId[p]) (kids[p] = kids[p] || []).push(byId[id].it);
+    });
+    return {cols:cols, kids:kids, byId:byId};
+  }
+  function hzFind(id){
+    var i;
+    for(i=0;i<state.tasks.length;i++) if(state.tasks[i].id===id) return {it:state.tasks[i], h:"day", k:state.tasks[i].date||TODAY, task:true};
+    for(i=0;i<state.horizons.length;i++) if(state.horizons[i].id===id) return {it:state.horizons[i], h:state.horizons[i].h, k:state.horizons[i].key, task:false};
+    return null;
+  }
+  /* Couleur propre, sinon celle du premier ancêtre qui en a une. */
+  function hzTone(it, ix){
+    for(var n=0; it && n<HZ.length; n++){
+      if(it.tone) return toneOf(it.tone);
+      var p = it.parent && ix.byId[it.parent];
+      it = p ? p.it : null;
+    }
+    return "";
+  }
+  function hzRenumber(h, k, it, beforeId){
+    var list = (hzBuild().cols[h+"|"+k] || []).filter(function(x){ return x!==it; });
+    var at = list.length;
+    if(beforeId) for(var i=0;i<list.length;i++) if(list[i].id===beforeId){ at = i; break; }
+    list.splice(at, 0, it);
+    list.forEach(function(x,i){ x.order = i; });
+  }
+  function hzAdd(h, k, title, parent){
+    var it = {id:uid(), title:title, done:false, doneAt:null, createdAt:TODAY, note:"", tone:"", parent:parent||""};
+    if(h==="day"){ it.date = k; it.prio = false; state.tasks.push(it); }
+    else { it.h = h; it.key = k; state.horizons.push(it); }
+    hzRenumber(h, k, it, null);
+    return it;
+  }
+  function hzCopy(it){
+    var c = {};
+    for(var p in it) if(Object.prototype.hasOwnProperty.call(it,p)) c[p] = it[p];
+    return c;
+  }
+  function hzMove(id, h, k, beforeId){
+    var f = hzFind(id); if(!f) return null;
+    var it = f.it;
+    if(f.task && h!=="day"){
+      state.tasks.splice(state.tasks.indexOf(it),1);
+      it = hzCopy(it); delete it.date; it.h = h; it.key = k;
+      state.horizons.push(it);
+    } else if(!f.task && h==="day"){
+      state.horizons.splice(state.horizons.indexOf(it),1);
+      it = hzCopy(it); delete it.h; delete it.key; it.date = k; it.prio = !!it.prio;
+      state.tasks.push(it);
+    } else if(f.task) it.date = k;
+    else { it.h = h; it.key = k; }
+    /* Un parent doit rester strictement plus large ; sinon le lien saute. */
+    var ix = hzBuild(), me = hzIdx(h);
+    var p = it.parent && ix.byId[it.parent];
+    if(p && hzIdx(p.h) <= me) it.parent = "";
+    (ix.kids[it.id] || []).forEach(function(c){ if(hzIdx(ix.byId[c.id].h) >= me) c.parent = ""; });
+    hzRenumber(h, k, it, beforeId);
+    return it;
+  }
+  function hzRemove(id){
+    var f = hzFind(id); if(!f) return;
+    var arr = f.task ? state.tasks : state.horizons;
+    arr.splice(arr.indexOf(f.it),1);
+  }
+  function hzLate(h, ix){
+    var now = periodOf(h, TODAY), out = [];
+    Object.keys(ix.cols).sort().forEach(function(ck){
+      var p = ck.split("|");
+      if(p[0]!==h || p[1] >= now) return;
+      ix.cols[ck].forEach(function(x){ if(!x.done) out.push(x); });
+    });
+    return out;
+  }
+  /* Annuler ne restaure que ce qui a bougé : ce qui a été coché ou saisi
+     entre-temps, pendant que le toast était affiché, reste intact. */
+  function hzMark(id){
+    var ix = hzBuild(), e = ix.byId[id]; if(!e) return null;
+    var col = ix.cols[e.h+"|"+e.k] || [], i = col.indexOf(e.it), kids = {};
+    (ix.kids[id] || []).forEach(function(c){ kids[c.id] = c.parent; });
+    return {id:id, h:e.h, k:e.k, before: col[i+1] ? col[i+1].id : null, parent: e.it.parent || "", kids: kids};
+  }
+  function hzUnmove(marks){
+    /* À rebours, pour que chaque « avant qui » désigne un voisin déjà revenu. */
+    marks.slice().reverse().forEach(function(m){
+      var it = m && hzMove(m.id, m.h, m.k, m.before);
+      if(!it) return;
+      it.parent = m.parent;
+      Object.keys(m.kids).forEach(function(cid){ var c = hzFind(cid); if(c) c.it.parent = m.kids[cid]; });
+    });
+    save(); renderTasks(); gauges(); renderHz(false);
+  }
+  /* Après une écriture : la console et la bande se remettent d'accord. */
+  function hzSaved(touchedTasks){
+    save();
+    if(touchedTasks){ renderTasks(); gauges(); }
+  }
+
+  /* ── Rendu ── */
+  function hzItemHTML(it, ix, h, k){
+    var tone = hzTone(it, ix), kids = ix.kids[it.id] || [], chips = "";
+    var late = !it.done && periodSpan(h,k)[1] < TODAY;
+    if(it.prio) chips += '<span class="chip acc">Prioritaire</span>';
+    if(kids.length){
+      var d = kids.filter(function(x){ return x.done; }).length;
+      chips += '<span class="chip'+(d===kids.length?' ok':'')+'">'+d+'/'+kids.length+'</span>';
+    }
+    var p = it.parent && ix.byId[it.parent];
+    if(p) chips += '<span class="chip up">↳ '+esc(trunc(p.it.title||"Sans titre", 28))+'</span>';
+    if(it.note && String(it.note).trim()) chips += '<span class="chip" title="Contient une note">✎</span>';
+    return '<div class="hzItem'+(it.done?' done':'')+(late?' late':'')+'" data-id="'+esc(it.id)+'"'+(tone?' style="--a:'+tone+'"':'')+'>'
+      + '<button class="check" role="checkbox" aria-checked="'+(it.done?"true":"false")+'" aria-label="Marquer comme fait"></button>'
+      + '<button class="hzText" data-act="open"><span class="tt">'+esc(it.title||"Sans titre")+'</span>'
+      +   (chips ? '<span class="hzChips">'+chips+'</span>' : '')+'</button>'
+      + '</div>';
+  }
+  function hzCountText(items){
+    if(!items.length) return "";
+    return items.filter(function(x){ return x.done; }).length+"/"+items.length;
+  }
+  function hzAddHTML(){ return '<button class="hzAddBtn" data-act="add">+ Ajouter</button>'; }
+  function hzColHTML(h, k, ix){
+    var L = periodLabel(h,k), ck = h+"|"+k, items = ix.cols[ck] || [], n = periodDelta(h,k);
+    var lateN = n===0 ? hzLate(h, ix).length : 0;
+    return '<div class="hzCol'+(n===0?' now':n<0?' past':'')+'" data-col="'+ck+'">'
+      + '<div class="hzHead"><div class="hzHT"><div class="k">'+esc(L.tag||" ")+'</div>'
+      +   '<div class="t">'+esc(L.title)+'</div>'+(L.sub?'<div class="s">'+esc(L.sub)+'</div>':'')+'</div>'
+      +   '<span class="n num">'+hzCountText(items)+'</span></div>'
+      + '<div class="hzBody">'
+      +   (lateN ? '<button class="hzLate" data-act="pull">'+lateN+' en retard · ramener ici</button>' : '')
+      +   '<div class="hzList">'+items.map(function(it){ return hzItemHTML(it, ix, h, k); }).join("")+'</div>'
+      +   hzAddHTML()
+      + '</div></div>';
+  }
+  function hzRailHTML(h, k, ix){
+    var L = periodLabel(h,k), ck = h+"|"+k, items = ix.cols[ck] || [];
+    var d = items.filter(function(x){ return x.done; }).length;
+    return '<aside class="hzRail'+(hzRailOpen?' open':'')+'" data-col="'+ck+'" data-rail="1" aria-label="Horizon au-dessus">'
+      + '<button class="hzRailHead" data-act="rail" aria-expanded="'+(hzRailOpen?"true":"false")+'">'
+      +   '<span class="txt"><span class="k" style="display:block">Au-dessus · '+esc(h==="life" ? "Vie" : (L.tag || hzDef(h).one))+'</span>'
+      +   '<span class="t" style="display:block">'+esc(L.title)+'</span>'
+      +   (L.sub ? '<span class="s" style="display:block">'+esc(L.sub)+'</span>' : '')+'</span>'
+      +   '<span class="n num">'+hzCountText(items)+'</span><span class="chev" aria-hidden="true">▾</span>'
+      + '</button>'
+      + (items.length ? '<div class="bar"><i style="width:'+Math.round(d/items.length*100)+'%"></i></div>' : '')
+      + '<div class="hzBody"><div class="hzList">'+items.map(function(it){ return hzItemHTML(it, ix, h, k); }).join("")+'</div>'
+      +   hzAddHTML()+'</div>'
+      + '</aside>';
+  }
+  function hzStripEl(){ return $("hzStrip"); }
+  function hzAnchorKey(){
+    var strip = hzStripEl(), r = strip.getBoundingClientRect(), cols = strip.querySelectorAll(".hzCol");
+    for(var i=0;i<cols.length;i++){
+      var c = cols[i].getBoundingClientRect();
+      if(c.left + c.width/2 >= r.left) return cols[i].dataset.col.split("|")[1];
+    }
+    return periodOf(hzCur(), TODAY);
+  }
+  /* L'horizon au-dessus suit la colonne visible à gauche de la bande. */
+  function hzRenderRail(ix, force){
+    var h = hzCur(), pi = hzIdx(h)+1, box = $("hzRailBox");
+    if(pi>=HZ.length){ box.innerHTML = ""; box.hidden = true; hzRailKey = null; return; }
+    var P = HZ[pi].id;
+    var a = $("horizons").hidden ? periodOf(h, TODAY) : hzAnchorKey();
+    var pk = periodOf(P, anchorDay(h, a));
+    if(!force && pk===hzRailKey) return;
+    var draft = box.querySelector(".hzNew");
+    if(draft){ hzCommitInput(draft, false); ix = null; }
+    hzRailKey = pk;
+    box.hidden = false;
+    box.innerHTML = hzRailHTML(P, pk, ix || hzBuild());
+  }
+  function hzScrollTo(k, smooth){
+    var strip = hzStripEl(), el = strip.querySelector('.hzCol[data-col="'+hzCur()+'|'+k+'"]');
+    if(!el) return;
+    var left = strip.scrollLeft + el.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+    try{ strip.scrollTo({left:left, behavior: smooth ? "smooth" : "auto"}); }catch(e){ strip.scrollLeft = left; }
+  }
+  function renderHz(scrollNow){
+    var h = hzCur(), d = hzDef(h), strip = hzStripEl();
+    if(!hzWin[h]) hzWin[h] = d.win.slice();
+    document.querySelectorAll("[data-hz]").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.hz===h ? "true" : "false"); });
+    $("hzNow").textContent = d.now || "Vie";
+    $("hzNow").hidden = h==="life";
+    document.querySelectorAll('#horizons [data-act="prev"], #horizons [data-act="next"]').forEach(function(b){ b.hidden = h==="life"; });
+
+    /* Un brouillon en cours de frappe n'est jamais perdu par un nouveau rendu. */
+    var open = $("horizons").querySelector(".hzNew");
+    if(open) hzCommitInput(open, true);
+
+    var keep = strip.scrollLeft, ix = hzBuild(), now = periodOf(h, TODAY), html = "";
+    if(h!=="life") html += '<button class="hzEdge" data-act="earlier">‹ Plus tôt</button>';
+    for(var i=hzWin[h][0]; i<=hzWin[h][1]; i++) html += hzColHTML(h, shiftPeriod(h, now, i), ix);
+    if(h!=="life") html += '<button class="hzEdge" data-act="later">Plus tard ›</button>';
+    strip.innerHTML = html;
+    strip.classList.toggle("single", h==="life");
+
+    var visible = !$("horizons").hidden;
+    if(visible && (scrollNow || !hzScrolled)){ hzScrollTo(now, false); hzScrolled = true; }
+    else strip.scrollLeft = keep;
+    hzRenderRail(ix, true);
+    hzReopen();
+  }
+  /* La saisie ouverte avant un rendu se rouvre au même endroit. */
+  function hzReopen(){
+    if(!hzAdding || $("horizons").querySelector(".hzNew")) return;
+    var col = $("horizons").querySelector('[data-col="'+hzAdding+'"]');
+    var btn = col && col.querySelector(".hzAddBtn");
+    if(btn) hzOpenAdd(btn); else hzAdding = null;
+  }
+  /* Rafraîchit une colonne sans toucher aux autres : un clic en cours ailleurs n'est pas perdu. */
+  function hzRefreshCol(ck, ix){
+    var el = hzStripEl().querySelector('.hzCol[data-col="'+ck+'"]');
+    if(!el) return;
+    var p = ck.split("|"), w = document.createElement("div");
+    w.innerHTML = hzColHTML(p[0], p[1], ix);
+    el.replaceWith(w.firstChild);
+  }
+  function hzRefresh(cks){
+    var open = $("horizons").querySelector(".hzNew");
+    if(open) hzCommitInput(open, true);
+    var ix = hzBuild(), h = hzCur(), seen = {};
+    cks.concat([h+"|"+periodOf(h, TODAY)]).forEach(function(ck){
+      if(seen[ck]) return; seen[ck] = 1;
+      hzRefreshCol(ck, ix);
+    });
+    hzRenderRail(ix, true);
+    hzReopen();
+  }
+
+  /* ── Saisie rapide en bas de colonne ── */
+  function hzOpenAdd(btn){
+    var other = $("horizons").querySelector(".hzNew");
+    if(other) hzCommitInput(other, false);
+    var col = btn.closest("[data-col]");
+    if(!col || !btn.isConnected) return;
+    hzAdding = col.dataset.col;
+    var w = document.createElement("div");
+    w.innerHTML = '<input class="hzNew" placeholder="Nouvel élément — Entrée pour valider" maxlength="140" enterkeyhint="done" aria-label="Nouvel élément">';
+    var inp = w.firstChild;
+    btn.replaceWith(inp);
+    try{ inp.focus({preventScroll:true}); }catch(e){ inp.focus(); }
+  }
+  function hzCommitInput(inp, keep){
+    var col = inp.closest("[data-col]");
+    var v = inp.value.trim();
+    inp.value = "";
+    if(col && v){
+      var p = col.dataset.col.split("|");
+      var it = hzAdd(p[0], p[1], v);
+      hzSaved(p[0]==="day");
+      if(p[0]==="day") bump("gA");
+      var ix = hzBuild();
+      col.querySelector(".hzList").insertAdjacentHTML("beforeend", hzItemHTML(it, ix, p[0], p[1]));
+      var n = col.querySelector(".n");
+      if(n) n.textContent = hzCountText(ix.cols[col.dataset.col] || []);
+    }
+    if(!keep){
+      hzAdding = null;
+      var w = document.createElement("div");
+      w.innerHTML = hzAddHTML();
+      if(inp.isConnected) inp.replaceWith(w.firstChild);
+    }
+  }
+  function hzCommitOpen(scope){
+    var inp = (scope || $("horizons")).querySelector(".hzNew");
+    if(inp) hzCommitInput(inp, false);
+  }
+
+  /* ── Actions ── */
+  function hzSetHorizon(h){
+    if(hzIdx(h)<0) return;
+    hzCommitOpen();
+    state.settings.hz = h; save();
+    hzRailKey = null;
+    renderHz(true);
+  }
+  function hzStepCols(dir){
+    var strip = hzStripEl(), c = strip.querySelector(".hzCol");
+    if(!c) return;
+    try{ strip.scrollBy({left: dir*(c.getBoundingClientRect().width+10), behavior:"smooth"}); }
+    catch(e){ strip.scrollLeft += dir*(c.offsetWidth+10); }
+  }
+  function hzExtend(dir){
+    var h = hzCur(), d = hzDef(h), strip = hzStripEl();
+    hzCommitOpen();
+    if(dir<0){
+      var first = strip.querySelector(".hzCol"), ck = first && first.dataset.col;
+      var before = first ? first.getBoundingClientRect().left : 0;
+      hzWin[h][0] -= d.step;
+      renderHz(false);
+      var again = ck && strip.querySelector('.hzCol[data-col="'+ck+'"]');
+      if(again){
+        strip.scrollLeft += again.getBoundingClientRect().left - before;
+        /* Puis on recule pour montrer ce qui vient d'apparaître. */
+        var w = again.getBoundingClientRect().width + 10;
+        try{ strip.scrollBy({left: -Math.max(w, strip.clientWidth - w), behavior:"smooth"}); }
+        catch(e){ strip.scrollLeft -= Math.max(w, strip.clientWidth - w); }
+      }
+    } else {
+      hzWin[h][1] += d.step;
+      renderHz(false);
+    }
+  }
+  function hzToggle(id){
+    var f = hzFind(id); if(!f) return;
+    f.it.done = !f.it.done;
+    f.it.doneAt = f.it.done ? TODAY : null;
+    hzSaved(f.task);
+    if(f.task && f.it.done) bump("gD");
+    hzRefresh([f.h+"|"+f.k]);
+  }
+  function hzPull(){
+    var h = hzCur(), now = periodOf(h, TODAY), late = hzLate(h, hzBuild());
+    if(!late.length) return;
+    var marks = late.map(function(x){ return hzMark(x.id); });
+    late.forEach(function(x){ hzMove(x.id, h, now, null); });
+    hzSaved(h==="day");
+    renderHz(false);
+    toast(late.length+" élément"+(late.length>1?"s":"")+" ramené"+(late.length>1?"s":"")+" → "+hzWhere(h, now),
+      function(){ hzUnmove(marks); });
+  }
+
+  $("horizons").addEventListener("click", function(e){
+    var b = e.target.closest("button"); if(!b) return;
+    if(b.dataset.hz) return hzSetHorizon(b.dataset.hz);
+    var item = b.closest(".hzItem");
+    if(item && b.classList.contains("check")) return hzToggle(item.dataset.id);
+    var act = b.dataset.act;
+    if(act==="open" && item){
+      if(Date.now() - hzJustDragged < 250) return;
+      return openHzItem(item.dataset.id);
+    }
+    if(act==="add") return hzOpenAdd(b);
+    if(act==="pull") return hzPull();
+    if(act==="now") return hzScrollTo(periodOf(hzCur(), TODAY), true);
+    if(act==="prev" || act==="next") return hzStepCols(act==="prev" ? -1 : 1);
+    if(act==="earlier" || act==="later") return hzExtend(act==="earlier" ? -1 : 1);
+    if(act==="rail"){
+      hzRailOpen = !hzRailOpen;
+      var r = b.closest(".hzRail");
+      r.classList.toggle("open", hzRailOpen);
+      b.setAttribute("aria-expanded", hzRailOpen ? "true" : "false");
+      return;
+    }
+    if(act==="help") return hzHelp();
+  });
+  $("horizons").addEventListener("keydown", function(e){
+    var inp = e.target;
+    if(!inp.classList || !inp.classList.contains("hzNew")) return;
+    if(e.key==="Enter"){ e.preventDefault(); hzCommitInput(inp, true); }
+    if(e.key==="Escape"){ e.preventDefault(); inp.value = ""; hzCommitInput(inp, false); }
+  });
+  $("horizons").addEventListener("focusout", function(e){
+    var inp = e.target;
+    if(!inp.classList || !inp.classList.contains("hzNew")) return;
+    setTimeout(function(){
+      if(inp.isConnected && document.activeElement!==inp) hzCommitInput(inp, false);
+    }, 0);
+  });
+  hzStripEl().addEventListener("scroll", function(){
+    if(hzRaf) return;
+    hzRaf = requestAnimationFrame(function(){ hzRaf = 0; hzRenderRail(null, false); });
+  }, {passive:true});
+
+  /* Raccourcis clavier, quand on n'écrit nulle part : ← → colonne par colonne,
+     T pour revenir à maintenant, 1 à 6 pour changer d'horizon. */
+  document.addEventListener("keydown", function(e){
+    if($("horizons").hidden || sheetOpen || e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target, tag = t && t.tagName;
+    if(tag==="INPUT" || tag==="TEXTAREA" || tag==="SELECT" || (t && t.isContentEditable)) return;
+    if(e.key==="ArrowLeft" || e.key==="ArrowRight"){ e.preventDefault(); hzStepCols(e.key==="ArrowLeft" ? -1 : 1); }
+    else if(e.key==="t" || e.key==="T") hzScrollTo(periodOf(hzCur(), TODAY), true);
+    else if(/^[1-6]$/.test(e.key)) hzSetHorizon(HZ[+e.key-1].id);
+  });
+
+  /* ── Glisser-déposer ── */
+  /* Souris : on glisse dès que le pointeur bouge. Doigt : appui long, pour que
+     le défilement de la bande et de la page reste libre. */
+  function hzDragStart(d){
+    d.active = true;
+    hzCommitOpen();
+    var r = d.el.getBoundingClientRect();
+    d.dx = d.sx - r.left; d.dy = d.sy - r.top;
+    var g = d.el.cloneNode(true);
+    g.classList.add("hzGhost");
+    g.style.width = r.width+"px";
+    document.body.appendChild(g);
+    d.ghost = g;
+    d.el.classList.add("lifted");
+    d.mark = document.createElement("div");
+    d.mark.className = "hzMark";
+    document.body.classList.add("hzDragging");
+    try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
+    hzDragMove(d.x, d.y);
+    d.raf = requestAnimationFrame(hzAutoScroll);
+  }
+  function hzDragMove(x, y){
+    var d = hzDrag; if(!d || !d.active) return;
+    d.x = x; d.y = y;
+    d.ghost.style.transform = "translate("+(x-d.dx)+"px,"+(y-d.dy)+"px) rotate(1.5deg)";
+    var el = document.elementFromPoint(x, y);
+    var zone = el && el.closest("#horizons [data-col]");
+    if(d.zone && d.zone!==zone) d.zone.classList.remove("over");
+    d.zone = zone || null;
+    if(!zone){ if(d.mark.parentNode) d.mark.remove(); return; }
+    zone.classList.add("over");
+    var list = zone.querySelector(".hzList"), ref = null;
+    var items = list.querySelectorAll(".hzItem:not(.lifted)");
+    for(var i=0;i<items.length;i++){
+      var r = items[i].getBoundingClientRect();
+      if(r.top + r.height/2 > y){ ref = items[i]; break; }
+    }
+    if(ref){ if(d.mark.nextSibling!==ref) list.insertBefore(d.mark, ref); }
+    else if(d.mark.parentNode!==list || d.mark.nextSibling) list.appendChild(d.mark);
+  }
+  function hzAutoScroll(){
+    var d = hzDrag; if(!d || !d.active) return;
+    var strip = hzStripEl(), r = strip.getBoundingClientRect(), v = 0, w = 0, edge = 56;
+    if(d.y > r.top && d.y < r.bottom){
+      if(d.x < r.left+edge) v = -Math.ceil((r.left+edge-d.x)/4);
+      else if(d.x > r.right-edge) v = Math.ceil((d.x-(r.right-edge))/4);
+    }
+    if(d.y < 70) w = -Math.ceil((70-d.y)/5);
+    else if(d.y > window.innerHeight-70) w = Math.ceil((d.y-(window.innerHeight-70))/5);
+    if(v) strip.scrollLeft += v;
+    if(w) window.scrollBy(0, w);
+    if(v || w) hzDragMove(d.x, d.y);
+    d.raf = requestAnimationFrame(hzAutoScroll);
+  }
+  function hzDragEnd(cancel){
+    var d = hzDrag; hzDrag = null;
+    if(!d) return;
+    clearTimeout(d.timer);
+    if(!d.active) return;
+    cancelAnimationFrame(d.raf);
+    hzJustDragged = Date.now();
+    document.body.classList.remove("hzDragging");
+    d.ghost.remove();
+    d.el.classList.remove("lifted");
+    var zone = d.zone, before = null;
+    if(zone) zone.classList.remove("over");
+    if(!cancel && zone && d.mark.parentNode){
+      var n = d.mark.nextElementSibling;
+      while(n && n.classList.contains("lifted")) n = n.nextElementSibling;
+      before = n && n.dataset.id || null;
+    }
+    if(d.mark.parentNode) d.mark.remove();
+    if(cancel || !zone) return;
+    var f = hzFind(d.id); if(!f) return;
+    var p = zone.dataset.col.split("|"), from = f.h+"|"+f.k, mark = hzMark(d.id);
+    hzMove(d.id, p[0], p[1], before);
+    hzSaved(f.task || p[0]==="day");
+    renderHz(false);
+    if(from!==zone.dataset.col) toast("Déplacé vers "+hzWhere(p[0], p[1]), function(){ hzUnmove([mark]); });
+  }
+  $("horizons").addEventListener("mousedown", function(e){
+    if(e.button!==0) return;
+    var it = e.target.closest(".hzItem");
+    if(!it || e.target.closest(".check")) return;
+    e.preventDefault();
+    hzDrag = {id:it.dataset.id, el:it, sx:e.clientX, sy:e.clientY, x:e.clientX, y:e.clientY, mouse:true};
+  });
+  document.addEventListener("mousemove", function(e){
+    var d = hzDrag; if(!d || !d.mouse) return;
+    if(!d.active){
+      if(Math.abs(e.clientX-d.sx) + Math.abs(e.clientY-d.sy) < 6) return;
+      d.x = e.clientX; d.y = e.clientY;
+      return hzDragStart(d);
+    }
+    hzDragMove(e.clientX, e.clientY);
+  });
+  document.addEventListener("mouseup", function(){ if(hzDrag && hzDrag.mouse) hzDragEnd(false); });
+  $("horizons").addEventListener("touchstart", function(e){
+    if(e.touches.length!==1){ if(hzDrag) hzDragEnd(true); return; }
+    var it = e.target.closest(".hzItem");
+    if(!it || e.target.closest(".check")) return;
+    var t = e.touches[0];
+    var d = hzDrag = {id:it.dataset.id, el:it, sx:t.clientX, sy:t.clientY, x:t.clientX, y:t.clientY, touch:true};
+    d.timer = setTimeout(function(){ if(hzDrag===d) hzDragStart(d); }, 380);
+  }, {passive:true});
+  document.addEventListener("touchmove", function(e){
+    var d = hzDrag; if(!d || !d.touch) return;
+    var t = e.touches[0];
+    if(!d.active){
+      if(Math.abs(t.clientX-d.sx) + Math.abs(t.clientY-d.sy) > 10){ clearTimeout(d.timer); hzDrag = null; }
+      return;
+    }
+    e.preventDefault();
+    hzDragMove(t.clientX, t.clientY);
+  }, {passive:false});
+  document.addEventListener("touchend", function(e){
+    var d = hzDrag; if(!d || !d.touch) return;
+    if(d.active){ e.preventDefault(); hzDragEnd(false); }
+    else { clearTimeout(d.timer); hzDrag = null; }
+  });
+  document.addEventListener("touchcancel", function(){ if(hzDrag && hzDrag.touch) hzDragEnd(true); });
+  /* L'appui long ne doit pas ouvrir le menu du navigateur ; le clic droit à la souris, si. */
+  $("horizons").addEventListener("contextmenu", function(e){ if(hzDrag && hzDrag.touch) e.preventDefault(); });
+
+  /* ── Feuille d'un élément ── */
+  function hzSheetTitle(h, k){ return h==="life" ? "Vie" : hzDef(h).one+" · "+hzWhere(h, k); }
+  function hzParentOptions(it, h, k, ix){
+    var span = periodSpan(h, k), html = '<option value="">Aucun</option>', found = !it.parent, any = false;
+    for(var i=hzIdx(h)+1; i<HZ.length; i++){
+      var H = HZ[i].id, keys = [periodOf(H, span[0])], k2 = periodOf(H, span[1]);
+      if(keys.indexOf(k2)<0) keys.push(k2);
+      keys.forEach(function(K){
+        var list = ix.cols[H+"|"+K] || [];
+        if(!list.length) return;
+        any = true;
+        html += '<optgroup label="'+esc(H==="life" ? "Vie" : hzDef(H).one+" · "+hzWhere(H,K))+'">';
+        list.forEach(function(x){
+          if(x.id===it.parent) found = true;
+          html += '<option value="'+esc(x.id)+'"'+(x.id===it.parent?' selected':'')+'>'+esc(trunc(x.title||"Sans titre", 60))+'</option>';
+        });
+        html += '</optgroup>';
+      });
+    }
+    var p = !found && ix.byId[it.parent];
+    if(p){
+      any = true;
+      html += '<optgroup label="Hors de cette période"><option value="'+esc(p.it.id)+'" selected>'+esc(trunc(p.it.title||"Sans titre", 60))+'</option></optgroup>';
+    }
+    return any ? html : "";
+  }
+  function hzTonePicker(sel){
+    return '<div class="tones"><button class="tone none" data-tone="" aria-pressed="'+(!sel?"true":"false")+'" aria-label="Sans couleur"></button>'
+      + TONES.map(function(t){
+        return '<button class="tone" data-tone="'+t.id+'" style="background:'+t.hex+'" aria-pressed="'+(t.id===sel?"true":"false")+'" aria-label="Couleur '+t.id+'"></button>';
+      }).join("") + '</div>';
+  }
+  function hzSheetHTML(f, ix){
+    var it = f.it, h = f.h, k = f.k, below = hzIdx(h)-1;
+    var parents = hzParentOptions(it, h, k, ix);
+    var kids = ix.kids[it.id] || [];
+    var html =
+      '<div class="fld"><label for="hzTitle">Intitulé</label><input id="hzTitle" data-f="title" value="'+esc(it.title)+'" maxlength="140"></div>'
+      + '<div class="row" style="margin:0 0 12px">'
+      +   '<button class="ghost'+(it.done?" on":"")+'" data-act="done" style="flex:1">'+(it.done?"✓ Fait":"Marquer comme fait")+'</button>'
+      +   (h==="day" ? '<button class="ghost'+(it.prio?" on":"")+'" data-act="prio" style="flex:1">'+(it.prio?"✓ Prioritaire":"Prioritaire")+'</button>' : '')
+      + '</div>'
+      + '<div class="fld"><label for="hzNote">Note</label><textarea id="hzNote" data-f="note" placeholder="Pourquoi, comment, ce qui bloque…">'+esc(it.note||"")+'</textarea></div>'
+      + '<div class="fld"><span class="lbl">Couleur</span>'+hzTonePicker(it.tone)+'</div>'
+      + '<div class="fld"><label for="hzParent">Rattaché à</label>'
+      +   (parents ? '<select id="hzParent" data-f="parent">'+parents+'</select>'
+                   : '<div class="mini">'+(h==="life" ? "La vie est l'horizon le plus large : rien au-dessus."
+                     : "Rien à quoi le rattacher : pose d'abord un élément dans un horizon plus large qui couvre cette période.")+'</div>')
+      + '</div>';
+    if(below>=0){
+      var B = HZ[below].id, bk = periodOf(B, anchorDay(h, k));
+      html += '<div class="fld"><span class="lbl">Ce qui en découle</span>'
+        + (kids.length ? kids.map(function(c){
+            var cf = ix.byId[c.id];
+            return '<div class="kid'+(c.done?" d":"")+'" data-kid="'+esc(c.id)+'">'
+              + '<button class="check" role="checkbox" aria-checked="'+(c.done?"true":"false")+'" data-act="kidtog" aria-label="Fait"></button>'
+              + '<button class="t" data-act="kidopen">'+esc(c.title||"Sans titre")+'<span class="w">'+esc(hzSheetTitle(cf.h, cf.k))+'</span></button></div>';
+          }).join("") : '<div class="mini">Rien de rattaché pour l\'instant. Découpe-le en éléments plus courts.</div>')
+        + '<div class="row" style="margin-top:8px"><input id="hzKid" placeholder="Nouvel élément · '+esc(B==="day" ? hzWhere(B, bk) : hzSheetTitle(B, bk))+'" maxlength="140">'
+        + '<button class="ghost" data-act="kidadd">Ajouter</button></div></div>';
+    }
+    html += '<div class="fld"><span class="lbl">Déplacer</span>'
+      + '<div class="seg" style="width:100%">' + HZ.map(function(x){
+          return '<button data-mh="'+x.id+'" aria-pressed="'+(x.id===h?"true":"false")+'" style="flex:1;padding:8px 2px;font-size:12px">'+esc(x.one)+'</button>';
+        }).join("") + '</div>'
+      + (h!=="life" ? '<div class="mvStep"><button class="step" data-mstep="-1" aria-label="Période précédente">‹</button>'
+          + '<b>'+esc(hzWhere(h, k))+'</b>'
+          + '<button class="step" data-mstep="1" aria-label="Période suivante">›</button>'
+          + (periodDelta(h, k)!==0 ? '<button class="ghost" data-act="mnow">'+esc(hzDef(h).now)+'</button>' : '')+'</div>' : '')
+      + '</div>'
+      + '<div class="row" style="margin-top:16px"><button class="danger" data-act="del" style="flex:1">Supprimer</button></div>';
+    return html;
+  }
+  function openHzItem(id){
+    var f0 = hzFind(id); if(!f0) return;
+    hzCommitOpen();
+    var lastTitle = f0.it.title || "Sans titre";
+    function paint(){
+      var f = hzFind(id); if(!f) return;
+      $("sheetTitle").textContent = hzSheetTitle(f.h, f.k);
+      $("sheetBody").innerHTML = hzSheetHTML(f, hzBuild());
+      $("sheet").style.setProperty("--a", f.it.tone ? toneOf(f.it.tone) : "var(--brass)");
+    }
+    function finish(){
+      var f = hzFind(id);
+      if(f && !String(f.it.title||"").trim()){ f.it.title = lastTitle; save(); }
+      if(f && f.task) renderTasks();
+    }
+    openSheet(hzSheetTitle(f0.h, f0.k), "", f0.it.tone ? toneOf(f0.it.tone) : null, function(){
+      finish(); renderHz(false);
+    });
+    paint();
+    var body = $("sheetBody");
+    body.oninput = function(e){
+      var fl = e.target.dataset.f;
+      if(fl!=="title" && fl!=="note") return;
+      var f = hzFind(id); if(!f) return;
+      f.it[fl] = e.target.value;
+      if(fl==="title" && e.target.value.trim()) lastTitle = e.target.value;
+      saveSoon();
+    };
+    body.onchange = function(e){
+      if(e.target.dataset.f!=="parent") return;
+      var f = hzFind(id); if(!f) return;
+      f.it.parent = e.target.value;
+      save();
+    };
+    body.onkeydown = function(e){
+      if(e.target.id==="hzKid" && e.key==="Enter"){ e.preventDefault(); var b = body.querySelector('[data-act="kidadd"]'); if(b) b.click(); }
+    };
+    body.onclick = function(e){
+      var b = e.target.closest("button"); if(!b) return;
+      var f = hzFind(id); if(!f) return;
+      var it = f.it, act = b.dataset.act;
+      if(b.dataset.tone!=null && b.classList.contains("tone")){
+        it.tone = b.dataset.tone;
+        save(); paint(); return;
+      }
+      if(act==="done"){
+        it.done = !it.done; it.doneAt = it.done ? TODAY : null;
+        hzSaved(f.task); if(f.task && it.done) bump("gD");
+        paint(); return;
+      }
+      if(act==="prio"){ it.prio = !it.prio; hzSaved(true); paint(); return; }
+      if(act==="kidtog" || act==="kidopen"){
+        var kid = b.closest("[data-kid]").dataset.kid, kf = hzFind(kid); if(!kf) return;
+        if(act==="kidopen"){ flush(); finish(); return openHzItem(kid); }
+        kf.it.done = !kf.it.done; kf.it.doneAt = kf.it.done ? TODAY : null;
+        hzSaved(kf.task); paint(); return;
+      }
+      if(act==="kidadd"){
+        var v = $("hzKid").value.trim(); if(!v){ $("hzKid").focus(); return; }
+        var B = HZ[hzIdx(f.h)-1].id;
+        hzAdd(B, periodOf(B, anchorDay(f.h, f.k)), v, it.id);
+        hzSaved(B==="day"); paint();
+        var again = $("hzKid"); if(again) again.focus();
+        return;
+      }
+      var to = null;
+      if(b.dataset.mh) to = {h:b.dataset.mh, k:periodOf(b.dataset.mh, anchorDay(f.h, f.k))};
+      if(b.dataset.mstep) to = {h:f.h, k:shiftPeriod(f.h, f.k, parseInt(b.dataset.mstep,10))};
+      if(act==="mnow") to = {h:f.h, k:periodOf(f.h, TODAY)};
+      if(to){
+        if(to.h===f.h && to.k===f.k) return;
+        flush();
+        hzMove(id, to.h, to.k, null);
+        hzSaved(f.task || to.h==="day");
+        paint(); return;
+      }
+      if(act==="del"){
+        var kids = (hzBuild().kids[id] || []).length;
+        if(!confirm("Supprimer « "+trunc(it.title||"cet élément", 60)+" » ?"+(kids ? " Les "+kids+" élément"+(kids>1?"s":"")+" rattaché"+(kids>1?"s":"")+" restent en place." : ""))) return;
+        flush();
+        var arr = f.task ? "tasks" : "horizons", at = state[arr].indexOf(it);
+        hzRemove(id);
+        hzSaved(f.task);
+        closeSheet();
+        toast("Élément supprimé", function(){
+          state[arr].splice(Math.min(at, state[arr].length), 0, it);
+          save(); renderTasks(); gauges(); renderHz(false);
+        });
+      }
+    };
+  }
+  function hzHelp(){
+    openSheet("Horizons, mode d'emploi",
+      '<div class="mini" style="font-size:13.5px">'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Un horizon, des colonnes.</b> Jours, semaines, mois, années, décennies : chaque colonne est une période. La vie n\'a qu\'une colonne, pour ce qui n\'a pas de date.</p>'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Le jour, ce sont tes tâches.</b> Ce que tu poses dans un jour apparaît dans l\'onglet Tâches, et inversement. Cocher ici nourrit ta série et ton bilan mensuel.</p>'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Rattacher.</b> Ouvre un élément et choisis, dans « Rattaché à », un élément plus large qui couvre sa période : une tâche à son objectif de la semaine, un objectif du mois à celui de l\'année. Le parent affiche alors combien de ses éléments sont faits, et sa couleur se transmet.</p>'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Au-dessus.</b> Le bandeau « Au-dessus » rappelle l\'horizon plus large de la colonne que tu regardes : la semaine quand tu es dans les jours, le mois quand tu es dans les semaines.</p>'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Déplacer.</b> À la souris, glisse l\'élément. Au doigt, appuie longuement puis glisse. Lâché sur une autre colonne, il change de période ; lâché sur le bandeau « Au-dessus », il monte d\'horizon. Depuis la fiche, « Déplacer » fait la même chose sans glisser.</p>'
+      + '<p style="margin-bottom:10px"><b style="color:var(--ink)">Le retard ne bouge pas tout seul.</b> Ce qui n\'est pas fait reste dans sa période, marqué en retard. La colonne en cours propose de le ramener d\'un geste, avec annulation.</p>'
+      + '<p><b style="color:var(--ink)">Au clavier.</b> ← → pour passer d\'une colonne à l\'autre, T pour revenir à maintenant, 1 à 6 pour changer d\'horizon.</p>'
+      + '</div>', null, null);
+  }
+
   /* ═══ Onglets ══════════════════════════════════════════ */
   function showTab(name){
     document.querySelectorAll("[data-tab]").forEach(function(x){
@@ -2049,6 +2966,9 @@
     });
     state.settings.tab = name; save();
     window.scrollTo({top:0});
+    var tb = document.querySelector('[data-tab="'+name+'"]');
+    try{ if(tb) tb.scrollIntoView({block:"nearest", inline:"nearest"}); }catch(e){}
+    if(name==="horizons"){ hzScrolled = false; renderHz(true); }
   }
   document.querySelectorAll("[data-tab]").forEach(function(b){
     b.onclick = function(){ showTab(b.dataset.tab); };
@@ -2088,7 +3008,7 @@
   function summarize(d){
     d = d || {};
     var j = (d.journal && typeof d.journal==="object") ? Object.keys(d.journal).length : 0;
-    return (d.tasks||[]).length+" tâches · "+(d.goals||[]).length+" objectifs · "
+    return (d.tasks||[]).length+" tâches · "+(d.horizons||[]).length+" horizons · "+(d.goals||[]).length+" objectifs · "
       + (d.tx||[]).length+" mouvements · "+(d.notes||[]).length+" notes · "
       + j+" journée"+(j>1?"s":"")+" · "+(d.reminders||[]).length+" rappels";
   }
@@ -2393,7 +3313,7 @@
   }
   $("exp").onclick = function(){
     var json = JSON.stringify(state, null, 2);
-    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, objectifs, colonnes, finances, notes, dossiers, journal horaire et rappels.<br><br><b style="color:var(--ink)">Passer d\'un appareil à l\'autre :</b> copie ici, envoie-toi le texte (e-mail, message), puis colle-le dans « Importer » sur l\'autre appareil. Les deux consoles restent ensuite indépendantes : ce qui est saisi d\'un côté ne remonte pas de l\'autre.</div>'
+    var html = '<div class="mini">Copie ce texte et garde-le en lieu sûr, ou télécharge le fichier. Il contient tout : tâches, horizons, objectifs, colonnes, finances, notes, dossiers, journal horaire et rappels.<br><br><b style="color:var(--ink)">Passer d\'un appareil à l\'autre :</b> copie ici, envoie-toi le texte (e-mail, message), puis colle-le dans « Importer » sur l\'autre appareil. Les deux consoles restent ensuite indépendantes : ce qui est saisi d\'un côté ne remonte pas de l\'autre.</div>'
       + '<div class="row" style="margin-top:10px"><button class="ghost" data-act="copy" style="flex:1">Copier</button>'
       + '<button class="ghost" data-act="dl" style="flex:1">Télécharger le fichier</button></div>'
       + '<textarea id="expBox" readonly style="margin-top:10px;min-height:200px;font-family:var(--mono);font-size:11.5px">'+esc(json)+'</textarea>';
@@ -2459,7 +3379,7 @@
     toast("Sauvegarde restaurée");
   }
   $("reset").onclick = function(){
-    if(!confirm("Effacer tâches, objectifs, colonnes, mouvements, notes et dossiers ? C'est définitif.")) return;
+    if(!confirm("Effacer tâches, horizons, objectifs, colonnes, mouvements, notes et dossiers ? C'est définitif.")) return;
     if(!confirm(sync.refresh
       ? "Confirmation : tout sera perdu ici ET sur le serveur à la prochaine synchronisation, sauf si tu as exporté."
       : "Confirmation : tout sera perdu, sauf si tu as exporté.")) return;
@@ -2473,7 +3393,7 @@
   function seed(){
     var c1 = uid(), c2 = uid(), c3 = uid();
     return {
-      tasks:[], tx:[], notes:[], folders:[], journal:{}, reminders:[], rev:0, touchedAt:"",
+      tasks:[], horizons:[], tx:[], notes:[], folders:[], journal:{}, reminders:[], rev:0, touchedAt:"",
       columns:[
         {id:c1, name:"À lancer", tone:"ciel"},
         {id:c2, name:"En cours", tone:"laiton"},
@@ -2486,6 +3406,7 @@
   function normalize(d){
     var s = {
       tasks: Array.isArray(d.tasks)?d.tasks:[],
+      horizons: Array.isArray(d.horizons)?d.horizons:[],
       goals: Array.isArray(d.goals)?d.goals:[],
       columns: Array.isArray(d.columns)?d.columns:[],
       tx: Array.isArray(d.tx)?d.tx:[],
@@ -2534,6 +3455,20 @@
       if(!t.id) t.id = uid();
       t.done = !!t.done;
       if(t.done && !t.doneAt) t.doneAt = t.date || TODAY;
+    });
+    /* Horizons au-delà du jour : { id, title, h, key, done, doneAt, note, tone, parent, order }. */
+    s.horizons = s.horizons.filter(function(x){ return x && typeof x==="object"; });
+    s.horizons.forEach(function(x){
+      if(!x.id) x.id = uid();
+      if(hzIdx(x.h)<1) x.h = "week";
+      if(!validKey(x.h, x.key)) x.key = periodOf(x.h, TODAY);
+      x.title = x.title==null ? "" : String(x.title);
+      x.done = !!x.done;
+      if(x.done && !x.doneAt) x.doneAt = TODAY;
+      if(typeof x.note!=="string") x.note = "";
+      if(typeof x.tone!=="string") x.tone = "";
+      if(typeof x.parent!=="string") x.parent = "";
+      if(!x.createdAt) x.createdAt = TODAY;
     });
     s.tx.forEach(function(t){
       if(!t.id) t.id = uid();
@@ -2585,6 +3520,10 @@
       if(!n.date) n.date = TODAY;
       n.pinned = !!n.pinned;
     });
+    /* Champs qu'une version plus récente de la console aurait ajoutés : on les
+       garde tels quels, pour qu'un appareil en retard d'une mise à jour ne les
+       efface pas en synchronisant. */
+    Object.keys(d).forEach(function(k){ if(!(k in s)) s[k] = d[k]; });
     return s;
   }
 
@@ -2593,6 +3532,7 @@
     renderDay(); renderReminders(); renderDueBand(); refreshNotif();
     gauges(); renderAlert(); renderSync();
     showTabSilent(state.settings.tab || "tasks");
+    renderHz(false);
   }
   function showTabSilent(name){
     var ok = false;
