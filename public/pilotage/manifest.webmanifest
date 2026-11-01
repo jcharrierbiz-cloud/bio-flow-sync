@@ -1,7 +1,7 @@
 {
-  "name": "CALYRE Pilotage",
-  "short_name": "CALYRE",
-  "description": "Console de pilotage : tâches, objectifs, finances, notes.",
+  "name": "Mes Comptes",
+  "short_name": "Mes Comptes",
+  "description": "Ce qui rentre, ce qui sort, le budget du mois, perso et business.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "index.html",
@@ -12,7 +12,6 @@
   "background_color": "#0f1814",
   "theme_color": "#0f1814",
   "categories": [
-    "productivity",
     "finance"
   ],
   "icons": [
